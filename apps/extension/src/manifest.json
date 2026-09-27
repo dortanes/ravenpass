@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/chrome-manifest.json",
   "manifest_version": 3,
   "name": "__MSG_extension_name__",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "__MSG_extension_description__",
   "default_locale": "en",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnJarT6if5GSRDvfi54imJthcPs0Bb6Yti2IScZj2zfWyjA3uJDRcqHioBFpjzkNYa7YATO48Rxvsj43NycJkCH3HJhwbRuSZFdTQdLXrAWHpQ0+/hd8FDeB5EH22B+cZ3ZCs1kqhsuPhvKFiwqFJcm7o0bx214ltyzmneu3UcBairP83JusvCvYGKWJdeTbkX6+VwKDwdG3MMAO/ygmHXe1GqOBPhzsFFsFZKgDDenQor9cFkwI9Xcxk1QGVnyZHGjV/gmYLVBTA9yc6IMtbn3YL2CezzvfFW2oKcXkcUAFPG0rFZEMwrO/bRGG0YzepApcE0ITkaO3+PnEl2LD4rQIDAQAB",
