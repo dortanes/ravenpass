@@ -18,7 +18,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
 	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/kslamph/bip39-hdwallet v1.0.2 // indirect
+	github.com/kslamph/bip39-hdwallet v1.1.0 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pquerna/otp v1.5.0 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
