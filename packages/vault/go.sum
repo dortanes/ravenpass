@@ -3,8 +3,8 @@ github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc/go.mod h1:paBW
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fxamacker/cbor/v2 v2.9.4 h1:xwjVlxEMR3S605oUlgBjKLTTeGFciYPGYCtF/35LKGo=
 github.com/fxamacker/cbor/v2 v2.9.4/go.mod h1:vM4b+DJCtHn+zz7h3FFp/hDAI9WNWCsZj23V5ytsSxQ=
-github.com/kslamph/bip39-hdwallet v1.0.2 h1:3aBNUlCxHId7LfDz8oJTTJPjv9HD3ZQ/82TsXO1D+Gc=
-github.com/kslamph/bip39-hdwallet v1.0.2/go.mod h1:5wnt7iWZ3LDanTqUfwwVf5l2UoTvkprGqjsfzgz8RV4=
+github.com/kslamph/bip39-hdwallet v1.1.0 h1:hogMS8XOHU2x7TZ61s4z3rl9sPzyk4zqyW9gh98anFw=
+github.com/kslamph/bip39-hdwallet v1.1.0/go.mod h1:kVPW9sUjy3Zxt9FYuiFFCI6lQgZcImujssolBeqL+u0=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/pquerna/otp v1.5.0 h1:NMMR+WrmaqXU4EzdGJEE1aUUI0AMRzsp96fFFWNPwxs=
 github.com/pquerna/otp v1.5.0/go.mod h1:dkJfzwRKNiegxyNb54X/3fLwhCynbMspSyWKnvi1AEg=

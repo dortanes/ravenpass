@@ -3,7 +3,7 @@ module github.com/dortanes/ravenpass/packages/app
 go 1.27.1
 
 require (
-	github.com/PuerkitoBio/goquery v1.12.0
+	github.com/PuerkitoBio/goquery v1.13.0
 	github.com/coder/websocket v1.8.15
 	github.com/dortanes/ravenpass/packages/authenticator v0.0.0-00010101000000-000000000000
 	github.com/dortanes/ravenpass/packages/importers v0.0.0-00010101000000-000000000000
@@ -30,7 +30,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/kslamph/bip39-hdwallet v1.0.2 // indirect
+	github.com/kslamph/bip39-hdwallet v1.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/pquerna/otp v1.5.0 // indirect

@@ -4,7 +4,7 @@ go 1.27.1
 
 require (
 	github.com/fxamacker/cbor/v2 v2.9.4
-	github.com/kslamph/bip39-hdwallet v1.0.2
+	github.com/kslamph/bip39-hdwallet v1.1.0
 	github.com/pquerna/otp v1.5.0
 	golang.org/x/crypto v0.57.0
 	golang.org/x/image v0.46.0
