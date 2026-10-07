@@ -12,6 +12,8 @@ export const failures = {
     "Secure device unlock is unavailable. Check your device's security settings and try again.",
   "failure.unlock-key-missing":
     "Biometrics can no longer unlock this vault on this device. Use your PIN or recovery key, then turn biometrics on again in Settings.",
+  "failure.way-in-not-set":
+    "Ravenpass could not set up this way to unlock on this device. Try again, or choose another way.",
   "failure.vault-locked": "The vault is locked. Unlock it and try again.",
   "failure.vault-exists":
     "A vault already exists there. Choose another file for the new vault.",

@@ -10,6 +10,7 @@ const (
 	failureAuthenticationFailed     failure = "authentication-failed"
 	failureUnlockUnavailable        failure = "unlock-unavailable"
 	failureUnlockKeyMissing         failure = "unlock-key-missing"
+	failureWayInNotSet              failure = "way-in-not-set"
 	failureVaultLocked              failure = "vault-locked"
 	failureVaultExists              failure = "vault-exists"
 	failureSetupInProgress          failure = "setup-in-progress"

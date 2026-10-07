@@ -854,6 +854,8 @@ func present(err error) error {
 		return fail(failureUnlockUnavailable)
 	case errors.Is(err, unlock.ErrUnbound):
 		return fail(failureUnlockKeyMissing)
+	case errors.Is(err, vaultservice.ErrWayInNotSet):
+		return fail(failureWayInNotSet)
 	case errors.Is(err, vaultservice.ErrKeyChangeUnfinished):
 		return fail(failureKeyChangeUnfinished)
 	case errors.Is(err, vaultservice.ErrKeyChangeUncertain):

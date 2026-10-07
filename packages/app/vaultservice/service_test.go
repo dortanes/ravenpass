@@ -464,7 +464,7 @@ func TestCreationFailsClosedIfTheHardwareRefusesTheBinding(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := service.ConfirmCreation(phrase, MethodChoice{Biometry: true}); !errors.Is(err, failure) {
+	if _, err := service.ConfirmCreation(phrase, MethodChoice{Biometry: true}); !errors.Is(err, failure) || !errors.Is(err, ErrWayInNotSet) {
 		t.Fatalf("confirmation error = %v", err)
 	}
 	if files.data != nil || len(keys.policy) != 0 {
@@ -472,6 +472,10 @@ func TestCreationFailsClosedIfTheHardwareRefusesTheBinding(t *testing.T) {
 	}
 	if _, err := service.List(); !errors.Is(err, ErrNotReady) {
 		t.Fatalf("list after failed setup = %v", err)
+	}
+	device.platform.FailCreate(nil)
+	if _, err := service.ConfirmCreation(phrase, MethodChoice{Biometry: true}); err != nil {
+		t.Fatalf("the recovery key already shown no longer creates the vault: %v", err)
 	}
 }
 

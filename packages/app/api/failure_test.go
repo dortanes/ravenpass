@@ -27,6 +27,7 @@ func TestEveryKnownCauseReportsItsOwnCode(t *testing.T) {
 		ownerauth.ErrFailed:                    failureAuthenticationFailed,
 		ownerauth.ErrUnavailable:               failureUnlockUnavailable,
 		unlock.ErrUnbound:                      failureUnlockKeyMissing,
+		vaultservice.ErrWayInNotSet:            failureWayInNotSet,
 		vaultservice.ErrConfirmationNeeded:     failureRecoveryNeedsConfirm,
 		vaultservice.ErrRecoveryChanged:        failureRecoveryChanged,
 		vault.ErrInvalidPhrase:                 failureRecoveryPhraseInvalid,

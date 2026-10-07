@@ -37,6 +37,8 @@ var (
 	ErrOlderCopy                    = errors.New("this file is older than the vault this device used")
 	ErrDiverged                     = errors.New("this vault was changed on another device at the same time")
 	ErrNoOtherVault                 = errors.New("no other vault to return to")
+	// ErrWayInNotSet reports a chosen way in this device could not set up; the staged vault stays to choose again.
+	ErrWayInNotSet = errors.New("the chosen way in could not be set up on this device")
 )
 
 // CiphertextStore is one bound storage location.
@@ -333,8 +335,8 @@ func (s *Service) ConfirmCreation(phrase string, choice MethodChoice) (vault.Hea
 	// Hardware keys take seconds to create on some devices; the service stays usable meanwhile.
 	policy, err := s.bindChoice(head.VaultID, choice, stage.session.WrapDeviceKey)
 	if err != nil {
-		s.dropStage(func() bool { return s.creating == stage })
-		return vault.Head{}, err
+		// The owner already holds the staged recovery key, so the stage stays for another choice.
+		return vault.Head{}, fmt.Errorf("%w: %w", ErrWayInNotSet, err)
 	}
 	return s.commitCreation(stage, head, policy)
 }
