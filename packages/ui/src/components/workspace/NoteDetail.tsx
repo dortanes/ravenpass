@@ -39,7 +39,6 @@ export function NoteDetail({
         title={title}
         icon={NotebookText}
         subtitle={t("note.words", { count: splitWords(note.body).length })}
-        deleteTitle={t("note.delete.title")}
         controls={
           note.hidden
             ? { ...controls, onEdit: () => gate.after(controls.onEdit) }

@@ -35,22 +35,35 @@ type entryMeta struct {
 	note  NoteFace
 	seed  SeedFace
 	tags  []string
+	// deletedAt is when the item moved to the trash, in Unix milliseconds; zero for a live item and an attachment.
+	deletedAt uint64
 }
 
-// An index is [revision, previous, [entry…], [group…], [earlier…]]:
+// trashed reports whether the item is in the trash.
+func (e entryMeta) trashed() bool {
+	return e.deletedAt != 0
+}
+
+// An index is [revision, previous, [entry…], [group…], [earlier…], retention?]:
 //
 //	previous  hash of the revision before, zero for the first revision
 //	earlier   hashes of the revisions before previous, latest first
+//	retention days the trash keeps an item, written only when not DefaultTrashRetention
 //	group     [id, name]
 //	entry     [id, revision, label, detail, pinned, digest, [groupID…], kind, expiresOn, thumbnail,
-//	           site, owner, email, card, summary, [site…], digits, period, [face…], [app…], [tag…]?]
-//	tag       written only for an entry with tags, so a vault without any reads as before tags
+//	           site, owner, email, card, summary, [site…], digits, period, [face…], [app…], [tag…]?, deletedAt?]
+//	tag       written for an entry with tags or in the trash, so a vault without either reads as before tags
+//	deletedAt Unix milliseconds, written only for an entry in the trash
 //	card      [network, lastFour, color] for a card, [] otherwise
 //	summary   [hidden] for a note, [format, total, used] for a seed, [] otherwise
 //	face      [credentialID, rpID, userName, discoverable, userHandle, userDisplayName]
 //	app       [package, signer]
 type wireIndex struct {
-	_        struct{} `cbor:",toarray"`
+	indexFields
+	Retention uint64
+}
+
+type indexFields struct {
 	Revision uint64
 	Previous [32]byte
 	Entries  []wireEntry
@@ -58,10 +71,53 @@ type wireIndex struct {
 	Earlier  [][32]byte
 }
 
-// wireEntry is an entry with its tags, written as a twenty-first element only when there are any.
+type defaultRetentionIndex struct {
+	_ struct{} `cbor:",toarray"`
+	indexFields
+}
+
+type retentionIndex struct {
+	_ struct{} `cbor:",toarray"`
+	indexFields
+	Retention uint64
+}
+
+// defaultRetentionHead is the CBOR head of an index keeping the default retention: an array of five elements.
+const defaultRetentionHead = 0x80 | 5
+
+// MarshalCBOR writes the index without its retention element when it keeps the default.
+func (w wireIndex) MarshalCBOR() ([]byte, error) {
+	if w.Retention == DefaultTrashRetention {
+		return encoding.Marshal(defaultRetentionIndex{indexFields: w.indexFields})
+	}
+	return encoding.Marshal(retentionIndex{indexFields: w.indexFields, Retention: w.Retention})
+}
+
+// UnmarshalCBOR reads an index of either length; a written default retention is not canonical and fails the
+// re-encoding check.
+func (w *wireIndex) UnmarshalCBOR(data []byte) error {
+	if len(data) > 0 && data[0] == defaultRetentionHead {
+		var index defaultRetentionIndex
+		if err := decoding.Unmarshal(data, &index); err != nil {
+			return err
+		}
+		*w = wireIndex{indexFields: index.indexFields, Retention: DefaultTrashRetention}
+		return nil
+	}
+	var index retentionIndex
+	if err := decoding.Unmarshal(data, &index); err != nil {
+		return err
+	}
+	*w = wireIndex{indexFields: index.indexFields, Retention: index.Retention}
+	return nil
+}
+
+// wireEntry is an entry with its optional trailing elements: tags, written when there are any or the entry is in the
+// trash, then the deletion time, written only for an entry in the trash.
 type wireEntry struct {
 	wireFields
-	Tags []string
+	Tags      []string
+	DeletedAt uint64
 }
 
 type untaggedEntry struct {
@@ -75,32 +131,59 @@ type taggedEntry struct {
 	Tags []string
 }
 
-// untaggedHead is the CBOR head of an entry without tags: an array of twenty elements.
-const untaggedHead = 0x80 | 20
-
-// MarshalCBOR writes the entry without its tags element when it has none.
-func (w wireEntry) MarshalCBOR() ([]byte, error) {
-	if len(w.Tags) == 0 {
-		return encoding.Marshal(untaggedEntry{wireFields: w.wireFields})
-	}
-	return encoding.Marshal(taggedEntry{wireFields: w.wireFields, Tags: w.Tags})
+type trashedEntry struct {
+	_ struct{} `cbor:",toarray"`
+	wireFields
+	Tags      []string
+	DeletedAt uint64
 }
 
-// UnmarshalCBOR reads an entry of either length; an empty tags element is not canonical and fails the re-encoding check.
+const (
+	// untaggedHead is the CBOR head of a live entry without tags: an array of twenty elements.
+	untaggedHead = 0x80 | 20
+	// taggedHead is the CBOR head of a live entry with tags: an array of twenty-one elements.
+	taggedHead = 0x80 | 21
+)
+
+// MarshalCBOR writes the entry without the trailing elements it does not need.
+func (w wireEntry) MarshalCBOR() ([]byte, error) {
+	switch {
+	case w.DeletedAt != 0:
+		return encoding.Marshal(trashedEntry{wireFields: w.wireFields, Tags: w.Tags, DeletedAt: w.DeletedAt})
+	case len(w.Tags) != 0:
+		return encoding.Marshal(taggedEntry{wireFields: w.wireFields, Tags: w.Tags})
+	default:
+		return encoding.Marshal(untaggedEntry{wireFields: w.wireFields})
+	}
+}
+
+// UnmarshalCBOR reads an entry of any of the three lengths; a trailing element its values do not need, such as empty
+// tags on a live entry or a zero deletion time, is not canonical and fails the re-encoding check.
 func (w *wireEntry) UnmarshalCBOR(data []byte) error {
-	if len(data) > 0 && data[0] == untaggedHead {
+	var head byte
+	if len(data) > 0 {
+		head = data[0]
+	}
+	switch head {
+	case untaggedHead:
 		var entry untaggedEntry
 		if err := decoding.Unmarshal(data, &entry); err != nil {
 			return err
 		}
 		*w = wireEntry{wireFields: entry.wireFields}
-		return nil
+	case taggedHead:
+		var entry taggedEntry
+		if err := decoding.Unmarshal(data, &entry); err != nil {
+			return err
+		}
+		*w = wireEntry{wireFields: entry.wireFields, Tags: entry.Tags}
+	default:
+		var entry trashedEntry
+		if err := decoding.Unmarshal(data, &entry); err != nil {
+			return err
+		}
+		*w = wireEntry{wireFields: entry.wireFields, Tags: entry.Tags, DeletedAt: entry.DeletedAt}
 	}
-	var entry taggedEntry
-	if err := decoding.Unmarshal(data, &entry); err != nil {
-		return err
-	}
-	*w = wireEntry{wireFields: entry.wireFields, Tags: entry.Tags}
 	return nil
 }
 
@@ -177,38 +260,48 @@ func boolFlag(set bool) uint64 {
 	return 0
 }
 
-func parseIndex(plaintext []byte, records []sealedBox) (uint64, ancestry, []entryMeta, []Group, error) {
+// parsedIndex is what an index holds besides its revision and ancestry.
+type parsedIndex struct {
+	entries   []entryMeta
+	groups    []Group
+	retention int
+}
+
+func parseIndex(plaintext []byte, records []sealedBox) (uint64, ancestry, parsedIndex, error) {
 	var index wireIndex
 	if err := unmarshal(plaintext, &index); err != nil {
-		return 0, nil, nil, nil, err
+		return 0, nil, parsedIndex{}, err
 	}
 	if index.Revision == 0 || index.Revision == 1 && index.Previous != ([32]byte{}) || len(index.Entries) != len(records) {
-		return 0, nil, nil, nil, ErrMalformed
+		return 0, nil, parsedIndex{}, ErrMalformed
+	}
+	if index.Retention < MinTrashRetention || index.Retention > MaxTrashRetention {
+		return 0, nil, parsedIndex{}, ErrMalformed
 	}
 	if len(index.Groups) > MaxGroups || len(index.Earlier) > maxAncestry-1 {
-		return 0, nil, nil, nil, ErrResourceLimit
+		return 0, nil, parsedIndex{}, ErrResourceLimit
 	}
 	entries := make([]entryMeta, len(index.Entries))
 	kinds := make(map[ID]Kind, len(entries))
 	for i, wire := range index.Entries {
 		entry, err := wire.meta(records[i])
 		if err != nil {
-			return 0, nil, nil, nil, err
+			return 0, nil, parsedIndex{}, err
 		}
 		if _, duplicate := kinds[entry.id]; duplicate {
-			return 0, nil, nil, nil, ErrMalformed
+			return 0, nil, parsedIndex{}, ErrMalformed
 		}
 		kinds[entry.id] = entry.kind
 		entries[i] = entry
 	}
 	for _, entry := range entries {
 		if entry.kind == KindAttachment && kinds[entry.owner] != KindIdentity {
-			return 0, nil, nil, nil, ErrMalformed
+			return 0, nil, parsedIndex{}, ErrMalformed
 		}
 	}
 	groups, err := parseGroups(index.Groups)
 	if err != nil {
-		return 0, nil, nil, nil, err
+		return 0, nil, parsedIndex{}, err
 	}
 	ancestors := append(ancestry{index.Previous}, index.Earlier...)
 	if index.Revision == 1 {
@@ -216,17 +309,17 @@ func parseIndex(plaintext []byte, records []sealedBox) (uint64, ancestry, []entr
 	}
 	// No container names more revisions than came before it.
 	if uint64(len(ancestors)) >= index.Revision {
-		return 0, nil, nil, nil, ErrMalformed
+		return 0, nil, parsedIndex{}, ErrMalformed
 	}
 	ancestors = nilIfEmpty(ancestors)
 	for _, entry := range entries {
 		for _, group := range entry.groups {
 			if !slices.ContainsFunc(groups, func(held Group) bool { return held.ID == group }) {
-				return 0, nil, nil, nil, ErrMalformed
+				return 0, nil, parsedIndex{}, ErrMalformed
 			}
 		}
 	}
-	return index.Revision, ancestors, entries, groups, nil
+	return index.Revision, ancestors, parsedIndex{entries: entries, groups: groups, retention: int(index.Retention)}, nil
 }
 
 // meta is the entry this wire entry holds, whose record is record.
@@ -291,6 +384,10 @@ func (w wireEntry) meta(record sealedBox) (entryMeta, error) {
 	if entry.tags, err = parseTags(w.Tags, entry.kind); err != nil {
 		return entryMeta{}, err
 	}
+	if entry.kind == KindAttachment && w.DeletedAt != 0 {
+		return entryMeta{}, ErrMalformed
+	}
+	entry.deletedAt = w.DeletedAt
 	if entry.kind == KindAttachment && !validScanEntry(entry) {
 		return entryMeta{}, ErrMalformed
 	}
@@ -415,7 +512,7 @@ func parseGroups(wires []wireGroup) ([]Group, error) {
 
 // wire is the entry as the index writes it.
 func (e entryMeta) wire() wireEntry {
-	wire := wireEntry{Tags: e.tags, wireFields: wireFields{
+	wire := wireEntry{Tags: e.tags, DeletedAt: e.deletedAt, wireFields: wireFields{
 		ID: e.id, Revision: e.revision, Label: e.label, Detail: e.detail, Pinned: flag(e.pinned), Digest: e.digest,
 		Groups: e.groups, Kind: uint64(e.kind), ExpiresOn: e.expiresOn, Thumbnail: e.thumbnail, Site: e.site,
 		Email: e.email, Sites: e.sites, Digits: uint64(e.code.Digits), Period: uint64(e.code.Period),
@@ -434,14 +531,14 @@ func (e entryMeta) wire() wireEntry {
 	return wire
 }
 
-func encodeIndex(revision uint64, ancestors ancestry, entries []entryMeta, groups []Group) ([]byte, error) {
+func encodeIndex(revision uint64, ancestors ancestry, entries []entryMeta, groups []Group, retention int) ([]byte, error) {
 	if revision == 0 || len(entries) > maxEntries || len(groups) > MaxGroups {
 		return nil, ErrResourceLimit
 	}
-	if len(ancestors) > maxAncestry || uint64(len(ancestors)) >= revision {
+	if len(ancestors) > maxAncestry || uint64(len(ancestors)) >= revision || retention < MinTrashRetention || retention > MaxTrashRetention {
 		return nil, ErrMalformed
 	}
-	index := wireIndex{Revision: revision, Previous: ancestors.previous(), Earlier: ancestors.earlier(), Entries: make([]wireEntry, len(entries)), Groups: make([]wireGroup, len(groups))}
+	index := wireIndex{Retention: uint64(retention), indexFields: indexFields{Revision: revision, Previous: ancestors.previous(), Earlier: ancestors.earlier(), Entries: make([]wireEntry, len(entries)), Groups: make([]wireGroup, len(groups))}}
 	for i, entry := range entries {
 		if len(entry.groups) > MaxCredentialGroups || len(entry.sites) > MaxCredentialWebsites || len(entry.passkeys) > MaxCredentialPasskeys || len(entry.apps) > MaxCredentialApps || len(entry.tags) > MaxItemTags {
 			return nil, ErrResourceLimit

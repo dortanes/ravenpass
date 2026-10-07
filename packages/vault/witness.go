@@ -89,6 +89,7 @@ func (s *Session) Follow(container []byte, persistAdvancedWitness func(Witness) 
 	s.recovery = next.recovery
 	s.entries = next.entries
 	s.groups = next.groups
+	s.retention = next.retention
 	s.records = next.records
 	s.container = next.container
 	s.head = next.head

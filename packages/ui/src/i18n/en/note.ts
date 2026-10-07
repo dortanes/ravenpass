@@ -33,8 +33,6 @@ export const note = {
   "note.copy": "Copy note",
   "note.copied": "Note copied.",
 
-  "note.delete.title": "Delete this note?",
-
   "note.editor.new.title": "New note",
   "note.editor.edit.title": "Edit note",
   "note.editor.create": "Add note",

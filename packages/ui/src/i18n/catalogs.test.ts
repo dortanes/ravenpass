@@ -80,6 +80,7 @@ test("no message is empty and none is left untranslated by accident", () => {
     "settings.general.macos",
     "settings.import.note.swift",
     "settings.import.note.iban",
+    "settings.trash.detail",
     "system.file.vault",
   ]);
   const identical = keys.filter(

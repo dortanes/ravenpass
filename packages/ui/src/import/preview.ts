@@ -1,9 +1,4 @@
-import type {
-  ImportFormat,
-  ImportKind,
-  ImportOrigin,
-  ImportReason,
-} from "../vault-api.ts";
+import type { ImportFormat, ImportOrigin, ImportReason } from "../vault-api.ts";
 
 const importFormats: readonly ImportFormat[] = [
   "json",
@@ -16,14 +11,6 @@ const importFormats: readonly ImportFormat[] = [
 const encryptedFormats: readonly ImportFormat[] = [
   "encrypted-json",
   "encrypted-zip",
-];
-
-const importKinds: readonly ImportKind[] = [
-  "credential",
-  "card",
-  "identity",
-  "note",
-  "seed",
 ];
 
 const importOrigins: readonly ImportOrigin[] = [
@@ -50,10 +37,6 @@ export function isImportFormat(value: string): value is ImportFormat {
 
 export function isEncryptedFormat(format: ImportFormat): boolean {
   return encryptedFormats.includes(format);
-}
-
-export function isImportKind(value: string): value is ImportKind {
-  return (importKinds as readonly string[]).includes(value);
 }
 
 export function isImportOrigin(value: string): value is ImportOrigin {

@@ -82,8 +82,6 @@ export const identity = {
   "identity.copied.country": "Country copied.",
   "identity.copied.number": "Number copied.",
 
-  "identity.delete.title": "Delete this identity?",
-
   "identity.scan.label": "Scans",
   "identity.scan.attach": "Attach scan",
   "identity.scan.from-photos": "From photos",

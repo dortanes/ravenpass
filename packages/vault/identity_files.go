@@ -17,7 +17,8 @@ type DocumentScans struct {
 	Scans []ScanSummary
 }
 
-// IdentityFiles lists every identity with its photo thumbnail and document scans without taking the selection.
+// IdentityFiles lists every identity outside the trash with its photo thumbnail and document scans without taking the
+// selection.
 func (s *Session) IdentityFiles() ([]IdentityFiles, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -32,7 +33,7 @@ func (s *Session) IdentityFiles() ([]IdentityFiles, error) {
 	}
 	var result []IdentityFiles
 	for i, entry := range s.entries {
-		if entry.kind != KindIdentity {
+		if entry.kind != KindIdentity || entry.trashed() {
 			continue
 		}
 		identity, err := s.decryptIdentity(i)

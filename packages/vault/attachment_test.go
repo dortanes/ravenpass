@@ -379,7 +379,7 @@ func resealIdentity(t *testing.T, session *Session, owner ID, documents []Docume
 	entries := append([]entryMeta(nil), session.entries...)
 	records[index] = box
 	entries[index].digest = sha256.Sum256(encodeBox(box))
-	indexPlaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil)
+	indexPlaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil, DefaultTrashRetention)
 	if err != nil {
 		t.Fatal(err)
 	}

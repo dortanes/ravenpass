@@ -394,7 +394,7 @@ func TestEntryKindThatDoesNotMatchItsRecordIsMalformed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			entries := append([]entryMeta(nil), session.entries...)
 			entries[test.index].kind = test.kind
-			plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil)
+			plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil, DefaultTrashRetention)
 			if err != nil {
 				t.Fatal(err)
 			}

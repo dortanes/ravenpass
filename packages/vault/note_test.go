@@ -208,7 +208,8 @@ func TestIndexHoldsANoteSummaryOnlyForANote(t *testing.T) {
 	id := ID{5}
 	note := uint64(KindNote)
 	hidden := encodeArray(encodeUint(1))
-	_, _, entries, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), currentElement(id, digest, note, hidden)), records)
+	_, _, index, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), currentElement(id, digest, note, hidden)), records)
+	entries := index.entries
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -235,7 +236,7 @@ func TestIndexHoldsANoteSummaryOnlyForANote(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, ErrMalformed) {
+			if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, ErrMalformed) {
 				t.Fatalf("got %v, want ErrMalformed", err)
 			}
 		})
@@ -264,7 +265,7 @@ func TestNoteEntryThatDoesNotMatchItsRecordIsMalformed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			entries := append([]entryMeta(nil), session.entries...)
 			test.mutate(entries)
-			plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil)
+			plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil, DefaultTrashRetention)
 			if err != nil {
 				t.Fatal(err)
 			}

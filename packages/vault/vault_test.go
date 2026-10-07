@@ -218,7 +218,7 @@ func TestWitnessAdvanceAuthenticatesEveryRecord(t *testing.T) {
 	modifiedRecords[0].ciphertext[len(modifiedRecords[0].ciphertext)-1] ^= 1
 	modifiedEntries := append([]entryMeta(nil), session.entries...)
 	modifiedEntries[0].digest = sha256.Sum256(encodeBox(modifiedRecords[0]))
-	plaintext, err := encodeIndex(successorHead.Revision, session.ancestry, modifiedEntries, nil)
+	plaintext, err := encodeIndex(successorHead.Revision, session.ancestry, modifiedEntries, nil, DefaultTrashRetention)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,11 +248,11 @@ func withRecords(t *testing.T, session *Session, records []sealedBox) []byte {
 	t.Helper()
 	raw, head := currentRaw(t, session)
 	entries := withDigests(slices.Clone(session.entries), records)
-	plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, session.groups)
+	plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, session.groups, session.retention)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, _, _, err := parseIndex(plaintext, records); err != nil {
+	if _, _, _, err := parseIndex(plaintext, records); err != nil {
 		t.Fatalf("the resealed index refuses the records: %v", err)
 	}
 	raw.records = records
@@ -598,7 +598,7 @@ func TestRevisionOverflowAndDuplicateManifest(t *testing.T) {
 		{id: ID{1}, revision: 1, label: "one", digest: sha256.Sum256(encodeBox(raw.records[0])), kind: KindCredential},
 		{id: ID{1}, revision: 1, label: "two", digest: sha256.Sum256(encodeBox(raw.records[1])), kind: KindCredential},
 	}
-	plaintext, err := encodeIndex(1, nil, malformed, nil)
+	plaintext, err := encodeIndex(1, nil, malformed, nil, DefaultTrashRetention)
 	if err != nil {
 		t.Fatal(err)
 	}

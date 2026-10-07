@@ -104,6 +104,32 @@ export interface BankLookup {
 }
 
 /**
+ * Breach is a credential whose password appears in known breaches, and how many times.
+ */
+export interface Breach {
+    "id": string;
+    "count": number;
+}
+
+/**
+ * BreachChecks reports whether passwords are checked against known breaches.
+ */
+export interface BreachChecks {
+    "enabled": boolean;
+}
+
+/**
+ * BreachReport is what one check of the vault's passwords found.
+ */
+export interface BreachReport {
+    /**
+     * Checked counts the passwords checked: every non-empty one outside the trash.
+     */
+    "checked": number;
+    "breaches": Breach[] | null;
+}
+
+/**
  * Capabilities are the features this host offers beyond the vault.
  */
 export interface Capabilities {
@@ -1204,7 +1230,7 @@ export interface SiteIcons {
  */
 export interface SiteLookup {
     /**
-     * Name is the site's declared name or its readable domain.
+     * Name is the site's declared name or its readable domain, empty when no name was asked for.
      */
     "name": string;
 
@@ -1295,6 +1321,37 @@ export interface SystemAutofillStatus {
 export interface TagLimits {
     "tag": number;
     "tags": number;
+}
+
+/**
+ * Trash is the items in the trash, latest deleted first, and how many days the trash keeps one.
+ */
+export interface Trash {
+    "items": TrashedItem[] | null;
+    "retentionDays": number;
+}
+
+/**
+ * TrashedItem is an item in the trash as the trash lists it.
+ */
+export interface TrashedItem {
+    "id": string;
+
+    /**
+     * Kind is the item's kind as kindNames names it.
+     */
+    "kind": string;
+    "label": string;
+
+    /**
+     * Detail is what the item's list row shows under its name: a login, an email, a bank, a note preview or a wallet.
+     */
+    "detail": string;
+
+    /**
+     * DeletedAt is when the item moved to the trash, in Unix milliseconds.
+     */
+    "deletedAt": number;
 }
 
 /**

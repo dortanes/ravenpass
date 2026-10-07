@@ -143,7 +143,8 @@ func TestIndexReadsTagsOnlyAsTheVaultWritesThem(t *testing.T) {
 		}
 		return encodeArray(append(currentFields(id, digest, credential, encodeArray()), encodeArray(values...))...)
 	}
-	_, _, entries, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), tagged("Personal", "Work")), records)
+	_, _, index, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), tagged("Personal", "Work")), records)
+	entries := index.entries
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -161,7 +162,7 @@ func TestIndexReadsTagsOnlyAsTheVaultWritesThem(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, ErrMalformed) {
+			if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, ErrMalformed) {
 				t.Fatalf("got %v, want ErrMalformed", err)
 			}
 		})

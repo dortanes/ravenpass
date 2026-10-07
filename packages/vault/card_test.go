@@ -323,7 +323,8 @@ func TestIndexHoldsACardFaceOnlyForACard(t *testing.T) {
 	id := ID{4}
 	card := uint64(KindCard)
 	valid := faceOf(uint64(NetworkMir), "6789", "#00a0e1")
-	_, _, entries, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), cardElement(id, digest, card, "2029-08-31", valid)), records)
+	_, _, index, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), cardElement(id, digest, card, "2029-08-31", valid)), records)
+	entries := index.entries
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -353,7 +354,7 @@ func TestIndexHoldsACardFaceOnlyForACard(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, test.want) {
+			if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, test.want) {
 				t.Fatalf("got %v, want %v", err, test.want)
 			}
 		})
@@ -389,7 +390,7 @@ func TestCardEntryThatDoesNotMatchItsRecordIsMalformed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			entries := append([]entryMeta(nil), session.entries...)
 			test.mutate(entries)
-			plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil)
+			plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil, DefaultTrashRetention)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -784,7 +785,7 @@ func resealed(t *testing.T, session *Session, id ID, plaintext []byte) []byte {
 	raw.records = append([]sealedBox(nil), raw.records...)
 	raw.records[index] = box
 	entries[index].digest = sha256.Sum256(encodeBox(box))
-	indexPlaintext, err := encodeIndex(head.Revision, session.ancestry, entries, session.groups)
+	indexPlaintext, err := encodeIndex(head.Revision, session.ancestry, entries, session.groups, session.retention)
 	if err != nil {
 		t.Fatal(err)
 	}

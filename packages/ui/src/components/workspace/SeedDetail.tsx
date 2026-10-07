@@ -83,7 +83,6 @@ export function SeedDetail({
           {...seedFace(seed.format, words)}
           title={seed.label || t("seed.untitled")}
           subtitle={[subtitle, seed.wallet].filter(Boolean).join(" · ")}
-          deleteTitle={t("seed.delete.title")}
           controls={
             seed.format === "codes"
               ? controls

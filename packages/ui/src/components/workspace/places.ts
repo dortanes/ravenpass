@@ -7,6 +7,7 @@ import {
   Sprout,
 } from "lucide-react";
 import type { MessageKey } from "../../i18n/messages.ts";
+import type { ItemKindName } from "../../vault-api.ts";
 
 /** A place holding one kind of item. */
 export type ItemPlaceName =
@@ -32,6 +33,21 @@ export const itemPlaces: readonly ItemPlaceEntry[] = [
   { id: "notes", icon: NotebookText, label: "workspace.rail.notes" },
   { id: "seeds", icon: Sprout, label: "workspace.rail.seeds" },
 ];
+
+/** The place that holds each kind of item. */
+export const kindPlaces: Readonly<Record<ItemKindName, ItemPlaceName>> = {
+  credential: "passwords",
+  identity: "identities",
+  card: "cards",
+  note: "notes",
+  seed: "seeds",
+};
+
+const itemKindNames = Object.keys(kindPlaces);
+
+export function isItemKindName(value: string): value is ItemKindName {
+  return itemKindNames.includes(value);
+}
 
 export function placeOf(id: ItemPlaceName): ItemPlaceEntry {
   const place = itemPlaces.find((item) => item.id === id);

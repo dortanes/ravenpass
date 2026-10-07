@@ -450,19 +450,19 @@ func TestIndexRoundTripsPasskeyFaces(t *testing.T) {
 		{id: ID{1}, revision: 1, label: "Held", kind: KindCredential, passkeys: faces},
 		{id: ID{2}, revision: 1, label: "Bare", kind: KindCredential},
 	}, records)
-	plaintext, err := encodeIndex(3, nil, entries, nil)
+	plaintext, err := encodeIndex(3, nil, entries, nil, DefaultTrashRetention)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, parsed, _, err := parseIndex(plaintext, records)
+	_, _, index, err := parseIndex(plaintext, records)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(parsed, entries) {
+	if parsed := index.entries; !reflect.DeepEqual(parsed, entries) {
 		t.Fatalf("entries changed: %+v", parsed)
 	}
 	entries[0].passkeys = append(faces, faces[0])
-	if _, err := encodeIndex(3, nil, entries, nil); !errors.Is(err, ErrResourceLimit) {
+	if _, err := encodeIndex(3, nil, entries, nil, DefaultTrashRetention); !errors.Is(err, ErrResourceLimit) {
 		t.Fatalf("nine faces: got %v, want ErrResourceLimit", err)
 	}
 }
@@ -485,7 +485,7 @@ func TestIndexRejectsMalformedPasskeyFaces(t *testing.T) {
 	element := func(kind Kind, faces ...[]byte) []byte {
 		return withField(id, digest, uint64(kind), encodeArray(), fieldPasskeys, encodeArray(faces...))
 	}
-	if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), element(KindCredential, valid)), records); err != nil {
+	if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), element(KindCredential, valid)), records); err != nil {
 		t.Fatalf("a valid face: %v", err)
 	}
 	tests := []struct {
@@ -514,7 +514,7 @@ func TestIndexRejectsMalformedPasskeyFaces(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, ErrMalformed) {
+			if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, ErrMalformed) {
 				t.Fatalf("got %v, want ErrMalformed", err)
 			}
 		})

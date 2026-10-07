@@ -317,7 +317,8 @@ func (s *Session) ReadSelectedCard(ticket Selection) (Card, error) {
 	return card, nil
 }
 
-// linkedAddress returns the address a link names, or nil when its identity or address is gone.
+// linkedAddress returns the address a link names, or nil when its identity is gone or in the trash, or its address is
+// gone.
 func (s *Session) linkedAddress(link AddressLink) (*Address, error) {
 	index := s.findKind(link.Identity, KindIdentity)
 	if index < 0 {
@@ -438,7 +439,8 @@ func (s *Session) unlinkCards(entries []entryMeta, records []sealedBox, gone fun
 	return nil
 }
 
-// IdentityAddresses lists what a card can link to in each identity with an address, without marking use or taking a selection.
+// IdentityAddresses lists what a card can link to in each identity outside the trash with an address, without marking
+// use or taking a selection.
 func (s *Session) IdentityAddresses() ([]IdentityAddresses, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -447,7 +449,7 @@ func (s *Session) IdentityAddresses() ([]IdentityAddresses, error) {
 	}
 	var result []IdentityAddresses
 	for i, entry := range s.entries {
-		if entry.kind != KindIdentity {
+		if entry.kind != KindIdentity || entry.trashed() {
 			continue
 		}
 		identity, err := s.decryptIdentity(i)

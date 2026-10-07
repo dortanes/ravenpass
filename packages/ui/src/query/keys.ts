@@ -23,6 +23,7 @@ export const queryKeys = {
   dockIcon: [...hostScope, "dock-icon"],
   siteIcons: [...hostScope, "site-icons"],
   bankDetails: [...hostScope, "bank-details"],
+  breachChecks: [...hostScope, "breach-checks"],
   screenshots: [...hostScope, "screenshots"],
   systemAutofill: [...hostScope, "system-autofill"],
   identityList: [...hostScope, "identity-list"],
@@ -40,6 +41,9 @@ export const queryKeys = {
   notes: [...vaultScope, "notes"],
   seeds: [...vaultScope, "seeds"],
   groups: [...vaultScope, "groups"],
+  trash: [...vaultScope, "trash"],
+  /** The vault-wide check for the passwords as they were read at `version`. */
+  breaches: (version: number) => [...vaultScope, "breaches", version],
   exportStatus: [...vaultScope, "export-status"],
   codeSetup: [...vaultScope, "code-setup"],
   limits: (kind: LimitsKind) => [...vaultScope, "limits", kind],

@@ -99,8 +99,6 @@ export const seed = {
   "seed.check.submit": "Check",
   "seed.check.done": "Backup check complete. Verification date saved.",
 
-  "seed.delete.title": "Delete this seed?",
-
   "seed.editor.new.title": "New seed",
   "seed.editor.edit.title": "Edit seed",
   "seed.editor.create": "Add seed",

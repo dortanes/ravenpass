@@ -103,8 +103,6 @@ export const seed: typeof english = {
   "seed.check.submit": "Проверить",
   "seed.check.done": "Проверка копии завершена. Дата проверки сохранена.",
 
-  "seed.delete.title": "Удалить этот сид?",
-
   "seed.editor.new.title": "Новый сид",
   "seed.editor.edit.title": "Изменить сид",
   "seed.editor.create": "Добавить сид",

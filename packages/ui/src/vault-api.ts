@@ -484,6 +484,39 @@ export interface BankDetails {
   enabled: boolean;
 }
 
+/** Whether passwords are checked against known breaches. */
+export interface BreachChecks {
+  enabled: boolean;
+}
+
+/** A password that appears in known breaches, and how many times. */
+export interface Breach {
+  id: string;
+  count: number;
+}
+
+/** What one check of the vault's passwords found; `checked` counts every non-empty password checked. */
+export interface BreachCheck {
+  checked: number;
+  breaches: Breach[];
+}
+
+/** An item in the trash; `deletedAt` is in Unix milliseconds. */
+export interface TrashedItem {
+  id: string;
+  kind: ItemKindName;
+  label: string;
+  /** What the item's list row shows under its name. */
+  detail: string;
+  deletedAt: number;
+}
+
+/** The trash, latest deleted first, and how many days it keeps an item. */
+export interface Trash {
+  items: TrashedItem[];
+  retentionDays: number;
+}
+
 /** Each value is empty when the site did not say. */
 export interface BankLookup {
   name: string;
@@ -664,7 +697,8 @@ export type ImportFormat =
   | "encrypted-zip"
   | "csv";
 
-export type ImportKind = "credential" | "card" | "identity" | "note" | "seed";
+/** An item's kind as the host names it. */
+export type ItemKindName = "credential" | "card" | "identity" | "note" | "seed";
 
 /** The kind an item had in the source. */
 export type ImportOrigin =
@@ -687,7 +721,7 @@ export interface ImportConversion {
 
 /** Counts include duplicates; `duplicates` counts the items the vault already holds. */
 export interface ImportKindPreview {
-  kind: ImportKind;
+  kind: ItemKindName;
   count: number;
   duplicates: number;
   oneTimeCodes: number;
@@ -746,7 +780,7 @@ export type ImportCardNetworks = Readonly<
 >;
 
 export interface ImportKindTotal {
-  kind: ImportKind;
+  kind: ItemKindName;
   count: number;
 }
 
@@ -987,10 +1021,23 @@ export interface VaultApi {
   listIdentityAddresses(): Promise<IdentityAddresses[]>;
   bankDetails(): Promise<BankDetails>;
   setBankDetails(enabled: boolean): Promise<void>;
+  breachChecks(): Promise<BreachChecks>;
+  /** Turning checks off forgets every answer. */
+  setBreachChecks(enabled: boolean): Promise<void>;
+  /**
+   * The passwords of the vault that appear in known breaches. Fails with `breach-checks-off` while checks are off and
+   * `breach-check-unreachable` when the service cannot be reached.
+   */
+  checkBreaches(): Promise<BreachCheck>;
+  /** How many times a typed password appears in known breaches; fails as `checkBreaches` does. */
+  checkPassword(password: string): Promise<number>;
   /** Both values are empty while `BankDetails.enabled` is off. */
   lookupBank(site: string): Promise<BankLookup>;
-  /** The site's declared name where website icons load, else its readable domain. */
-  lookupSite(website: string): Promise<SiteLookup>;
+  /**
+   * The website cut to what the vault matches it by and, when `named` is set, the site's declared name where website
+   * icons load, else its readable domain. Without `named` no site is contacted and the name is empty.
+   */
+  lookupSite(website: string, named: boolean): Promise<SiteLookup>;
   /**
    * The setup a QR code holds in a picture the owner chooses or on the clipboard; empty when the owner cancels the
    * file choice. Fails with `qr-code-missing`, `qr-code-not-setup` or `qr-code-ambiguous`.
@@ -1031,8 +1078,26 @@ export interface VaultApi {
   /** Empty when new items join no group. */
   defaultGroup(): Promise<string>;
   setDefaultGroup(id: string): Promise<void>;
-  /** Acts on an item of any kind. */
+  /** Moves an item of any kind to the trash. */
+  trashItem(id: string): Promise<void>;
+  restoreItem(id: string): Promise<void>;
+  /** Deletes an item of any kind permanently, in the trash or not. */
   deleteItem(id: string): Promise<void>;
+  /** Removes the items kept longer than the retention period first. */
+  listTrash(): Promise<Trash>;
+  emptyTrash(): Promise<void>;
+  /** Removes the items kept longer than the new period. */
+  setTrashRetention(days: number): Promise<void>;
+  /**
+   * Saves input and groups over the password `into` as `updateCredential` does, moves every passkey of `from` into it,
+   * and moves `from` to the trash, in one save. Fails with `passkeys-full` when the passkeys do not fit.
+   */
+  mergeCredentials(
+    into: string,
+    from: string,
+    input: CredentialInput,
+    groups: string[],
+  ): Promise<void>;
   /**
    * Saves a copy of an item of any kind, named after it, and resolves with the copy's id. A password's passkeys stay
    * with the original; an identity's scans are copied.

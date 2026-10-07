@@ -14,6 +14,7 @@ import (
 
 	"github.com/dortanes/ravenpass/packages/app/appbundle"
 	"github.com/dortanes/ravenpass/packages/app/backups"
+	"github.com/dortanes/ravenpass/packages/app/breaches"
 	"github.com/dortanes/ravenpass/packages/app/confirmation"
 	"github.com/dortanes/ravenpass/packages/app/linkserver"
 	"github.com/dortanes/ravenpass/packages/app/linkstore"
@@ -105,6 +106,7 @@ type Service struct {
 	preferences *preferences.Store
 	icons       *siteicons.Service
 	brands      brandSource
+	breaches    breachCounter
 	currentApp  func() *application.App
 	clipboard   clipboardState
 	pasteboard  Pasteboard
@@ -304,7 +306,7 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 	}
 	offers.LockWhenHidden = settings.LocksWhenHidden()
 	s := &Service{
-		vault: vault, preferences: settings, icons: icons, brands: siteicons.NewFetcher(), currentApp: host.CurrentApp,
+		vault: vault, preferences: settings, icons: icons, brands: siteicons.NewFetcher(), breaches: breaches.New(), currentApp: host.CurrentApp,
 		pasteboard: clipboard, files: heldFiles{VaultFiles: files, hold: hold}, places: places, openURL: openURL, hold: hold, dialog: dialog,
 		photoPicker: heldPhotos{PhotoPicker: photoPicker, hold: hold}, saver: saver, printer: printer, qrCodes: host.QRCodes, links: links, identities: identities, offers: offers,
 		shows: shows, screens: screens, systemAutofill: systemAutofill,
@@ -371,12 +373,14 @@ func (s *Service) Unlock() error {
 	return s.opened(err)
 }
 
-// opened ends the waiting unlock request and requests any due backup once err reports the vault open.
+// opened ends the waiting unlock request, removes the items kept in the trash past its period and requests any due
+// backup once err reports the vault open. A purge that fails is retried at the next unlock or listing of the trash.
 func (s *Service) opened(err error) error {
 	if err != nil {
 		return present(err)
 	}
 	s.confirmations.VaultOpened()
+	_, _ = s.vault.PurgeTrash()
 	if s.backups != nil {
 		s.backups.Poke()
 	}
@@ -613,24 +617,33 @@ func (s *Service) UpdateCredential(id string, input CredentialInput, groups []st
 	if !ok {
 		return fail(failureItemUnreadable)
 	}
-	membership, err := s.knownGroups(groups)
-	if err != nil {
-		return err
-	}
 	held, err := s.heldApps(parsed)
 	if err != nil {
 		return err
 	}
-	apps, err := keptApps(held, input.Apps)
+	patch, err := s.credentialPatch(input, groups, held)
 	if err != nil {
 		return err
 	}
-	patch := vault.CredentialPatch{
+	patch.RemovePasskeys = removed
+	return present(s.vault.EditCredential(parsed, patch))
+}
+
+// credentialPatch is the patch saving input and groups over a credential, whose linked apps must be among held.
+func (s *Service) credentialPatch(input CredentialInput, groups []string, held []vault.App) (vault.CredentialPatch, error) {
+	membership, err := s.knownGroups(groups)
+	if err != nil {
+		return vault.CredentialPatch{}, err
+	}
+	apps, err := keptApps(held, input.Apps)
+	if err != nil {
+		return vault.CredentialPatch{}, err
+	}
+	return vault.CredentialPatch{
 		Label: &input.Label, Websites: &input.Websites, Login: &input.Login,
 		Email: &input.Email, Password: &input.Password, Notes: &input.Notes,
-		TOTP: &input.TOTP, Apps: &apps, Groups: &membership, Tags: &input.Tags, RemovePasskeys: removed,
-	}
-	return present(s.vault.EditCredential(parsed, patch))
+		TOTP: &input.TOTP, Apps: &apps, Groups: &membership, Tags: &input.Tags,
+	}, nil
 }
 
 // SetPinned pins or unpins an item of either kind.
@@ -642,7 +655,7 @@ func (s *Service) SetPinned(id string, pinned bool) error {
 	return present(s.vault.SetPinned(parsed, pinned))
 }
 
-// DeleteItem deletes an item of either kind.
+// DeleteItem deletes an item of any kind permanently, in the trash or not.
 func (s *Service) DeleteItem(id string) error {
 	parsed, err := vault.ParseID(id)
 	if err != nil {
@@ -791,8 +804,8 @@ func (s *Service) lockedInside() {
 	s.clearClipboard()
 }
 
-// dropOpenVault ends pending confirmations and drops the staged photo, scans and import, any link share and the
-// location a move was to go to.
+// dropOpenVault ends pending confirmations and drops the staged photo, scans and import, any link share, the location
+// a move was to go to, and the breach answers kept for the vault's passwords.
 func (s *Service) dropOpenVault() {
 	s.confirmations.EndAll(vaultservice.ErrNotReady)
 	s.photo.clear()
@@ -800,6 +813,7 @@ func (s *Service) dropOpenVault() {
 	s.imports.clear()
 	s.links.Cancel()
 	s.moveTo.drop()
+	s.breaches.Forget()
 }
 
 func (input CredentialInput) toVault() vault.CredentialInput {

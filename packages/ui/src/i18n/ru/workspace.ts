@@ -61,10 +61,7 @@ export const workspace: typeof english = {
   "workspace.detail.duplicate": "Дублировать",
   "workspace.detail.delete": "Удалить",
   "workspace.duplicate.name": "{name} (копия)",
-  "workspace.delete.detail": "Это действие нельзя отменить.",
   "workspace.delete.cancel": "Отмена",
-  "workspace.delete.confirm": "Удалить",
-  "workspace.delete.busy": "Удаляем…",
   "workspace.field.notes": "Заметки",
   "workspace.field.hidden": "Скрыто",
   "workspace.notes.copy": "Скопировать заметки",
@@ -214,8 +211,6 @@ export const workspace: typeof english = {
   "credential.totp.qr": "Прочитать QR-код",
   "credential.totp.qr.file": "Из файла с изображением",
   "credential.totp.qr.clipboard": "Из буфера обмена",
-
-  "credential.delete.title": "Удалить этот пароль?",
 
   "credential.passkeys": "Ключи доступа",
   "credential.mark.totp": "Есть одноразовый код",

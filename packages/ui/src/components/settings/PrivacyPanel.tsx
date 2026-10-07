@@ -2,6 +2,7 @@ import { useCapabilities } from "../../host/capabilities.tsx";
 import { useTranslator } from "../../i18n/translator.tsx";
 import type {
   BankDetails,
+  BreachChecks,
   ClipboardClearing,
   ScreenshotSettings,
   SiteIcons,
@@ -17,6 +18,8 @@ export function PrivacyPanel({
   onSiteIcons,
   bankDetails,
   onBankDetails,
+  breachChecks,
+  onBreachChecks,
   clipboard,
   onClipboard,
   screenshots,
@@ -26,6 +29,8 @@ export function PrivacyPanel({
   onSiteIcons: (enabled: boolean) => void;
   bankDetails: BankDetails | null;
   onBankDetails: (enabled: boolean) => void;
+  breachChecks: BreachChecks | null;
+  onBreachChecks: (enabled: boolean) => void;
   clipboard: ClipboardClearing | null;
   onClipboard: (enabled: boolean, seconds: number) => void;
   screenshots: ScreenshotSettings;
@@ -79,6 +84,22 @@ export function PrivacyPanel({
         </BlockRow>
       </Block>
       <BlockNote>{t("settings.site-icons.note")}</BlockNote>
+      <BlockHeading>{t("settings.privacy.passwords")}</BlockHeading>
+      <Block>
+        <BlockRow
+          title={t("settings.breach-checks")}
+          detail={t("settings.breach-checks.detail")}
+          htmlFor="breach-checks"
+          wrap
+        >
+          <Switch
+            id="breach-checks"
+            checked={Boolean(breachChecks?.enabled)}
+            disabled={busy || !breachChecks}
+            onCheckedChange={onBreachChecks}
+          />
+        </BlockRow>
+      </Block>
       {offers.screenshots && (
         <ScreenshotsSetting settings={screenshots} busy={busy} />
       )}

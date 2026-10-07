@@ -159,6 +159,8 @@ type Entry struct {
 	Pinned   bool
 	Groups   []ID
 	Tags     []string
+	// DeletedAt is when the item moved to the trash, in Unix milliseconds; zero outside the trash.
+	DeletedAt uint64
 }
 
 // Group is a named set of items; it lives in the index.
@@ -210,6 +212,7 @@ type Pending struct {
 	parentHash [32]byte
 	entries    []entryMeta
 	groups     []Group
+	retention  int
 	records    []sealedBox
 	container  []byte
 	head       Head

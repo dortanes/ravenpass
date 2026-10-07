@@ -208,7 +208,7 @@ func openSession(raw rawContainer, dataKey [32]byte) (*Session, error) {
 		clear(recordKey[:])
 		return nil, err
 	}
-	revision, ancestors, entries, groups, err := parseIndex(plaintext, raw.records)
+	revision, ancestors, index, err := parseIndex(plaintext, raw.records)
 	clear(plaintext)
 	if err != nil {
 		clear(indexKey[:])
@@ -221,8 +221,9 @@ func openSession(raw rawContainer, dataKey [32]byte) (*Session, error) {
 		indexKey:   indexKey,
 		recordKey:  recordKey,
 		recovery:   raw.recovery,
-		entries:    entries,
-		groups:     groups,
+		entries:    index.entries,
+		groups:     index.groups,
+		retention:  index.retention,
 		records:    raw.records,
 		container:  raw.data,
 		head:       Head{VaultID: raw.vaultID, Revision: revision, Hash: sha256.Sum256(raw.data), PreviousHash: ancestors.previous()},
@@ -246,7 +247,7 @@ func Create() (Created, error) {
 	if err != nil {
 		return Created{}, err
 	}
-	indexPlaintext, err := encodeIndex(1, nil, nil, nil)
+	indexPlaintext, err := encodeIndex(1, nil, nil, nil, DefaultTrashRetention)
 	if err != nil {
 		clear(indexKey[:])
 		return Created{}, err

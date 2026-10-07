@@ -9,6 +9,7 @@ import {
   Settings2,
   ShieldCheck,
   Tags,
+  Trash2,
   Vault,
 } from "lucide-react";
 import type { MessageKey } from "../../i18n/messages.ts";
@@ -22,11 +23,17 @@ export type SettingsSection =
   | "shortcuts"
   | "vaults"
   | "groups"
+  | "trash"
   | "import"
   | "backups"
   | "about";
 
-export type VaultSettingsTab = "vaults" | "backups" | "groups" | "import";
+export type VaultSettingsTab =
+  | "vaults"
+  | "backups"
+  | "groups"
+  | "trash"
+  | "import";
 
 export type SettingsPart = "device" | "vault";
 
@@ -123,6 +130,13 @@ const vaultTabs: readonly (SettingsSectionEntry & { id: VaultSettingsTab })[] =
       icon: Tags,
       label: "settings.groups.heading",
       summary: "settings.groups.summary",
+    },
+    {
+      id: "trash",
+      part: "vault",
+      icon: Trash2,
+      label: "settings.trash.heading",
+      summary: "settings.trash.summary",
     },
     {
       id: "import",

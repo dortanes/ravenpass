@@ -131,6 +131,22 @@ export function Capabilities(): $CancellablePromise<$models.Capabilities> {
 }
 
 /**
+ * CheckBreaches checks every password of the vault against known breaches. It fails with breach-checks-off while
+ * checks are off and breach-check-unreachable when the service cannot be reached.
+ */
+export function CheckBreaches(): $CancellablePromise<$models.BreachReport> {
+    return $Call.ByID(2028986195);
+}
+
+/**
+ * CheckPassword reports how many times password appears in known breaches, zero when it is empty or not known. It
+ * fails as CheckBreaches does.
+ */
+export function CheckPassword(password: string): $CancellablePromise<number> {
+    return $Call.ByID(4247421927, password);
+}
+
+/**
  * CheckSeedPhrase reports the BIP-39 checksum of words as typed. It needs no open vault.
  */
 export function CheckSeedPhrase(words: string[] | null): $CancellablePromise<$models.PhraseCheck> {
@@ -382,7 +398,7 @@ export function DeleteGroup(id: string): $CancellablePromise<void> {
 }
 
 /**
- * DeleteItem deletes an item of either kind.
+ * DeleteItem deletes an item of any kind permanently, in the trash or not.
  */
 export function DeleteItem(id: string): $CancellablePromise<void> {
     return $Call.ByID(649520838, id);
@@ -421,6 +437,13 @@ export function DismissCodeSetup(token: string): $CancellablePromise<void> {
  */
 export function DuplicateItem(id: string): $CancellablePromise<string> {
     return $Call.ByID(2638681916, id);
+}
+
+/**
+ * EmptyTrash deletes every item in the trash permanently.
+ */
+export function EmptyTrash(): $CancellablePromise<void> {
+    return $Call.ByID(1322811739);
 }
 
 /**
@@ -491,6 +514,13 @@ export function GetAutoLock(): $CancellablePromise<$models.AutoLock> {
  */
 export function GetBankDetails(): $CancellablePromise<$models.BankDetails> {
     return $Call.ByID(1691356278);
+}
+
+/**
+ * GetBreachChecks reports whether passwords are checked against known breaches.
+ */
+export function GetBreachChecks(): $CancellablePromise<$models.BreachChecks> {
+    return $Call.ByID(892798158);
 }
 
 /**
@@ -690,6 +720,13 @@ export function ListSeeds(): $CancellablePromise<$models.SeedSummary[] | null> {
 }
 
 /**
+ * ListTrash lists the trash after removing the items kept longer than its period.
+ */
+export function ListTrash(): $CancellablePromise<$models.Trash> {
+    return $Call.ByID(941829340);
+}
+
+/**
  * Lock closes the vault and clears what this app put on the clipboard.
  */
 export function Lock(): $CancellablePromise<void> {
@@ -704,11 +741,20 @@ export function LookupBank(site: string): $CancellablePromise<$models.BankLookup
 }
 
 /**
- * LookupSite names a credential's website: the name the site declares where website icons load and it answers, else
- * its readable domain; an address naming no web site is empty, never an error.
+ * LookupSite cuts a credential's website to what the vault matches it by and, when named is set, names it: the name the
+ * site declares where website icons load and it answers, else its readable domain. Without named no site is contacted.
+ * An address naming no web site is empty, never an error.
  */
-export function LookupSite(website: string): $CancellablePromise<$models.SiteLookup> {
-    return $Call.ByID(2379475239, website);
+export function LookupSite(website: string, named: boolean): $CancellablePromise<$models.SiteLookup> {
+    return $Call.ByID(2379475239, website, named);
+}
+
+/**
+ * MergeCredentials saves input and groups over credential into as UpdateCredential does, with linked apps either
+ * credential holds, moves every passkey of from into it, and moves from to the trash, in one save.
+ */
+export function MergeCredentials(into: string, $from: string, input: $models.CredentialInput, groups: string[] | null): $CancellablePromise<void> {
+    return $Call.ByID(4289228228, into, $from, input, groups);
 }
 
 /**
@@ -827,6 +873,13 @@ export function RenameGroup(id: string, name: string): $CancellablePromise<void>
 }
 
 /**
+ * RestoreItem brings an item back from the trash.
+ */
+export function RestoreItem(id: string): $CancellablePromise<void> {
+    return $Call.ByID(449074031, id);
+}
+
+/**
  * RetryStorage opens the configured location again after it could not be reached.
  */
 export function RetryStorage(): $CancellablePromise<void> {
@@ -910,6 +963,14 @@ export function SetBankDetails(enabled: boolean): $CancellablePromise<void> {
  */
 export function SetBiometryUnlock(enabled: boolean, current: string): $CancellablePromise<void> {
     return $Call.ByID(2791073867, enabled, current);
+}
+
+/**
+ * SetBreachChecks records whether passwords are checked against known breaches; turning checks off forgets every
+ * answer.
+ */
+export function SetBreachChecks(enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(842237842, enabled);
 }
 
 /**
@@ -1005,6 +1066,14 @@ export function SetSiteIcons(enabled: boolean): $CancellablePromise<void> {
 }
 
 /**
+ * SetTrashRetention sets how many days the trash keeps an item, from vault.MinTrashRetention to
+ * vault.MaxTrashRetention, and deletes those kept longer.
+ */
+export function SetTrashRetention(days: number): $CancellablePromise<void> {
+    return $Call.ByID(3257500530, days);
+}
+
+/**
  * SiteIcon returns a site's icon, fetching only sites a credential or card of the open vault names.
  */
 export function SiteIcon(site: string): $CancellablePromise<$models.SiteIcon> {
@@ -1044,6 +1113,13 @@ export function ThirdPartyNotices(): $CancellablePromise<string> {
  */
 export function TrashImportFile(): $CancellablePromise<void> {
     return $Call.ByID(3598924251);
+}
+
+/**
+ * TrashItem moves an item of any kind to the trash.
+ */
+export function TrashItem(id: string): $CancellablePromise<void> {
+    return $Call.ByID(3946147503, id);
 }
 
 /**

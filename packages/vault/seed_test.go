@@ -580,7 +580,8 @@ func TestIndexHoldsASeedSummaryOnlyForASeed(t *testing.T) {
 	id := ID{6}
 	seed := uint64(KindSeed)
 	valid := seedSummary(uint64(SeedBackupCodes), 10, 3)
-	_, _, entries, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), currentElement(id, digest, seed, valid)), records)
+	_, _, index, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), currentElement(id, digest, seed, valid)), records)
+	entries := index.entries
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -617,7 +618,7 @@ func TestIndexHoldsASeedSummaryOnlyForASeed(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, test.want) {
+			if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, test.want) {
 				t.Fatalf("got %v, want %v", err, test.want)
 			}
 		})
@@ -655,7 +656,7 @@ func TestSeedEntryThatDoesNotMatchItsRecordIsMalformed(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			entries := append([]entryMeta(nil), session.entries...)
 			test.mutate(entries)
-			plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil)
+			plaintext, err := encodeIndex(head.Revision, session.ancestry, entries, nil, DefaultTrashRetention)
 			if err != nil {
 				t.Fatal(err)
 			}

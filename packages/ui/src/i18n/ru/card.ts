@@ -77,8 +77,6 @@ export const card: typeof english = {
   "card.copied.bank-name": "Название банка скопировано.",
   "card.copied.bank-site": "Сайт банка скопирован.",
 
-  "card.delete.title": "Удалить эту карту?",
-
   "card.editor.new.title": "Новая карта",
   "card.editor.edit.title": "Изменить карту",
   "card.editor.create": "Добавить карту",

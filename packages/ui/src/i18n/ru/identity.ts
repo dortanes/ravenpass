@@ -85,8 +85,6 @@ export const identity: typeof english = {
   "identity.copied.country": "Страна скопирована.",
   "identity.copied.number": "Номер скопирован.",
 
-  "identity.delete.title": "Удалить этот профиль?",
-
   "identity.scan.label": "Сканы",
   "identity.scan.attach": "Прикрепить скан",
   "identity.scan.from-photos": "Из фотографий",

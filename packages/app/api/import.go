@@ -28,8 +28,8 @@ var importSources = map[string]importSource{
 	"aliasvault": {open: aliasvault.Open, extensions: "*.avex;*.avux;*.csv"},
 }
 
-// importKinds names the vault kinds an import adds as the interface knows them.
-var importKinds = map[vault.Kind]string{
+// kindNames names the vault's item kinds as the interface knows them.
+var kindNames = map[vault.Kind]string{
 	vault.KindCredential: "credential",
 	vault.KindCard:       "card",
 	vault.KindIdentity:   "identity",
@@ -422,7 +422,7 @@ func importPreview(preview importers.Preview) ImportPreview {
 			converted[i] = ImportConversion{From: string(conversion.From), Count: conversion.Count}
 		}
 		result.Kinds = append(result.Kinds, ImportKind{
-			Kind: importKinds[kind.Kind], Count: kind.Count, Duplicates: kind.Duplicates,
+			Kind: kindNames[kind.Kind], Count: kind.Count, Duplicates: kind.Duplicates,
 			OneTimeCodes: kind.OneTimeCodes, Converted: converted,
 		})
 	}
@@ -438,14 +438,14 @@ func importGroups(groups importers.GroupPreview) ImportGroups {
 
 // kindTotals counts the items added of each kind, in the order the preview lists kinds.
 func kindTotals(items []vault.NewItem) []ImportKindTotal {
-	counts := make(map[vault.Kind]int, len(importKinds))
+	counts := make(map[vault.Kind]int, len(kindNames))
 	for _, item := range items {
 		counts[item.Kind()]++
 	}
 	totals := []ImportKindTotal{}
 	for _, kind := range []vault.Kind{vault.KindCredential, vault.KindCard, vault.KindIdentity, vault.KindNote, vault.KindSeed} {
 		if counts[kind] > 0 {
-			totals = append(totals, ImportKindTotal{Kind: importKinds[kind], Count: counts[kind]})
+			totals = append(totals, ImportKindTotal{Kind: kindNames[kind], Count: counts[kind]})
 		}
 	}
 	return totals

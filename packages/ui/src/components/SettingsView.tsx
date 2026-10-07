@@ -13,6 +13,7 @@ import type {
   AutoLock,
   BackupSettings,
   BankDetails,
+  BreachChecks,
   ClipboardClearing,
   DockIcon,
   ExportState,
@@ -45,6 +46,11 @@ import {
   type SettingsSection,
   settingsParent,
 } from "./settings/sections.ts";
+import {
+  type TrashActions,
+  type TrashApi,
+  TrashPanel,
+} from "./settings/TrashPanel.tsx";
 import { VaultsPanel } from "./settings/VaultsPanel.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs.tsx";
@@ -72,6 +78,8 @@ export function SettingsView({
   onSiteIcons,
   bankDetails,
   onBankDetails,
+  breachChecks,
+  onBreachChecks,
   screenshots,
   storage,
   movingStorage,
@@ -101,6 +109,8 @@ export function SettingsView({
   onExport,
   onBackedUp,
   importActions,
+  trash,
+  trashActions,
   about,
   onOpenWebsite,
 }: {
@@ -125,6 +135,8 @@ export function SettingsView({
   onSiteIcons: (enabled: boolean) => void;
   bankDetails: BankDetails | null;
   onBankDetails: (enabled: boolean) => void;
+  breachChecks: BreachChecks | null;
+  onBreachChecks: (enabled: boolean) => void;
   screenshots: ScreenshotSettings;
   storage: StorageStatus | null;
   movingStorage: boolean;
@@ -155,6 +167,8 @@ export function SettingsView({
   onExport: () => void;
   onBackedUp: () => void;
   importActions: ImportActions;
+  trash: TrashApi;
+  trashActions: TrashActions;
   about: AboutApi;
   /** Opens a web address in the browser. */
   onOpenWebsite: (address: string) => void;
@@ -212,6 +226,8 @@ export function SettingsView({
             onSiteIcons={onSiteIcons}
             bankDetails={bankDetails}
             onBankDetails={onBankDetails}
+            breachChecks={breachChecks}
+            onBreachChecks={onBreachChecks}
             clipboard={clipboard}
             onClipboard={onClipboard}
             screenshots={screenshots}
@@ -295,6 +311,9 @@ export function SettingsView({
                 onDelete={onDeleteGroup}
                 onDefaultGroup={onDefaultGroup}
               />
+            </TabsContent>
+            <TabsContent value="trash">
+              <TrashPanel trash={trash} busy={busy} {...trashActions} />
             </TabsContent>
             <TabsContent value="import">
               <ImportPanel actions={importActions} busy={busy} />

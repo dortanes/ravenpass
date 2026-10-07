@@ -73,6 +73,8 @@ interface RowLook<Item> {
   avatar?: (entry: Item, face: RowFace) => ReactNode;
   /** Small glyphs at the row's end, before the pin, naming what the item holds. */
   marks?: (entry: Item) => ReactNode;
+  /** A warning badge leading the row's title line, unset for a row with nothing to warn of. */
+  alert?: (entry: Item) => string | undefined;
 }
 
 /** What a list names its rows with, whatever kind of item they hold. */
@@ -99,8 +101,14 @@ export function ItemList<Item extends ListedItem>({
   label,
   untitled,
   detail,
+  notice,
   ...look
-}: ListProps<Item> & RowLook<Item> & RowWords<Item>) {
+}: ListProps<Item> &
+  RowLook<Item> &
+  RowWords<Item> & {
+    /** A line under the section's title saying how the whole list stands, such as a check of its items. */
+    notice?: ReactNode;
+  }) {
   const { t } = useTranslator();
   const [arrivals] = useState(() => new RowArrivals());
 
@@ -114,6 +122,7 @@ export function ItemList<Item extends ListedItem>({
           <span className="text-[11px] text-faint">{entries.length}</span>
         )}
       </div>
+      {notice && <div className="shrink-0 px-3 pb-1">{notice}</div>}
       {loading && (
         <div
           className="flex items-center gap-2 px-3 py-2 text-[13px] text-muted-foreground"
@@ -134,6 +143,13 @@ export function ItemList<Item extends ListedItem>({
       <ListRows
         key={position.key}
         entries={entries}
+        groupsOf={(entry) =>
+          groups
+            .filter(
+              (held) => held.id !== group && entry.groups.includes(held.id),
+            )
+            .map((held) => held.name)
+        }
         selectedId={selectedId}
         onOpen={onOpen}
         position={position}
@@ -148,6 +164,7 @@ export function ItemList<Item extends ListedItem>({
 /** ListRows is one listing's virtualized rows; it restores and records the listing's scroll position. */
 function ListRows<Item extends ListedItem>({
   entries,
+  groupsOf,
   selectedId,
   onOpen,
   position,
@@ -156,6 +173,8 @@ function ListRows<Item extends ListedItem>({
   look,
 }: {
   entries: Item[];
+  /** The names of the groups a row shows, leaving out the group the list is narrowed to. */
+  groupsOf: (entry: Item) => string[];
   selectedId: string | null;
   onOpen: (id: string) => void;
   position: ListingPosition;
@@ -265,6 +284,8 @@ function ListRows<Item extends ListedItem>({
                       />
                     }
                     title={entry.label || words.untitled}
+                    alert={look.alert?.(entry)}
+                    groups={groupsOf(entry)}
                     tags={entry.tags}
                     detail={words.detail(entry)}
                     trailing={

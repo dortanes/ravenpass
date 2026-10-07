@@ -107,7 +107,7 @@ export const rowButtonClass =
   "size-7 shrink-0 rounded-md text-muted-foreground hover:text-foreground";
 
 /** RowButton is an icon button beside a row's value, such as a row's `accessory`. */
-function RowButton({
+export function RowButton({
   label,
   icon: Icon,
   busy,

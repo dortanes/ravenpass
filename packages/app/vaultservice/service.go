@@ -164,6 +164,8 @@ type Service struct {
 	changes changecount.Counter
 	// states counts every save, every open or lock, and every change of current location.
 	states changecount.Counter
+	// now dates moves to the trash and the purges of items past the retention period.
+	now func() time.Time
 }
 
 // New returns a locked Service over files, keys and device.
@@ -179,7 +181,7 @@ func New(files Storage, keys KeyStore, device Device) (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Service{files: files, keys: keys, owner: device.Owner, pins: pins, platforms: platforms, pinThrottle: unlock.NewThrottle(time.Now)}, nil
+	return &Service{files: files, keys: keys, owner: device.Owner, pins: pins, platforms: platforms, pinThrottle: unlock.NewThrottle(time.Now), now: time.Now}, nil
 }
 
 // State reports the current phase and whether the bound location holds a vault.
@@ -830,7 +832,7 @@ func (s *Service) SetPinned(id vault.ID, pinned bool) error {
 	return s.commit(pending)
 }
 
-// DeleteItem removes an item of either kind.
+// DeleteItem removes an item of any kind permanently, in the trash or not.
 func (s *Service) DeleteItem(id vault.ID) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

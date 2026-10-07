@@ -37,8 +37,6 @@ export const note: typeof english = {
   "note.copy": "Скопировать заметку",
   "note.copied": "Заметка скопирована.",
 
-  "note.delete.title": "Удалить эту заметку?",
-
   "note.editor.new.title": "Новая заметка",
   "note.editor.edit.title": "Изменить заметку",
   "note.editor.create": "Добавить заметку",

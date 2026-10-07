@@ -70,6 +70,12 @@ export const failures = {
     "The picture shows more than one setup code. Use a picture with only one.",
   "failure.resource-limit":
     "This item or vault exceeds the size limit. Shorten the item and try again.",
+  "failure.passkeys-full":
+    "Together these passwords hold more passkeys than one can. Remove a passkey from one of them, then merge.",
+  "failure.breach-checks-off":
+    "Breach checks are off. Turn them on in Privacy settings.",
+  "failure.breach-check-unreachable":
+    "Ravenpass could not reach the breach check service. Check your connection and try again.",
   "failure.permission-denied":
     "Ravenpass cannot use that file or folder. Choose another location and try again.",
   "failure.file-size-invalid":

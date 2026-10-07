@@ -1,0 +1,31 @@
+export const generator = {
+  "generator.open": "Сгенерировать пароль",
+  "generator.title": "Новый пароль",
+  "generator.again": "Сгенерировать другой",
+  "generator.strength": "{strength} · {bits} бит",
+  "generator.strength.weak": "Слабый",
+  "generator.strength.fair": "Средний",
+  "generator.strength.strong": "Надёжный",
+  "generator.strength.very-strong": "Очень надёжный",
+  "generator.mode": "Вид пароля",
+  "generator.mode.words": "Слова",
+  "generator.mode.characters": "Символы",
+  "generator.words":
+    "{count, plural, one {# слово} few {# слова} many {# слов} other {# слова}}",
+  "generator.separator": "Между словами",
+  "generator.separator.hyphen": "Дефис",
+  "generator.separator.dot": "Точка",
+  "generator.separator.underscore": "Подчёркивание",
+  "generator.separator.space": "Пробел",
+  "generator.capitalize": "Заглавные буквы",
+  "generator.digit": "Цифра",
+  "generator.length":
+    "{count, plural, one {# символ} few {# символа} many {# символов} other {# символа}}",
+  "generator.uppercase": "Заглавные буквы",
+  "generator.digits": "Цифры",
+  "generator.symbols": "Спецсимволы",
+  "generator.cancel": "Отмена",
+  "generator.use": "Использовать",
+  "generator.error.words":
+    "Ravenpass не удалось загрузить список слов. Перезапустите Ravenpass и повторите попытку.",
+};

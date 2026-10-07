@@ -1,13 +1,13 @@
 import type * as models from "./bindings/github.com/dortanes/ravenpass/packages/app/api/models.ts";
 import * as service from "./bindings/github.com/dortanes/ravenpass/packages/app/api/service.ts";
 import { isCardNetwork } from "./cards/card.ts";
+import { isItemKindName } from "./components/workspace/places.ts";
 import { CountWatcher } from "./count-watcher.ts";
 import { isSignInStyle, signInStyleOf } from "./extensions/sign-in-style.ts";
 import { appearanceOf, isAppearance } from "./host/appearance.ts";
 import { isDocumentType, isScanMediaType } from "./identities/identity.ts";
 import {
   isImportFormat,
-  isImportKind,
   isImportOrigin,
   isImportReason,
 } from "./import/preview.ts";
@@ -51,6 +51,7 @@ import type {
   StorageKind,
   StorageReason,
   StorageStatus,
+  Trash,
   UnlockRequester,
   Vault,
   VaultApi,
@@ -312,6 +313,17 @@ async function listIdentityAddresses(): Promise<IdentityAddresses[]> {
   }));
 }
 
+/** Items of a kind this version does not know are left out. */
+async function listTrash(): Promise<Trash> {
+  const trash = await service.ListTrash();
+  return {
+    retentionDays: trash.retentionDays,
+    items: listed(trash.items).flatMap((item) =>
+      isItemKindName(item.kind) ? [{ ...item, kind: item.kind }] : [],
+    ),
+  };
+}
+
 async function listNotes(): Promise<NoteSummary[]> {
   const notes: models.NoteSummary[] | null = await service.ListNotes();
   return listed(notes).map((note) => ({
@@ -422,7 +434,7 @@ function importPreview(preview: models.ImportPreview): ImportPreview {
     format: knownImportFormat(preview.format),
     items: preview.items,
     kinds: listed(preview.kinds).flatMap((entry) =>
-      isImportKind(entry.kind)
+      isItemKindName(entry.kind)
         ? [
             {
               kind: entry.kind,
@@ -484,7 +496,7 @@ async function importItems(
   return {
     added: result.added,
     kinds: listed(result.kinds).flatMap((total) =>
-      isImportKind(total.kind)
+      isItemKindName(total.kind)
         ? [{ kind: total.kind, count: total.count }]
         : [],
     ),
@@ -694,6 +706,13 @@ export const hostApi: VaultApi = {
   listIdentityAddresses,
   bankDetails: service.GetBankDetails,
   setBankDetails: service.SetBankDetails,
+  breachChecks: service.GetBreachChecks,
+  setBreachChecks: service.SetBreachChecks,
+  async checkBreaches() {
+    const check = await service.CheckBreaches();
+    return { checked: check.checked, breaches: listed(check.breaches) };
+  },
+  checkPassword: service.CheckPassword,
   lookupBank: service.LookupBank,
   lookupSite: service.LookupSite,
   readCodeSetup: service.ReadCodeSetup,
@@ -726,7 +745,13 @@ export const hostApi: VaultApi = {
   setItemGroups: service.SetItemGroups,
   defaultGroup: service.DefaultGroup,
   setDefaultGroup: service.SetDefaultGroup,
+  trashItem: service.TrashItem,
+  restoreItem: service.RestoreItem,
   deleteItem: service.DeleteItem,
+  listTrash,
+  emptyTrash: service.EmptyTrash,
+  setTrashRetention: service.SetTrashRetention,
+  mergeCredentials: service.MergeCredentials,
   duplicateItem: service.DuplicateItem,
   setPinned: service.SetPinned,
   copyCredentialField: service.CopyCredentialField,

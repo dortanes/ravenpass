@@ -31,15 +31,32 @@ export function TagBadge({
   );
 }
 
-/** RowTags are an item's tags on its row's title line; short of room, each tag cuts its own text. */
-export function RowTags({ tags }: { tags: readonly string[] }) {
-  if (!tags.length) return null;
+const rowBadge =
+  "max-w-[96px] min-w-7 shrink truncate rounded-full px-1.5 text-[10.5px] leading-4 text-secondary-foreground";
+
+/**
+ * RowBadges are an item's group names, filled, then its tags, outlined, on its row's title line; short of room, each
+ * badge cuts its own text.
+ */
+export function RowBadges({
+  groups,
+  tags,
+}: {
+  groups: readonly string[];
+  tags: readonly string[];
+}) {
+  if (!groups.length && !tags.length) return null;
   return (
     <span className="flex min-w-0 shrink items-center gap-1 overflow-hidden">
+      {groups.map((name) => (
+        <span key={`group:${name}`} className={cn(rowBadge, "bg-foreground/8")}>
+          {name}
+        </span>
+      ))}
       {tags.map((tag) => (
         <span
-          key={tag}
-          className="max-w-[96px] min-w-7 shrink truncate rounded-full bg-foreground/8 px-1.5 text-[10.5px] leading-4 text-secondary-foreground"
+          key={`tag:${tag}`}
+          className={cn(rowBadge, "border border-foreground/12")}
         >
           {tag}
         </span>

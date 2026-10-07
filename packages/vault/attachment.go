@@ -194,7 +194,8 @@ func (s *Session) ReadScan(id ID) (Scan, error) {
 		return Scan{}, ErrLocked
 	}
 	index := s.findKind(id, KindAttachment)
-	if index < 0 {
+	// A scan of an identity in the trash stays with it until the identity returns.
+	if index < 0 || s.findKind(s.entries[index].owner, KindIdentity) < 0 {
 		return Scan{}, ErrNotFound
 	}
 	plaintext, err := s.openRecord(index)

@@ -1,4 +1,4 @@
-import { Copy, ExternalLink, KeyRound } from "lucide-react";
+import { Copy, ExternalLink, KeyRound, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import type { MessageKey } from "../../i18n/messages.ts";
 import { useTranslator } from "../../i18n/translator.tsx";
@@ -22,20 +22,33 @@ import { OneTimeCode } from "./OneTimeCode.tsx";
 import { Passkeys } from "./Passkeys.tsx";
 import { useSiteIcon } from "./SiteIcons.tsx";
 
+/** What the last breach check found for this password. */
+export interface PasswordBreach {
+  count: number;
+  /** Set when the check could not run, so nothing is known. */
+  failed: boolean;
+}
+
 /** CredentialDetail owns the password reveal, so it ends with this pane. */
 export function CredentialDetail({
   credential,
   controls,
+  breach,
   onCopy,
   onGenerateCode,
   onOpenWebsite,
+  onMerge,
 }: {
   credential: Credential;
   controls: DetailControls;
+  /** Null while breach checks are off. */
+  breach: PasswordBreach | null;
   /** Copies one value, and names the notice that says what was copied. */
   onCopy: (field: CredentialField, notice: MessageKey) => void;
   onGenerateCode: (setup: string) => Promise<Code>;
   onOpenWebsite: (address: string) => void;
+  /** Unset while there is no other password to merge with. */
+  onMerge?: () => void;
 }) {
   const { t } = useTranslator();
   const [revealPassword, setRevealPassword] = useState(false);
@@ -51,9 +64,11 @@ export function CredentialDetail({
           title={credential.label || t("credential.untitled")}
           icon={KeyRound}
           subtitle={credential.websites[0] || t("credential.website.empty")}
-          deleteTitle={t("credential.delete.title")}
+          onMerge={onMerge}
           controls={controls}
         />
+
+        {credential.password && breach && <BreachNote breach={breach} />}
 
         <div className="shrink-0">
           <FieldBlock>
@@ -164,4 +179,28 @@ export function CredentialDetail({
       </article>
     </ScrollArea>
   );
+}
+
+/** BreachNote warns of a breached password, or says the check could not run; a clean password shows nothing. */
+function BreachNote({ breach }: { breach: PasswordBreach }) {
+  const { t } = useTranslator();
+  if (breach.count > 0) {
+    return (
+      <p
+        className="flex shrink-0 items-start gap-2 rounded-row bg-destructive/10 px-[13px] py-2.5 text-xs leading-[1.5] text-destructive"
+        role="status"
+      >
+        <ShieldAlert className="mt-px size-4 shrink-0" aria-hidden="true" />
+        {t("breach.detail", { count: breach.count })}
+      </p>
+    );
+  }
+  if (breach.failed) {
+    return (
+      <p className="shrink-0 px-[3px] text-xs text-muted-foreground">
+        {t("breach.unreachable")}
+      </p>
+    );
+  }
+  return null;
 }

@@ -221,7 +221,7 @@ func (s *Session) PrepareRekey(rekey *Rekey) (*Pending, error) {
 		}
 		entries[i].digest = sha256.Sum256(encodeBox(records[i]))
 	}
-	pending, err := s.prepareSealed(entries, records, append([]Group(nil), s.groups...), keys.index, keys.recovery)
+	pending, err := s.prepareSealed(entries, records, append([]Group(nil), s.groups...), s.retention, keys.index, keys.recovery)
 	if err != nil {
 		keys.clear()
 		return nil, err

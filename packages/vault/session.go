@@ -19,6 +19,7 @@ type Session struct {
 	recovery       sealedBox
 	entries        []entryMeta
 	groups         []Group
+	retention      int
 	records        []sealedBox
 	container      []byte
 	head           Head
@@ -42,7 +43,7 @@ func (s *Session) Head() (Head, error) {
 	return s.head, nil
 }
 
-// List returns every listed item's entry without decrypting a record.
+// List returns every listed item's entry without decrypting a record; an item in the trash is not listed.
 func (s *Session) List() ([]Entry, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -51,7 +52,7 @@ func (s *Session) List() ([]Entry, error) {
 	}
 	result := make([]Entry, 0, len(s.entries))
 	for _, entry := range s.entries {
-		if entry.kind == KindAttachment {
+		if entry.kind == KindAttachment || entry.trashed() {
 			continue
 		}
 		result = append(result, entry.listed())
@@ -61,7 +62,7 @@ func (s *Session) List() ([]Entry, error) {
 
 // listed is the entry as a client sees it, holding no memory the session holds.
 func (e entryMeta) listed() Entry {
-	return Entry{ID: e.id, Kind: e.kind, Label: e.label, Detail: e.detail, ExpiresOn: e.expiresOn, Thumbnail: bytes.Clone(e.thumbnail), Site: e.site, Sites: slices.Clone(e.sites), Email: e.email, Code: e.code, Passkeys: clonedFaces(e.passkeys), Apps: slices.Clone(e.apps), Card: e.card, Note: e.note, Seed: e.seed, Pinned: e.pinned, Groups: append([]ID(nil), e.groups...), Tags: slices.Clone(e.tags)}
+	return Entry{ID: e.id, Kind: e.kind, Label: e.label, Detail: e.detail, ExpiresOn: e.expiresOn, Thumbnail: bytes.Clone(e.thumbnail), Site: e.site, Sites: slices.Clone(e.sites), Email: e.email, Code: e.code, Passkeys: clonedFaces(e.passkeys), Apps: slices.Clone(e.apps), Card: e.card, Note: e.note, Seed: e.seed, Pinned: e.pinned, Groups: append([]ID(nil), e.groups...), Tags: slices.Clone(e.tags), DeletedAt: e.deletedAt}
 }
 
 // CurrentContainer returns a copy of the file the session shows, with its head.
@@ -103,6 +104,7 @@ func (s *Session) Lock() {
 	clear(s.recordKey[:])
 	s.entries = nil
 	s.groups = nil
+	s.retention = 0
 	s.records = nil
 	s.container = nil
 	s.ancestry = nil
@@ -124,10 +126,11 @@ func (s *Session) find(id ID) int {
 	return -1
 }
 
-// findItem is find for a listed item; an attachment is reached only through its document.
+// findItem is find for a listed item; an attachment is reached only through its document, and an item in the trash
+// only through the trash's calls.
 func (s *Session) findItem(id ID) int {
 	index := s.find(id)
-	if index < 0 || s.entries[index].kind == KindAttachment {
+	if index < 0 || s.entries[index].kind == KindAttachment || s.entries[index].trashed() {
 		return -1
 	}
 	return index
@@ -162,10 +165,10 @@ func (s *Session) ClearSelection() {
 	}
 }
 
-// findKind is find for an item of kind alone.
+// findKind is find for an item of kind alone, outside the trash.
 func (s *Session) findKind(id ID, kind Kind) int {
 	index := s.find(id)
-	if index < 0 || s.entries[index].kind != kind {
+	if index < 0 || s.entries[index].kind != kind || s.entries[index].trashed() {
 		return -1
 	}
 	return index
@@ -387,8 +390,24 @@ func (s *Session) PrepareEdit(id ID, patch CredentialPatch) (*Pending, error) {
 		return nil, err
 	}
 	defer forgetPasskeyKeys(input.Passkeys)
-	if input.Passkeys, err = withoutPasskeys(input.Passkeys, patch.RemovePasskeys); err != nil {
+	input, membership, err := s.patched(index, input, patch)
+	if err != nil {
 		return nil, err
+	}
+	plaintext, err := encodeCredentialRecord(input)
+	if err != nil {
+		return nil, err
+	}
+	defer clear(plaintext)
+	return s.prepareReplace(index, credentialEntry(input, membership), plaintext)
+}
+
+// patched is the accepted credential at index, read as input, changed by patch, with its membership. The returned
+// passkeys share their private keys with input's. The caller holds the lock.
+func (s *Session) patched(index int, input CredentialInput, patch CredentialPatch) (CredentialInput, []ID, error) {
+	var err error
+	if input.Passkeys, err = withoutPasskeys(input.Passkeys, patch.RemovePasskeys); err != nil {
+		return CredentialInput{}, nil, err
 	}
 	if patch.Label != nil {
 		input.Label = *patch.Label
@@ -419,21 +438,16 @@ func (s *Session) PrepareEdit(id ID, patch CredentialPatch) (*Pending, error) {
 	}
 	input, err = acceptInput(input)
 	if err != nil {
-		return nil, err
+		return CredentialInput{}, nil, err
 	}
 	membership := s.entries[index].groups
 	if patch.Groups != nil {
 		membership, err = acceptMembership(*patch.Groups, s.groups)
 		if err != nil {
-			return nil, err
+			return CredentialInput{}, nil, err
 		}
 	}
-	plaintext, err := encodeCredentialRecord(input)
-	if err != nil {
-		return nil, err
-	}
-	defer clear(plaintext)
-	return s.prepareReplace(index, credentialEntry(input, membership), plaintext)
+	return input, membership, nil
 }
 
 // PrepareSetPinned prepares the item's pin set to pinned, sealing no record again.
@@ -453,26 +467,41 @@ func (s *Session) PrepareSetPinned(id ID, pinned bool) (*Pending, error) {
 	return s.prepare(entries, records)
 }
 
-// PrepareDelete prepares the item's removal; an identity takes its scans and every card link to it along.
+// PrepareDelete prepares the permanent removal of an item, in the trash or not; an identity takes its scans and every
+// card link to it along.
 func (s *Session) PrepareDelete(id ID) (*Pending, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err := s.readyToWrite(); err != nil {
 		return nil, err
 	}
-	index := s.findItem(id)
-	if index < 0 {
+	index := s.find(id)
+	if index < 0 || s.entries[index].kind == KindAttachment {
 		return nil, ErrNotFound
 	}
+	return s.prepareRemoval(map[ID]struct{}{id: {}})
+}
+
+// prepareRemoval prepares the permanent removal of every item in removed with its scans, and of every card link to a
+// removed identity. The caller holds the lock.
+func (s *Session) prepareRemoval(removed map[ID]struct{}) (*Pending, error) {
 	entries := append([]entryMeta(nil), s.entries...)
 	records := append([]sealedBox(nil), s.records...)
-	if s.entries[index].kind == KindIdentity {
-		if err := s.unlinkCards(entries, records, func(link AddressLink) bool { return link.Identity == id }); err != nil {
+	if slices.ContainsFunc(s.entries, func(entry entryMeta) bool {
+		_, gone := removed[entry.id]
+		return gone && entry.kind == KindIdentity
+	}) {
+		if err := s.unlinkCards(entries, records, func(link AddressLink) bool {
+			_, gone := removed[link.Identity]
+			return gone
+		}); err != nil {
 			return nil, err
 		}
 	}
 	entries, records = withoutItems(entries, records, func(entry entryMeta) bool {
-		return entry.id == id || entry.kind == KindAttachment && entry.owner == id
+		_, gone := removed[entry.id]
+		_, ownerGone := removed[entry.owner]
+		return gone || entry.kind == KindAttachment && ownerGone
 	})
 	return s.prepare(entries, records)
 }
@@ -495,14 +524,15 @@ func (s *Session) prepare(entries []entryMeta, records []sealedBox) (*Pending, e
 }
 
 func (s *Session) prepareWithGroups(entries []entryMeta, records []sealedBox, groups []Group) (*Pending, error) {
-	return s.prepareSealed(entries, records, groups, s.indexKey, s.recovery)
+	return s.prepareSealed(entries, records, groups, s.retention, s.indexKey, s.recovery)
 }
 
-// prepareSealed prepares the next revision with its index sealed by indexKey beside recovery.
-func (s *Session) prepareSealed(entries []entryMeta, records []sealedBox, groups []Group, indexKey [32]byte, recovery sealedBox) (*Pending, error) {
+// prepareSealed prepares the next revision keeping items in the trash for retention days, with its index sealed by
+// indexKey beside recovery.
+func (s *Session) prepareSealed(entries []entryMeta, records []sealedBox, groups []Group, retention int, indexKey [32]byte, recovery sealedBox) (*Pending, error) {
 	revision := s.head.Revision + 1
 	ancestors := s.ancestry.after(s.head.Hash)
-	indexPlaintext, err := encodeIndex(revision, ancestors, entries, groups)
+	indexPlaintext, err := encodeIndex(revision, ancestors, entries, groups, retention)
 	if err != nil {
 		return nil, err
 	}
@@ -515,7 +545,7 @@ func (s *Session) prepareSealed(entries []entryMeta, records []sealedBox, groups
 	if err != nil {
 		return nil, err
 	}
-	pending := &Pending{session: s, parentHash: s.head.Hash, entries: entries, groups: groups, records: records, container: container, head: Head{VaultID: s.vaultID, Revision: revision, Hash: sha256.Sum256(container), PreviousHash: s.head.Hash}, ancestry: ancestors}
+	pending := &Pending{session: s, parentHash: s.head.Hash, entries: entries, groups: groups, retention: retention, records: records, container: container, head: Head{VaultID: s.vaultID, Revision: revision, Hash: sha256.Sum256(container), PreviousHash: s.head.Hash}, ancestry: ancestors}
 	s.pending = pending
 	return pending, nil
 }
@@ -539,6 +569,7 @@ func (s *Session) Commit(pending *Pending) error {
 	}
 	s.entries = pending.entries
 	s.groups = pending.groups
+	s.retention = pending.retention
 	s.records = raw.records
 	s.recovery = raw.recovery
 	s.container = raw.data

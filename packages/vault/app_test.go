@@ -96,7 +96,7 @@ func TestCredentialWithoutAppLinksHasAnEmptyAppField(t *testing.T) {
 	fields[fieldSite] = encodeBytes([]byte("mail.example"))
 	fields[fieldSites] = encodeArray(encodeBytes([]byte("mail.example")))
 	expected := indexPlaintext(head.Revision, head.PreviousHash, encodeArray(), encodeArray(fields...))
-	written, err := encodeIndex(head.Revision, session.ancestry, session.entries, nil)
+	written, err := encodeIndex(head.Revision, session.ancestry, session.entries, nil, DefaultTrashRetention)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -228,19 +228,19 @@ func TestIndexRoundTripsAppLinks(t *testing.T) {
 		{id: ID{1}, revision: 1, label: "Linked", kind: KindCredential, apps: numberedApps(MaxCredentialApps)},
 		{id: ID{2}, revision: 1, label: "Bare", kind: KindCredential},
 	}, records)
-	plaintext, err := encodeIndex(3, nil, entries, nil)
+	plaintext, err := encodeIndex(3, nil, entries, nil, DefaultTrashRetention)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, _, parsed, _, err := parseIndex(plaintext, records)
+	_, _, index, err := parseIndex(plaintext, records)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !reflect.DeepEqual(parsed, entries) {
+	if parsed := index.entries; !reflect.DeepEqual(parsed, entries) {
 		t.Fatalf("entries changed: %+v", parsed)
 	}
 	entries[0].apps = numberedApps(MaxCredentialApps + 1)
-	if _, err := encodeIndex(3, nil, entries, nil); !errors.Is(err, ErrResourceLimit) {
+	if _, err := encodeIndex(3, nil, entries, nil, DefaultTrashRetention); !errors.Is(err, ErrResourceLimit) {
 		t.Fatalf("seventeen links: got %v, want ErrResourceLimit", err)
 	}
 }
@@ -255,7 +255,7 @@ func TestIndexRejectsMalformedAppLinks(t *testing.T) {
 		return encodeArray(append(fields[:fieldApps], apps...)...)
 	}
 	for _, apps := range [][]byte{encodeArray(), encodeArray(link)} {
-		if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), element(KindCredential, apps)), records); err != nil {
+		if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), element(KindCredential, apps)), records); err != nil {
 			t.Fatalf("a valid app field % x: %v", apps, err)
 		}
 	}
@@ -277,7 +277,7 @@ func TestIndexRejectsMalformedAppLinks(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, ErrMalformed) {
+			if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), test.element), records); !errors.Is(err, ErrMalformed) {
 				t.Fatalf("got %v, want ErrMalformed", err)
 			}
 		})

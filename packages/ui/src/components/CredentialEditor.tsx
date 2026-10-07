@@ -5,6 +5,8 @@ import {
   Globe,
   LoaderCircle,
   QrCode,
+  ShieldAlert,
+  WandSparkles,
 } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useState } from "react";
@@ -19,6 +21,7 @@ import { useCapabilities } from "../host/capabilities.tsx";
 import type { MessageKey } from "../i18n/messages.ts";
 import { useTranslator } from "../i18n/translator.tsx";
 import { typeIn } from "../motion/type-in.ts";
+import { useBreachCount } from "../query/breaches.ts";
 import type {
   Credential,
   CredentialInput,
@@ -43,6 +46,10 @@ import {
   useRemaining,
   useRows,
 } from "./editor/EditorFields.tsx";
+import {
+  GeneratorDialog,
+  type GeneratorHost,
+} from "./editor/GeneratorDialog.tsx";
 import { Button } from "./ui/button.tsx";
 import {
   DropdownMenu,
@@ -52,7 +59,11 @@ import {
 } from "./ui/dropdown-menu.tsx";
 import { Input } from "./ui/input.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
-import { RevealButton, rowButtonClass } from "./workspace/Fields.tsx";
+import {
+  RevealButton,
+  RowButton,
+  rowButtonClass,
+} from "./workspace/Fields.tsx";
 import { LinkedApps } from "./workspace/LinkedApps.tsx";
 import { Passkeys } from "./workspace/Passkeys.tsx";
 
@@ -61,8 +72,9 @@ const formID = "credential-editor";
 /** What the editor asks of the host besides saving. */
 export type CredentialEditorHost = Pick<
   VaultApi,
-  "lookupSite" | "readCodeSetup"
->;
+  "lookupSite" | "readCodeSetup" | "breachChecks" | "checkPassword"
+> &
+  GeneratorHost;
 
 export function CredentialEditor({
   initial,
@@ -98,6 +110,8 @@ export function CredentialEditor({
   const [membership, setMembership] = useState<string[]>(initialGroups);
   const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const [showPassword, setShowPassword] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const breached = useBreachCount(host, input.password);
   const [showTotp, setShowTotp] = useState(false);
   const [removedPasskeys, setRemovedPasskeys] = useState<string[]>([]);
   const passkeys = (initial?.passkeys ?? []).filter(
@@ -127,15 +141,15 @@ export function CredentialEditor({
     markHintSeen("credential-site");
   }
 
-  /** Cuts a typed or pasted first website to its domain and names the password after the site. */
+  /** Cuts a typed or pasted first website to its domain and names a password still unnamed after the site. */
   async function lookUpSite(key: number, website: string) {
     const site = siteNaming.begin(website);
     if (!site) return;
     dismissHint();
     const naming = siteNaming.names(input.label);
-    setLookingUp(true);
+    setLookingUp(naming);
     try {
-      const found = await host.lookupSite(site);
+      const found = await host.lookupSite(site, naming);
       if (found.website && found.website !== site) {
         siteNaming.cut(found.website);
         websites.update(key, (current) =>
@@ -336,7 +350,22 @@ export function CredentialEditor({
                 busy={busy}
                 onToggle={() => setShowPassword((visible) => !visible)}
               />
+              <RowButton
+                label={t("generator.open")}
+                icon={WandSparkles}
+                busy={busy}
+                onClick={() => setGenerating(true)}
+              />
             </EditorRow>
+            {breached > 0 && (
+              <p
+                className="flex items-center gap-2 border-b px-[13px] py-2 text-xs text-warning"
+                role="status"
+              >
+                <ShieldAlert className="size-3.5 shrink-0" aria-hidden="true" />
+                {t("breach.editor", { count: breached })}
+              </p>
+            )}
             <TagField
               tags={tags}
               tagging={tagging}
@@ -476,6 +505,16 @@ export function CredentialEditor({
           </p>
         </form>
       </ScrollArea>
+      <GeneratorDialog
+        open={generating}
+        host={host}
+        onUse={(password) => {
+          update("password", password);
+          setShowPassword(true);
+          setGenerating(false);
+        }}
+        onClose={() => setGenerating(false)}
+      />
     </div>
   );
 }

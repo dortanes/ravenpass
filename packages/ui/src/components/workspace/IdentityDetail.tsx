@@ -42,7 +42,6 @@ export function IdentityDetail({
           title={identity.label || t("identity.untitled")}
           icon={IdCard}
           subtitle={birthday}
-          deleteTitle={t("identity.delete.title")}
           controls={controls}
         />
 

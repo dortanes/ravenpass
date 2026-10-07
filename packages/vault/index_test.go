@@ -134,7 +134,8 @@ func TestIndexHoldsAttachmentsOnlyUnderAnIdentity(t *testing.T) {
 	credentialElement := siteElement(credential, digests[1].digest, uint64(KindCredential), "")
 	thumbnail := []byte{0xff, 0xd8, 0xff, 0xd9}
 	valid := scanElement(scan, digests[2].digest, "passport.jpg", MediaJPEG, 0, thumbnail, identity[:])
-	_, _, entries, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), identityElement, credentialElement, valid), records)
+	_, _, index, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), identityElement, credentialElement, valid), records)
+	entries := index.entries
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,13 +161,13 @@ func TestIndexHoldsAttachmentsOnlyUnderAnIdentity(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			plaintext := indexPlaintext(1, [32]byte{}, encodeArray(), identityElement, credentialElement, test.element)
-			if _, _, _, _, err := parseIndex(plaintext, records); !errors.Is(err, ErrMalformed) {
+			if _, _, _, err := parseIndex(plaintext, records); !errors.Is(err, ErrMalformed) {
 				t.Fatalf("got %v, want ErrMalformed", err)
 			}
 		})
 	}
 	withOwner := withField(identity, digests[0].digest, uint64(KindIdentity), encodeArray(), fieldOwner, encodeBytes(scan[:]))
-	if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), withOwner, credentialElement, valid), records); !errors.Is(err, ErrMalformed) {
+	if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), withOwner, credentialElement, valid), records); !errors.Is(err, ErrMalformed) {
 		t.Fatalf("an identity with an owner: got %v", err)
 	}
 }
@@ -175,7 +176,7 @@ func TestIndexRejectsAnEntryOfAnyOtherFieldCount(t *testing.T) {
 	records := stubRecords(1)
 	digest := sha256.Sum256(encodeBox(records[0]))
 	fields := currentFields(ID{5}, digest, uint64(KindCredential), encodeArray())
-	if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), encodeArray(fields...)), records); err != nil {
+	if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), encodeArray(fields...)), records); err != nil {
 		t.Fatalf("an entry of %d fields: %v", len(fields), err)
 	}
 	for count := range len(fields) + 2 {
@@ -183,7 +184,7 @@ func TestIndexRejectsAnEntryOfAnyOtherFieldCount(t *testing.T) {
 			continue
 		}
 		element := encodeArray(append(append([][]byte(nil), fields...), encodeUint(0))[:count]...)
-		if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), element), records); !errors.Is(err, ErrMalformed) {
+		if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, encodeArray(), element), records); !errors.Is(err, ErrMalformed) {
 			t.Fatalf("an entry of %d fields: got %v, want ErrMalformed", count, err)
 		}
 	}
@@ -300,14 +301,15 @@ func TestIndexRoundTripsDetailKindAndPinned(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			records := stubRecords(len(test.entries))
 			entries := withDigests(append([]entryMeta(nil), test.entries...), records)
-			plaintext, err := encodeIndex(7, ancestors, entries, nil)
+			plaintext, err := encodeIndex(7, ancestors, entries, nil, DefaultTrashRetention)
 			if err != nil {
 				t.Fatal(err)
 			}
-			revision, gotAncestors, gotEntries, gotGroups, err := parseIndex(plaintext, records)
+			revision, gotAncestors, index, err := parseIndex(plaintext, records)
 			if err != nil {
 				t.Fatal(err)
 			}
+			gotEntries, gotGroups := index.entries, index.groups
 			if revision != 7 || !reflect.DeepEqual(gotAncestors, ancestors) {
 				t.Fatalf("head fields changed: revision %d, ancestry %x", revision, gotAncestors)
 			}
@@ -351,14 +353,15 @@ func TestIndexRoundTripsGroupsAndMembership(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			records := stubRecords(len(test.entries))
 			entries := withDigests(append([]entryMeta(nil), test.entries...), records)
-			plaintext, err := encodeIndex(11, ancestors, entries, test.groups)
+			plaintext, err := encodeIndex(11, ancestors, entries, test.groups, DefaultTrashRetention)
 			if err != nil {
 				t.Fatal(err)
 			}
-			revision, gotAncestors, gotEntries, gotGroups, err := parseIndex(plaintext, records)
+			revision, gotAncestors, index, err := parseIndex(plaintext, records)
 			if err != nil {
 				t.Fatal(err)
 			}
+			gotEntries, gotGroups := index.entries, index.groups
 			if revision != 11 || !reflect.DeepEqual(gotAncestors, ancestors) {
 				t.Fatalf("head fields changed: revision %d, ancestry %x", revision, gotAncestors)
 			}
@@ -438,7 +441,7 @@ func TestIndexRejectsMalformedManifestElements(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, table, test.element), records); !errors.Is(err, test.want) {
+			if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, table, test.element), records); !errors.Is(err, test.want) {
 				t.Fatalf("got %v", err)
 			}
 		})
@@ -467,7 +470,7 @@ func TestIndexRejectsInconsistentGroups(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			if _, _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, test.table, test.element), records); !errors.Is(err, ErrMalformed) {
+			if _, _, _, err := parseIndex(indexPlaintext(1, [32]byte{}, test.table, test.element), records); !errors.Is(err, ErrMalformed) {
 				t.Fatalf("got %v", err)
 			}
 		})

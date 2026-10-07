@@ -74,8 +74,6 @@ export const card = {
   "card.copied.bank-name": "Bank name copied.",
   "card.copied.bank-site": "Bank website copied.",
 
-  "card.delete.title": "Delete this card?",
-
   "card.editor.new.title": "New card",
   "card.editor.edit.title": "Edit card",
   "card.editor.create": "Add card",

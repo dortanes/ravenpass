@@ -67,6 +67,7 @@ type record struct {
 	InterfaceSize      int  `json:"interfaceSize,omitempty"`
 	IdentityListOn     bool `json:"identityListOn,omitempty"`
 	ScreenshotsAllowed bool `json:"screenshotsAllowed,omitempty"`
+	BreachChecksOn     bool `json:"breachChecksOn,omitempty"`
 	// Appearance is empty for AppearanceSystem.
 	Appearance Appearance `json:"appearance,omitempty"`
 	// AutoBackupOn requires AutoBackupFolder.

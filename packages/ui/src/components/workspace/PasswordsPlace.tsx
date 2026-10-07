@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { KeyRound } from "lucide-react";
-import type { Ref } from "react";
+import { type Ref, useState } from "react";
 import type { CredentialDraft } from "../../credentials/credential.ts";
+import { type BreachStatus, breachedFirst } from "../../query/breaches.ts";
 import { queryKeys } from "../../query/keys.ts";
 import type { Credential, CredentialSummary } from "../../vault-api.ts";
 import { credentialSearchValues } from "../../workspace/sections.ts";
@@ -16,6 +17,7 @@ import {
   type PlaceMessages,
   type PlaceShell,
 } from "./ItemPlace.tsx";
+import { MergeDialog } from "./MergeDialog.tsx";
 
 const messages: PlaceMessages = {
   loading: "workspace.loading",
@@ -46,6 +48,7 @@ export function PasswordsPlace({
   shell,
   entries,
   loading,
+  breaches,
   refresh,
   opening,
   onImport,
@@ -54,6 +57,8 @@ export function PasswordsPlace({
   shell: PlaceShell;
   entries: CredentialSummary[];
   loading: boolean;
+  /** Where the breach check stands; null while checks are off. */
+  breaches: BreachStatus | null;
   refresh: () => Promise<void>;
   opening: OpeningPane;
   /** Opens the import of another app's items, offered while the vault holds no password. */
@@ -66,6 +71,16 @@ export function PasswordsPlace({
     queryFn: () => api.credentialLimits(),
     meta: { failure: "workspace.error.read" },
   });
+  const { data: tagLimits = null } = useQuery({
+    queryKey: queryKeys.limits("tags"),
+    queryFn: () => api.tagLimits(),
+    meta: { failure: "workspace.error.read" },
+  });
+  // A failed check knows nothing to put first or mark.
+  const breached =
+    breaches?.report?.failure === null ? breaches.report.counts : null;
+  // The password whose merge dialog is open.
+  const [merging, setMerging] = useState<string | null>(null);
 
   const kind: ItemKind<Credential, CredentialDraft> = {
     icon: KeyRound,
@@ -95,18 +110,70 @@ export function PasswordsPlace({
       onImport={onImport}
       searchValues={credentialSearchValues}
       opening={opening}
-      list={(props) => <CredentialList {...props} />}
-      detail={(credential, controls, copy) => (
-        <CredentialDetail
-          credential={credential}
-          controls={controls}
-          onCopy={(field, notice) =>
-            copy(() => api.copyCredentialField(credential.id, field), notice)
-          }
-          onGenerateCode={api.generateOneTimeCode}
-          onOpenWebsite={openWebsite}
-        />
-      )}
+      rank={(visible) =>
+        breached ? breachedFirst(visible, breached) : visible
+      }
+      list={(props) => <CredentialList {...props} breaches={breaches} />}
+      detail={(credential, controls, copy, change) => {
+        const summary = entries.find((entry) => entry.id === credential.id);
+        return (
+          <>
+            <CredentialDetail
+              credential={credential}
+              controls={controls}
+              breach={
+                breaches?.report
+                  ? {
+                      count: breaches.report.counts.get(credential.id) ?? 0,
+                      failed: breaches.report.failure !== null,
+                    }
+                  : null
+              }
+              onCopy={(field, notice) =>
+                copy(
+                  () => api.copyCredentialField(credential.id, field),
+                  notice,
+                )
+              }
+              onGenerateCode={api.generateOneTimeCode}
+              onOpenWebsite={openWebsite}
+              onMerge={
+                limits && tagLimits && summary && entries.length > 1
+                  ? () => setMerging(credential.id)
+                  : undefined
+              }
+            />
+            {merging === credential.id && limits && tagLimits && summary && (
+              <MergeDialog
+                kept={credential}
+                summary={summary}
+                credentials={entries}
+                bounds={{
+                  websites: limits.websites,
+                  notes: limits.notes,
+                  tags: tagLimits.tags,
+                }}
+                host={api}
+                busy={busy}
+                onMerge={(from, input, membership) =>
+                  change(
+                    () =>
+                      api.mergeCredentials(
+                        credential.id,
+                        from,
+                        input,
+                        membership,
+                      ),
+                    { failure: "merge.error", notice: "merge.done" },
+                  )
+                }
+                onClose={() => setMerging(null)}
+                onFailure={report}
+              />
+            )}
+          </>
+        );
+      }}
       editor={(props) => (
         <CredentialEditor
           {...props}

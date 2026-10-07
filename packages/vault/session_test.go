@@ -259,7 +259,7 @@ func TestEncodingRejectsOversizedInput(t *testing.T) {
 		entries[i].revision = 1
 		entries[i].label = large
 	}
-	if _, err := encodeIndex(1, nil, entries, nil); !errors.Is(err, ErrResourceLimit) {
+	if _, err := encodeIndex(1, nil, entries, nil, DefaultTrashRetention); !errors.Is(err, ErrResourceLimit) {
 		t.Fatalf("oversized index: %v", err)
 	}
 	sharedCiphertext := bytes.Repeat([]byte{'x'}, maxRecordBytes)

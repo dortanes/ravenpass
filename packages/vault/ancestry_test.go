@@ -142,10 +142,10 @@ func TestAncestryIsAuthenticatedAndBounded(t *testing.T) {
 		})
 	}
 
-	if _, err := encodeIndex(2, ancestry{{1}, {2}}, nil, nil); !errors.Is(err, ErrMalformed) {
+	if _, err := encodeIndex(2, ancestry{{1}, {2}}, nil, nil, DefaultTrashRetention); !errors.Is(err, ErrMalformed) {
 		t.Fatalf("writing more ancestors than revisions before it: got %v", err)
 	}
-	if _, err := encodeIndex(maxAncestry+10, make(ancestry, maxAncestry+1), nil, nil); !errors.Is(err, ErrMalformed) {
+	if _, err := encodeIndex(maxAncestry+10, make(ancestry, maxAncestry+1), nil, nil, DefaultTrashRetention); !errors.Is(err, ErrMalformed) {
 		t.Fatalf("writing more ancestors than the bound: got %v", err)
 	}
 }
@@ -291,7 +291,7 @@ func TestAContainerWithoutAncestryNamesOnlyItsPreviousRevision(t *testing.T) {
 	_, oneBack := containerOf(t, devices.other)
 	saveCredentials(t, devices.other, "two")
 	raw, head := currentRaw(t, devices.other)
-	plaintext, err := encodeIndex(head.Revision, ancestry{head.PreviousHash}, devices.other.entries, devices.other.groups)
+	plaintext, err := encodeIndex(head.Revision, ancestry{head.PreviousHash}, devices.other.entries, devices.other.groups, devices.other.retention)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -23,11 +23,11 @@ import { type ImportSourceGuide, importSources } from "../../import/sources.ts";
 import type {
   ImportCardNetworks,
   ImportChoice,
-  ImportKind,
   ImportOptions,
   ImportPreview,
   ImportResult,
   ImportSource,
+  ItemKindName,
 } from "../../vault-api.ts";
 import {
   Block,
@@ -52,6 +52,7 @@ import { Button } from "../ui/button.tsx";
 import { Field, FieldError, FieldGroup, FieldLabel } from "../ui/field.tsx";
 import { Input } from "../ui/input.tsx";
 import { Switch } from "../ui/switch.tsx";
+import { kindPlaces, placeOf } from "../workspace/places.ts";
 
 /** What the Import section asks of the workspace. `run` reports its own failure. */
 export interface ImportActions {
@@ -122,13 +123,9 @@ function reviewing(
   };
 }
 
-const kindLabels: Record<ImportKind, MessageKey> = {
-  credential: "workspace.rail.passwords",
-  card: "workspace.rail.cards",
-  identity: "workspace.rail.identities",
-  note: "workspace.rail.notes",
-  seed: "workspace.rail.seeds",
-};
+function kindLabel(kind: ItemKindName): MessageKey {
+  return placeOf(kindPlaces[kind]).label;
+}
 
 /** The review lists this many items it cannot import and counts the rest. */
 const listedSkips = 5;
@@ -528,7 +525,7 @@ function Review({
             {review.kinds.map((kind) => (
               <BlockRow
                 key={kind.kind}
-                title={t(kindLabels[kind.kind])}
+                title={t(kindLabel(kind.kind))}
                 detail={detailOf(kind)}
               >
                 <Count value={kind.adding} />
@@ -729,7 +726,7 @@ function Done({
           detail={t("settings.import.done.detail", { name })}
         />
         {result.kinds.map((total) => (
-          <BlockRow key={total.kind} title={t(kindLabels[total.kind])}>
+          <BlockRow key={total.kind} title={t(kindLabel(total.kind))}>
             <Count value={total.count} />
           </BlockRow>
         ))}

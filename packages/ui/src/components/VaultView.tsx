@@ -19,6 +19,7 @@ import { useCompactLayout } from "../host/compact.ts";
 import type { MessageKey } from "../i18n/messages.ts";
 import { useTranslator } from "../i18n/translator.tsx";
 import { CrossFade } from "../motion/CrossFade.tsx";
+import { useBreachReport } from "../query/breaches.ts";
 import { useHostSetting } from "../query/host-setting.ts";
 import { queryKeys, vaultScope } from "../query/keys.ts";
 import { unlockMethodsQuery } from "../query/unlock-methods.ts";
@@ -51,6 +52,7 @@ import { SiteIconStore } from "../workspace/site-icons.ts";
 import { SettingsView } from "./SettingsView.tsx";
 import type { ImportActions } from "./settings/ImportPanel.tsx";
 import type { SettingsSection } from "./settings/sections.ts";
+import type { TrashActions } from "./settings/TrashPanel.tsx";
 import type { UnlockPending } from "./unlock-change.ts";
 import { BackRow } from "./workspace/BackRow.tsx";
 import { CardsPlace } from "./workspace/CardsPlace.tsx";
@@ -136,6 +138,11 @@ export function VaultView({
   const notesRead = useQuery(reads.notes.options());
   const seedsRead = useQuery(reads.seeds.options());
   const credentials = credentialsRead.data ?? noItems;
+  // Checked again with every read of the passwords; the host keeps the service's answers.
+  const breaches = useBreachReport(
+    api,
+    credentialsRead.isSuccess ? credentialsRead.dataUpdatedAt : null,
+  );
   const identities = identitiesRead.data ?? noItems;
   const cards = cardsRead.data ?? noItems;
   const notes = notesRead.data ?? noItems;
@@ -204,6 +211,13 @@ export function VaultView({
     write: (enabled: boolean) => api.setBankDetails(enabled),
     readFailure: "app.error.setting-read",
     writeFailure: "workspace.error.bank-details",
+  });
+  const breachChecksSetting = useHostSetting({
+    key: queryKeys.breachChecks,
+    read: () => api.breachChecks(),
+    write: (enabled: boolean) => api.setBreachChecks(enabled),
+    readFailure: "app.error.setting-read",
+    writeFailure: "settings.breach-checks.error",
   });
   // A refused change leaves the previous keys working.
   const shortcutSetting = useHostSetting({
@@ -287,6 +301,7 @@ export function VaultView({
     dockIconSetting.changing ||
     siteIconsSetting.changing ||
     bankDetailsSetting.changing ||
+    breachChecksSetting.changing ||
     shortcutSetting.changing ||
     interfaceSizeChange.isPending ||
     appearanceChange.isPending ||
@@ -481,6 +496,42 @@ export function VaultView({
   function deleteGroup(id: string) {
     void changeGroups(() => api.deleteGroup(id));
   }
+
+  // A restore or a purge changes the lists as well as the trash.
+  async function changeTrash(change: () => Promise<void>, failure: MessageKey) {
+    setWorking(true);
+    setSyncState("writing");
+    try {
+      await change();
+      setSyncState("synced");
+      await Promise.all([
+        refreshItems(),
+        client.invalidateQueries({ queryKey: queryKeys.trash }),
+      ]);
+      await refreshExportState();
+      return true;
+    } catch (cause) {
+      settleSync(cause);
+      report(cause, failure);
+      return false;
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  const trashActions: TrashActions = {
+    onRestore: (id) =>
+      changeTrash(() => api.restoreItem(id), "settings.trash.error.restore"),
+    onDelete: (id) =>
+      changeTrash(() => api.deleteItem(id), "settings.trash.error.delete"),
+    onEmpty: () =>
+      changeTrash(() => api.emptyTrash(), "settings.trash.error.delete"),
+    onRetention: (days) =>
+      changeTrash(
+        () => api.setTrashRetention(days),
+        "settings.trash.error.retention",
+      ),
+  };
 
   async function chooseDefaultGroup(id: string) {
     setWorking(true);
@@ -865,6 +916,8 @@ export function VaultView({
                   onSiteIcons={changeSiteIcons}
                   bankDetails={bankDetails}
                   onBankDetails={bankDetailsSetting.change}
+                  breachChecks={breachChecksSetting.value}
+                  onBreachChecks={breachChecksSetting.change}
                   screenshots={api}
                   storage={storage}
                   movingStorage={storageMove === "moving"}
@@ -902,6 +955,8 @@ export function VaultView({
                     void refreshExportState();
                   }}
                   importActions={importActions}
+                  trash={api}
+                  trashActions={trashActions}
                   about={api}
                   onOpenWebsite={(address) => {
                     void api
@@ -920,6 +975,7 @@ export function VaultView({
                   shell={shell}
                   entries={credentials}
                   loading={credentialsRead.isPending}
+                  breaches={breaches}
                   refresh={refreshCredentials}
                   opening={opening}
                   onImport={() => showSettings("import")}

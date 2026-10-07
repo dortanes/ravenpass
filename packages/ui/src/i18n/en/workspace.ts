@@ -57,10 +57,7 @@ export const workspace = {
   "workspace.detail.duplicate": "Duplicate",
   "workspace.detail.delete": "Delete",
   "workspace.duplicate.name": "{name} (copy)",
-  "workspace.delete.detail": "This cannot be undone.",
   "workspace.delete.cancel": "Cancel",
-  "workspace.delete.confirm": "Delete",
-  "workspace.delete.busy": "Deleting…",
   "workspace.field.notes": "Notes",
   "workspace.field.hidden": "Hidden",
   "workspace.notes.copy": "Copy notes",
@@ -208,8 +205,6 @@ export const workspace = {
   "credential.totp.qr": "Read a QR code",
   "credential.totp.qr.file": "From a picture file",
   "credential.totp.qr.clipboard": "From the clipboard",
-
-  "credential.delete.title": "Delete this password?",
 
   "credential.passkeys": "Passkeys",
   "credential.mark.totp": "Has a one-time code",

@@ -179,6 +179,7 @@ export function ItemPlace<
   detail,
   editor,
   onImport,
+  rank,
 }: {
   shell: PlaceShell;
   kind: ItemKind<Item, Input>;
@@ -190,6 +191,8 @@ export function ItemPlace<
   ref?: Ref<PlaceHandle>;
   /** Set when the place offers to import items from another app while it holds none. */
   onImport?: () => void;
+  /** Reorders the listed items after the section's own order, such as putting those that need attention first. */
+  rank?: (entries: Summary[]) => Summary[];
   list: (props: ListProps<Summary>) => ReactNode;
   detail: (
     item: Item,
@@ -232,14 +235,21 @@ export function ItemPlace<
   const [selected, setSelected] = useState<Item | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const selectionRequest = useRef(0);
+  // The undo of the last move to the trash, which must not outlive this place or its vault.
+  const undoNotice = useRef<string | number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (undoNotice.current !== null) toast.dismiss(undoNotice.current);
+    },
+    [],
+  );
 
   function forget() {
     selectionRequest.current += 1;
     setSelected(null);
     setSelectedId(null);
-    setConfirmDelete(false);
   }
 
   function leaveDetail(next: Pane) {
@@ -286,7 +296,6 @@ export function ItemPlace<
     setSelectedId(id);
     setPane("detail");
     setLoadingDetail(true);
-    setConfirmDelete(false);
     try {
       await selection.settled();
       if (request !== selectionRequest.current) return;
@@ -456,15 +465,23 @@ export function ItemPlace<
     }
   }
 
+  // Moving to the trash is undone from its notice, which reopens the item.
   async function remove() {
     if (!selected) return;
+    const { id } = selected;
     setBusy(true);
     setSyncState("writing");
     let removed = false;
     try {
-      await api.deleteItem(selected.id);
+      await api.trashItem(id);
       removed = true;
       setSyncState("synced");
+      undoNotice.current = toast.success(t("workspace.trash.moved"), {
+        action: {
+          label: t("workspace.trash.undo"),
+          onClick: () => void restore(id),
+        },
+      });
       await refresh();
       await refreshExportState();
       leaveDetail("empty");
@@ -486,13 +503,31 @@ export function ItemPlace<
     }
   }
 
-  const visible = selectEntries(
+  async function restore(id: string) {
+    setBusy(true);
+    setSyncState("writing");
+    try {
+      await api.restoreItem(id);
+      setSyncState("synced");
+      await refresh();
+      await refreshExportState();
+      await open(id);
+    } catch (cause) {
+      settleSync(cause);
+      report(cause, "workspace.error.restore");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const matching = selectEntries(
     entries,
     searchValues,
     shell.section,
     shell.query,
     group,
   );
+  const visible = rank ? rank(matching) : matching;
   const groupsForNew =
     group !== everyGroup
       ? [group]
@@ -587,10 +622,7 @@ export function ItemPlace<
               onTag: shell.onTag,
               pinned,
               busy,
-              confirmDelete,
-              onAskDelete: () => setConfirmDelete(true),
-              onCancelDelete: () => setConfirmDelete(false),
-              onDelete: remove,
+              onDelete: () => void remove(),
               onDuplicate: () => void duplicate(),
               onEdit: () => setPane("edit"),
               onTogglePin: () => togglePin(selected.id, !pinned),

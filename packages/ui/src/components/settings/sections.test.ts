@@ -152,24 +152,32 @@ test("each host sees its sections in two parts: the device, then the vault", () 
   assert.deepEqual(settingsParts([]), []);
 });
 
-test("vault tabs preserve import and groups on every host and gate backups", () => {
+test("vault tabs preserve import, groups and the trash on every host and gate backups", () => {
   assert.deepEqual(ids(offeredVaultTabs(mac)), [
     "vaults",
     "backups",
     "groups",
+    "trash",
     "import",
   ]);
   for (const host of [android, nothing]) {
     assert.deepEqual(ids(offeredVaultTabs(host)), [
       "vaults",
       "groups",
+      "trash",
       "import",
     ]);
   }
 });
 
 test("direct vault destinations select the vault navigation entry", () => {
-  for (const target of ["vaults", "backups", "groups", "import"] as const) {
+  for (const target of [
+    "vaults",
+    "backups",
+    "groups",
+    "trash",
+    "import",
+  ] as const) {
     assert.equal(settingsParent(target), "vaults");
   }
   for (const target of [

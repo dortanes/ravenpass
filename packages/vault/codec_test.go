@@ -102,14 +102,15 @@ func TestIndexOfEveryFieldWritesBackItsFixtureBytes(t *testing.T) {
 	fixture := loadEncodingFixture(t)
 	plaintext := decodeHex(t, fixture.IndexHex)
 	records := stubRecords(fixture.IndexRecords)
-	revision, ancestors, entries, groups, err := parseIndex(plaintext, records)
+	revision, ancestors, index, err := parseIndex(plaintext, records)
 	if err != nil {
 		t.Fatal(err)
 	}
+	entries, groups := index.entries, index.groups
 	if len(entries[0].passkeys) == 0 || len(entries[0].apps) == 0 || len(groups) == 0 || len(ancestors) < 2 {
 		t.Fatal("the fixture index does not use every field")
 	}
-	written, err := encodeIndex(revision, ancestors, entries, groups)
+	written, err := encodeIndex(revision, ancestors, entries, groups, index.retention)
 	if err != nil {
 		t.Fatal(err)
 	}

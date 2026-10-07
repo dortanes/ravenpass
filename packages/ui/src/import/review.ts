@@ -3,13 +3,13 @@ import type {
   ImportCardNetworks,
   ImportConversion,
   ImportGroups,
-  ImportKind,
   ImportOptions,
   ImportPreview,
+  ItemKindName,
 } from "../vault-api.ts";
 
 export interface ImportKindReview {
-  readonly kind: ImportKind;
+  readonly kind: ItemKindName;
   /** Duplicates included. */
   readonly count: number;
   /** Items the vault already holds. */

@@ -84,7 +84,6 @@ export function CardDetail({
           subtitle={[networkName(card.network), card.bankName]
             .filter(Boolean)
             .join(" · ")}
-          deleteTitle={t("card.delete.title")}
           controls={controls}
         />
 
