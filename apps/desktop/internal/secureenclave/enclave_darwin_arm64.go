@@ -6,11 +6,11 @@ package secureenclave
 #cgo LDFLAGS: -L/usr/lib/swift -framework LocalAuthentication -framework Security
 #include <stdint.h>
 
-int32_t ravenpass_enclave_create(int32_t policy, const uint8_t *salt, intptr_t saltLength,
+int32_t ravenpass_enclave_create(int32_t keychain, int32_t policy, const uint8_t *salt, intptr_t saltLength,
     uint8_t *boundKey, intptr_t boundKeyCapacity, intptr_t *boundKeyLength,
     uint8_t *peerKey, intptr_t peerKeyCapacity, intptr_t *peerKeyLength,
     uint8_t *secret);
-int32_t ravenpass_enclave_derive(int32_t policy, const uint8_t *boundKey, intptr_t boundKeyLength,
+int32_t ravenpass_enclave_derive(int32_t keychain, int32_t policy, const uint8_t *boundKey, intptr_t boundKeyLength,
     const uint8_t *peerKey, intptr_t peerKeyLength,
     const uint8_t *salt, intptr_t saltLength,
     const uint8_t *reason, intptr_t reasonLength,
@@ -46,7 +46,7 @@ func create(which policy, salt []byte) ([]byte, []byte, [unlock.SecretSize]byte,
 	boundKey := make([]byte, boundKeyBytes)
 	peerKey := make([]byte, peerKeyBytes)
 	var boundKeyLength, peerKeyLength C.intptr_t
-	result := C.ravenpass_enclave_create(C.int32_t(which),
+	result := C.ravenpass_enclave_create(C.int32_t(keys), C.int32_t(which),
 		bytePointer(salt), C.intptr_t(len(salt)),
 		(*C.uint8_t)(unsafe.Pointer(&boundKey[0])), C.intptr_t(len(boundKey)), &boundKeyLength,
 		(*C.uint8_t)(unsafe.Pointer(&peerKey[0])), C.intptr_t(len(peerKey)), &peerKeyLength,
@@ -64,7 +64,7 @@ func derive(which policy, boundKey, peerKey, salt []byte, reason string) ([unloc
 	if reason != "" {
 		reasonBytes = (*C.uint8_t)(unsafe.Pointer(unsafe.StringData(reason)))
 	}
-	result := C.ravenpass_enclave_derive(C.int32_t(which),
+	result := C.ravenpass_enclave_derive(C.int32_t(keys), C.int32_t(which),
 		bytePointer(boundKey), C.intptr_t(len(boundKey)),
 		bytePointer(peerKey), C.intptr_t(len(peerKey)),
 		bytePointer(salt), C.intptr_t(len(salt)),

@@ -20,6 +20,9 @@ WAILS := go run github.com/wailsapp/wails/v3/cmd/wails3
 GO_DARWIN := GOOS=darwin GOARCH=arm64 CGO_ENABLED=1 MACOSX_DEPLOYMENT_TARGET=13.0 \
 	CGO_CFLAGS=-mmacosx-version-min=13.0 CGO_LDFLAGS=-mmacosx-version-min=13.0
 SWIFT_TARGET := arm64-apple-macosx13.0
+# A build no provisioning profile signs carries the adhoc tag, which keeps unlock keys in the login keychain; signed
+# targets refuse such a binary.
+GO_TAGS := production
 
 # The AutoFill extension needs macOS 15 and a provisioning profile; only signed packages carry it.
 AUTOFILL_NAME := RavenpassAutoFill
@@ -53,7 +56,7 @@ help:
 	@echo "  make dev                  run the app with live reload"
 	@echo "  make check                build, vet and test (no Secure Enclave needed)"
 	@echo "  make test-secure-enclave  create and use keys in this Mac's Secure Enclave (needs PROFILES)"
-	@echo "  make package              ad-hoc signed bin/Ravenpass.app, without AutoFill"
+	@echo "  make package              ad-hoc signed bin/Ravenpass.app, without AutoFill, unlock keys in the login keychain"
 	@echo "  make package-development  development-signed app installed into $(DEVELOPMENT_DIR)"
 	@echo "  make release              Developer ID signed, notarized $(RELEASE_DMG)"
 	@echo "  make release-sign         sign and notarize the already built app into the disk image"
@@ -98,7 +101,7 @@ frontend: deps bindings
 
 app: frontend secure-enclave
 	mkdir -p bin
-	$(GO_DARWIN) go build -tags production -trimpath -ldflags="-s -w" -o bin/Ravenpass .
+	$(GO_DARWIN) go build -tags $(GO_TAGS) -trimpath -ldflags="-s -w" -o bin/Ravenpass .
 
 $(AUTOFILL_BINARY): $(AUTOFILL_SOURCES)
 	mkdir -p bin
@@ -146,7 +149,7 @@ dev-prepare: deps bindings
 
 dev-build: bindings secure-enclave
 	mkdir -p bin
-	$(GO_DARWIN) go build -o bin/Ravenpass-dev .
+	$(GO_DARWIN) go build -tags adhoc -o bin/Ravenpass-dev .
 
 notices: deps
 	mkdir -p bin
@@ -193,6 +196,8 @@ endef
 # $(call signed-app,directory,identity,app profile,extension profile,codesign options) embeds each
 # bundle's provisioning profile and signs inside out with the hardened runtime.
 define signed-app
+! go version -m bin/Ravenpass | grep -Eq -- '-tags=([^[:space:]]*,)?adhoc(,|[[:space:]]|$$)' \
+	|| { echo "bin/Ravenpass was built for ad-hoc signing; build it again without the adhoc tag"; exit 1; }
 $(call bundle,$(1))
 mkdir -p "$(1)/Ravenpass.app/Contents/PlugIns"
 cp "$(PROFILES)/$(3)" "$(1)/Ravenpass.app/Contents/embedded.provisionprofile"
@@ -209,6 +214,7 @@ $(call profile-match,$(1)/Ravenpass.app/Contents/PlugIns/$(AUTOFILL_NAME).appex)
 $(call profile-match,$(1)/Ravenpass.app)
 endef
 
+package: GO_TAGS := production,adhoc
 package: app notices
 	$(call bundle,bin)
 	codesign --force --options runtime --sign - bin/Ravenpass.app

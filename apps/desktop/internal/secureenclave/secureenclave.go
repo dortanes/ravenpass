@@ -17,6 +17,14 @@ var (
 	ErrInteractionRequired = errors.New("the key needs its owner, who may not be asked")
 )
 
+// keychainKind values match the Keychain raw values in secureenclave.swift; the build picks one as keys.
+type keychainKind int32
+
+const (
+	keychainDataProtection keychainKind = 0
+	keychainLogin          keychainKind = 1
+)
+
 // policy values match the Policy raw values in secureenclave.swift.
 type policy int32
 
@@ -27,7 +35,8 @@ const (
 
 // Enclave binds a PIN's device secret to a Secure Enclave key whose use never prompts. Every key's representation is a
 // Data Protection keychain item only code signed as Ravenpass reads, so a copy of the device records cannot yield the
-// secret; the item needs the application identifier entitlement, which an ad-hoc signature lacks.
+// secret; the item needs the application identifier entitlement, which an ad-hoc signature lacks, so a build with the
+// adhoc tag keeps it in the login keychain instead.
 type Enclave struct{}
 
 // Create makes a Secure Enclave key for salt and returns its keychain label, the peer public key and the salt's secret.
