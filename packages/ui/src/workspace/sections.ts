@@ -1,4 +1,4 @@
-import { networkName } from "../cards/card.ts";
+import { networkName } from "../cards/networks.ts";
 import type {
   CardSummary,
   CredentialSummary,

@@ -19,53 +19,13 @@ import type {
   CardInput,
   CardNetwork,
 } from "../vault-api.ts";
-
-/** In the vault's order. */
-export const cardNetworks: readonly Exclude<CardNetwork, "">[] = [
-  "visa",
-  "mastercard",
-  "american-express",
-  "discover",
-  "diners-club",
-  "jcb",
-  "unionpay",
-  "maestro",
-  "mir",
-  "elo",
-  "hiper",
-  "hipercard",
-  "troy",
-  "verve",
-  "naranja",
-];
-
-export function isCardNetwork(value: string): value is CardNetwork {
-  return value === "" || (cardNetworks as readonly string[]).includes(value);
-}
+import { digitsOf, networkName } from "./networks.ts";
 
 const defaultGaps = [4, 8, 12];
 const longestNumber = 19;
 
-export function digitsOf(text: string): string {
-  return text.replace(/\D/g, "");
-}
-
-/** Empty while more than one network, or none, fits the digits. */
-export function detectNetwork(number: string): CardNetwork {
-  const digits = digitsOf(number);
-  if (!digits) return "";
-  const [match, ...others] = creditCardType(digits);
-  if (!match || others.length > 0) return "";
-  return isCardNetwork(match.type) ? match.type : "";
-}
-
 function gapsOf(network: CardNetwork): number[] {
   return network ? creditCardType.getTypeInfo(network).gaps : defaultGaps;
-}
-
-/** The network's own name, such as `American Express`; empty for none. */
-export function networkName(network: CardNetwork): string {
-  return network ? creditCardType.getTypeInfo(network).niceType : "";
 }
 
 const networkLogos: Partial<Record<CardNetwork, PaymentType>> = {

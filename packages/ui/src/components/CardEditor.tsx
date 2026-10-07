@@ -11,18 +11,16 @@ import {
   billingOf,
   cardColor,
   cardSwatches,
-  detectNetwork,
   digitsMask,
-  digitsOf,
   digitsWithin,
   expiryDisplay,
   expiryStored,
   failsCheck,
-  networkName,
   numberGroups,
   numberMask,
   readableOn,
 } from "../cards/card.ts";
+import { detectNetwork, digitsOf, networkName } from "../cards/networks.ts";
 import type { MessageKey } from "../i18n/messages.ts";
 import { useTranslator } from "../i18n/translator.tsx";
 import { addressName, emptyAddress } from "../identities/identity.ts";

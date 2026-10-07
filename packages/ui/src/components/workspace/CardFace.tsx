@@ -9,8 +9,8 @@ import {
   logoInColour,
   maskedGroups,
   networkLogo,
-  networkName,
 } from "../../cards/card.ts";
+import { networkName } from "../../cards/networks.ts";
 import { useTranslator } from "../../i18n/translator.tsx";
 import { photoSource } from "../../identities/photo.ts";
 import type { Card, CardNetwork } from "../../vault-api.ts";

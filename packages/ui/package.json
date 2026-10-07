@@ -12,6 +12,7 @@
     "./package.json": "./package.json",
     "./styles.css": "./src/styles.css",
     "./vault-api.ts": "./src/vault-api.ts",
+    "./cards/*": "./src/cards/*",
     "./components/*": "./src/components/*",
     "./credentials/*": "./src/credentials/*",
     "./extensions/*": "./src/extensions/*",

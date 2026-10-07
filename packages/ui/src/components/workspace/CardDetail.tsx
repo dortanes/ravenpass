@@ -6,9 +6,9 @@ import {
   expiryEnd,
   expiryStart,
   maskedGroups,
-  networkName,
   numberGroups,
 } from "../../cards/card.ts";
+import { networkName } from "../../cards/networks.ts";
 import type { MessageKey } from "../../i18n/messages.ts";
 import { useTranslator } from "../../i18n/translator.tsx";
 import { Validity } from "../../identities/dates.ts";

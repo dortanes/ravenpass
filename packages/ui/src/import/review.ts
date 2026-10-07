@@ -1,4 +1,4 @@
-import { detectNetwork } from "../cards/card.ts";
+import { detectNetwork } from "../cards/networks.ts";
 import type {
   ImportCardNetworks,
   ImportConversion,

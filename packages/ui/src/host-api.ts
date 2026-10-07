@@ -1,6 +1,6 @@
 import type * as models from "./bindings/github.com/dortanes/ravenpass/packages/app/api/models.ts";
 import * as service from "./bindings/github.com/dortanes/ravenpass/packages/app/api/service.ts";
-import { isCardNetwork } from "./cards/card.ts";
+import { isCardNetwork } from "./cards/networks.ts";
 import { isItemKindName } from "./components/workspace/places.ts";
 import { CountWatcher } from "./count-watcher.ts";
 import { isSignInStyle, signInStyleOf } from "./extensions/sign-in-style.ts";

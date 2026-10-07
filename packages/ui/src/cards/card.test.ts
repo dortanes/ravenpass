@@ -9,25 +9,27 @@ import {
   billingOf,
   cardColor,
   cardLine,
-  cardNetworks,
   concealedDigits,
-  detectNetwork,
-  digitsOf,
   digitsWithin,
   expiryDisplay,
   expiryEnd,
   expiryStart,
   expiryStored,
   failsCheck,
-  isCardNetwork,
   logoInColour,
   maskedGroups,
   networkLogo,
-  networkName,
   neutralCardColor,
   numberGroups,
   readableOn,
 } from "./card.ts";
+import {
+  cardNetworks,
+  detectNetwork,
+  digitsOf,
+  isCardNetwork,
+  networkName,
+} from "./networks.ts";
 
 test("the network is detected once exactly one fits the digits", () => {
   assert.equal(detectNetwork("4111111111111111"), "visa");
