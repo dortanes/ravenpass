@@ -30,13 +30,15 @@
 
 ## Features
 
-- **Native autofill, everywhere.** Built into your system's own autofill, so passwords, passkeys and two-factor codes fill in any app or browser. Chrome also has its own extension.
+- **Native autofill, everywhere.** Built into your system's own autofill, so passwords, passkeys and two-factor codes fill in any app or browser. Chrome also has its own extension, which fills payment cards at checkout after your fingerprint or PIN and offers to save a card you type.
 - **Your vault, your choice.** Keep it on your device, or in a cloud drive folder to open the same vault on your computer and phone.
 - **Everything in one place.** Passwords, passkeys, two-factor codes, payment cards, identities with document scans, secure notes and crypto wallet seeds.
+- **Strong passwords on demand.** Generate a password or a passphrase while you edit an item or on its own, with an optional history of what you generated.
+- **Breach alerts.** Turn on breach checks to see which of your passwords appear in known data breaches. Only the first five characters of each password's hash leave your device.
 - **Quick to unlock.** Your fingerprint or your device's screen lock, or a PIN.
-- **Hard to lose.** Automatic encrypted backups to a folder you choose, and a 24-word recovery key you can print or save.
-- **Easy to switch.** Bring your passwords over from other password managers in a few clicks.
-- **No tracking.** No analytics or telemetry. Ravenpass goes online only to fetch icons from the sites you save and, on Android, to check which apps a site trusts.
+- **Hard to lose.** Deleted items wait in the trash for 30 days, or a period you choose. Automatic encrypted backups go to a folder you choose, and a 24-word recovery key can be printed or saved.
+- **Easy to switch.** Bring your passwords over from other password managers in a few clicks, then merge duplicates into one item.
+- **No tracking.** No analytics or telemetry. Ravenpass goes online only to fetch icons from the sites you save, on Android to check which apps a site trusts, and, if you turn on breach checks, to look up your passwords' hash prefixes in [Have I Been Pwned](https://haveibeenpwned.com/Passwords).
 
 ## Download
 
