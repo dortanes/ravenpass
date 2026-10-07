@@ -327,7 +327,7 @@ func (s *Service) ImportItems(options ImportOptions) (ImportResult, error) {
 func importNetworks(names map[string]string) (map[string]vault.CardNetwork, error) {
 	networks := make(map[string]vault.CardNetwork, len(names))
 	for issuer, name := range names {
-		network, known := cardNetworkNamed(name)
+		network, known := vault.ParseCardNetwork(name)
 		if !known {
 			return nil, fail(failureInvalidItem)
 		}

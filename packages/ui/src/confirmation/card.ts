@@ -55,6 +55,12 @@ const verifyCopy: Record<VerificationReason, VerifyCopy> = {
     confirm: "sharing.prompt.fill.confirm",
     error: "sharing.prompt.passkey.error",
   },
+  "fill-card": {
+    title: "sharing.prompt.fill-card.title",
+    description: "sharing.prompt.fill-card.description",
+    confirm: "sharing.prompt.fill.confirm",
+    error: "sharing.prompt.passkey.error",
+  },
   "change-unlock": {
     title: "confirmation.change-unlock.title",
     description: "confirmation.change-unlock.description",

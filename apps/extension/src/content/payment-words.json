@@ -1,0 +1,80 @@
+{
+  "number": [
+    "card number",
+    "cardnumber",
+    "card no",
+    "card num",
+    "ccnumber",
+    "cc number",
+    "cc num",
+    "ccnum",
+    "номер карт"
+  ],
+  "holder": [
+    "cardholder",
+    "card holder",
+    "name on card",
+    "nameoncard",
+    "holder name",
+    "ccname",
+    "cc name",
+    "владелец карт",
+    "держател",
+    "имя на карт"
+  ],
+  "expiry": [
+    "expir",
+    "exp date",
+    "expdate",
+    "exp month",
+    "expmonth",
+    "exp mm",
+    "exp year",
+    "expyear",
+    "exp yy",
+    "valid thru",
+    "valid until",
+    "mm yy",
+    "mmyy",
+    "срок действ",
+    "годен"
+  ],
+  "month": ["month", "mm", "месяц"],
+  "year": ["year", "yy", "год"],
+  "securityCode": [
+    "cvc",
+    "cvv",
+    "cvn",
+    "csc",
+    "security code",
+    "securitycode",
+    "card code",
+    "card verification",
+    "код безопасност",
+    "проверочный код"
+  ],
+  "secondLine": [
+    "line 2",
+    "line2",
+    "address 2",
+    "address2",
+    "addr2",
+    "apartment",
+    "apt",
+    "suite",
+    "квартир"
+  ],
+  "street": ["street", "address", "addr", "line 1", "line1", "улиц", "адрес"],
+  "city": ["city", "town", "locality", "город", "населенн"],
+  "region": [
+    "state",
+    "region",
+    "province",
+    "county",
+    "област",
+    "регион",
+    "край"
+  ],
+  "postalCode": ["zip", "postal", "postcode", "post code", "индекс"],
+  "country": ["country", "стран"]
+}

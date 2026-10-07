@@ -6,19 +6,29 @@ import {
   menuPage,
 } from "../messages.ts";
 import { sendIgnoringClosedPort } from "../messaging/send.ts";
+import { fillChosenForm } from "./card-fill.ts";
 import type { Field } from "./fields.ts";
 import { fillForm, typeCode } from "./fill.ts";
 import { FieldAnchor, MenuFrame } from "./menu-frame.ts";
+import { cardFieldOf } from "./payment-fields.ts";
 import { PersonInput } from "./person-input.ts";
 import { signInFieldOf } from "./sign-in-forms.ts";
 
 // A click into the menu moves focus to its frame only after the field has lost it.
 const blurDelayMs = 100;
 
+/** A field whose menu lists cards. */
+interface CardField {
+  readonly kind: "card";
+  readonly inputs: readonly [HTMLInputElement];
+}
+
+type MenuTarget = Field | CardField;
+
 interface OpenMenu {
   /** The input the menu opened beneath, which focus returns to. */
   readonly input: HTMLInputElement;
-  readonly field: Field;
+  readonly field: MenuTarget;
   readonly token: string;
   readonly frame: MenuFrame;
 }
@@ -85,7 +95,7 @@ export class FieldMenus {
     ) {
       return;
     }
-    const field = signInFieldOf(input);
+    const field = signInFieldOf(input) ?? cardFieldAt(input);
     if (!field) return;
     this.close({ tell: true, refocus: false });
     void this.ask(input, field);
@@ -217,7 +227,15 @@ export class FieldMenus {
         this.close({ tell: false, refocus: true });
         break;
       case "fill":
-        fillForm(open.input, open.field.kind, message);
+        if (open.field.kind !== "card") {
+          fillForm(open.input, open.field.kind, message);
+        }
+        this.close({ tell: false, refocus: true });
+        break;
+      case "fill-card":
+        if (open.field.kind === "card") {
+          fillChosenForm(open.input, message.values);
+        }
         this.close({ tell: false, refocus: true });
         break;
       case "fill-code":
@@ -234,8 +252,8 @@ export class FieldMenus {
     const input = this.rightClicked;
     this.rightClicked = null;
     if (!input?.isConnected) return;
-    const found = signInFieldOf(input);
-    const field: Field =
+    const found = kind === "card" ? null : signInFieldOf(input);
+    const field: MenuTarget =
       found && (found.kind === "code") === (kind === "code")
         ? found
         : { kind, inputs: [input] };
@@ -247,7 +265,7 @@ export class FieldMenus {
 
   private async ask(
     input: HTMLInputElement,
-    field: Field,
+    field: MenuTarget,
     requested = false,
   ): Promise<void> {
     this.asking = input;
@@ -293,6 +311,10 @@ export class FieldMenus {
   private menuFocused(open = this.open): boolean {
     return open !== null && this.document.activeElement === open.frame.host;
   }
+}
+
+function cardFieldAt(input: HTMLInputElement): CardField | null {
+  return cardFieldOf(input) ? { kind: "card", inputs: [input] } : null;
 }
 
 /** The input an event started at, including one inside an open shadow root. */

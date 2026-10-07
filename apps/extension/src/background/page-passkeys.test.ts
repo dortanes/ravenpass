@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import type { OneTimeCode, SiteIcon } from "@ravenpass/ui/vault-api.ts";
 import {
+  type CardOption,
+  type CardValues,
   type CodeSuggestion,
   type FillValues,
   type IdentityFiles,
@@ -23,6 +25,7 @@ import type {
   GetOptions,
   PageRequest,
 } from "../passkeys/requests.ts";
+import { CardFrames } from "./card-frames.ts";
 import { type MenuClient, MenuRouter, type TabMessenger } from "./menus.ts";
 import { PagePasskeys } from "./page-passkeys.ts";
 import { PendingPasskeys } from "./pending-passkeys.ts";
@@ -119,6 +122,14 @@ class NoPasswords implements MenuClient {
   share(): Promise<SharedFile> {
     return Promise.reject(new Error("Passkey tests share no file."));
   }
+
+  async cards(): Promise<CardOption[]> {
+    return [];
+  }
+
+  fillCard(): Promise<CardValues> {
+    return Promise.reject(new Error("Passkey tests fill no card."));
+  }
 }
 
 type Relayed = [Parameters<TabMessenger>[0], Parameters<TabMessenger>[1]];
@@ -156,6 +167,7 @@ function worker({ refuses = false } = {}) {
     passkeys,
     recentFills: new RecentFills({ area, now: clock.now }),
     pendingSignIns: new PendingSignIns({ area, now: clock.now }),
+    cardFrames: new CardFrames({ area }),
     signInStyle: async () => "field",
     relay,
   });

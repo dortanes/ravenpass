@@ -961,11 +961,13 @@ test("a request without a link asks Ravenpass nothing", async () => {
 });
 
 const readyOffer = {
+  kind: "password",
   state: "ready",
   pending: "p1",
   site: "github.com",
   account: "alex",
   name: "github.com",
+  card: null,
   targets: [
     {
       credential: "a1",
@@ -1024,7 +1026,7 @@ test("capture without a current password sends none, and reads nothing to offer"
 
 test("a capture Ravenpass keeps while locked answers locked with its pending id", async () => {
   const { client } = await serving(
-    '{"id":1,"result":{"state":"locked","pending":"p1","site":"github.com","account":"alex","name":"github.com","targets":[],"suggested":""}}',
+    '{"id":1,"result":{"kind":"password","state":"locked","pending":"p1","site":"github.com","account":"alex","name":"github.com","targets":[],"suggested":""}}',
   );
 
   assert.deepEqual(
@@ -1033,11 +1035,13 @@ test("a capture Ravenpass keeps while locked answers locked with its pending id"
       password: "correct horse",
     }),
     {
+      kind: "password",
       state: "locked",
       pending: "p1",
       site: "github.com",
       account: "alex",
       name: "github.com",
+      card: null,
       targets: [],
       suggested: "",
     },
@@ -1053,16 +1057,110 @@ test("review asks what Ravenpass offers now for a pending capture", async () => 
   assert.equal(await sent(), '{"id":1,"type":"review","pending":"p1"}');
 });
 
-test("an offer from an older Ravenpass reads its targets as untagged", async () => {
-  const targets = readyOffer.targets.map(({ tags: _, ...target }) => target);
+test("an offer from an older Ravenpass reads as an untagged password offer", async () => {
+  const { kind: _, card: __, ...older } = readyOffer;
+  const targets = older.targets.map(({ tags: _, ...target }) => target);
   const { client } = await serving(
-    JSON.stringify({ id: 1, result: { ...readyOffer, targets } }),
+    JSON.stringify({ id: 1, result: { ...older, targets } }),
   );
 
   assert.deepEqual(await client.review("p1"), {
     ...readyOffer,
     targets: targets.map((target) => ({ ...target, tags: [] })),
   });
+});
+
+test("a card capture sends the typed card and reads the card's offer", async () => {
+  const cardOffer = {
+    kind: "card",
+    state: "ready",
+    pending: "p2",
+    site: "shop.example.com",
+    account: "",
+    name: "",
+    card: { network: "visa", lastFour: "1111" },
+    targets: [
+      {
+        credential: "c3",
+        label: "Travel",
+        account: "",
+        action: "update",
+        tags: [],
+      },
+    ],
+    suggested: "c3",
+  };
+  const { client, sent } = await serving(
+    JSON.stringify({ id: 1, result: cardOffer }),
+  );
+  const card = {
+    holder: "Alex Example",
+    number: "4111111111111111",
+    expiry: "2032-01",
+    securityCode: "739",
+    network: "visa",
+  };
+  assert.deepEqual(await client.captureCard(origin, card), cardOffer);
+  assert.deepEqual(JSON.parse(await sent()), {
+    id: 1,
+    type: "card-capture",
+    origin,
+    ...card,
+  });
+
+  const unknown = await serving(
+    JSON.stringify({
+      id: 1,
+      result: { ...cardOffer, card: { network: "amex", lastFour: "1111" } },
+    }),
+  );
+  await assert.rejects(unknown.client.captureCard(origin, card), {
+    name: "SessionError",
+    reason: "failed",
+  });
+});
+
+test("cards list the index faces and a card fill reads its values", async () => {
+  const option = {
+    id: "c3",
+    label: "Travel",
+    bankName: "Example Bank",
+    site: "bank.example",
+    network: "visa",
+    lastFour: "1111",
+    color: "#00a0e1",
+    expiresOn: "2029-08-31",
+  };
+  const listing = await serving(
+    JSON.stringify({ id: 1, result: { cards: [option] } }),
+  );
+  assert.deepEqual(await listing.client.cards(origin), [option]);
+  assert.equal(
+    await listing.sent(),
+    `{"id":1,"type":"cards","origin":"${origin}"}`,
+  );
+
+  const values = {
+    holder: "Alex Example",
+    number: "4111111111111111",
+    expiry: "2029-08",
+    securityCode: "739",
+    billing: {
+      street: "1 Example Street",
+      city: "Springfield",
+      region: "",
+      postalCode: "12345",
+      country: "US",
+    },
+  };
+  const fill = await serving(
+    JSON.stringify({ id: 1, result: { ...values, pin: "4829" } }),
+  );
+  assert.deepEqual(await fill.client.fillCard("c3", origin, () => {}), values);
+  assert.equal(
+    await fill.sent(),
+    `{"id":1,"type":"card-fill","card":"c3","origin":"${origin}"}`,
+  );
 });
 
 test("save sends where the person chose, with the account and name of a new credential", async () => {

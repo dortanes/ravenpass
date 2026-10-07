@@ -2,7 +2,10 @@ import type { OneTimeCode, SiteIcon } from "@ravenpass/ui/vault-api.ts";
 import * as v from "valibot";
 import type { FieldKind } from "./content/fields.ts";
 import type {
+  CapturedCard,
   CapturedPassword,
+  CardOption,
+  CardValues,
   CodeSuggestion,
   DesktopState,
   FillValues,
@@ -19,6 +22,7 @@ import type {
   Suggestion,
   SuggestPurpose,
 } from "./link/client.ts";
+import { cardValues } from "./link/results.ts";
 import type { MatchStrength } from "./match-strength.ts";
 import type { PageAnswer } from "./passkeys/page-channel.ts";
 import type { PageRequest } from "./passkeys/requests.ts";
@@ -54,6 +58,9 @@ export interface FileDestination {
   readonly accept: string;
 }
 
+/** What a field's menu lists: credentials for a sign-in or code field, cards for a card field. */
+export type MenuField = FieldKind | "card";
+
 /**
  * `requested` is set when the person asked for the field's menu from the context menu. `confirmed` is set once the
  * person confirmed a fill of a suggestion that is not strong; `remember` once they also asked to remember the page for
@@ -62,7 +69,7 @@ export interface FileDestination {
 export type MenuRequest =
   | {
       readonly kind: "menu-open";
-      readonly field: FieldKind;
+      readonly field: MenuField;
       readonly requested: boolean;
     }
   | {
@@ -90,6 +97,13 @@ export type MenuRequest =
       readonly confirmed: boolean;
       readonly remember?: boolean;
     }
+  | {
+      readonly kind: "menu-fill-card";
+      readonly token: string;
+      readonly id: string;
+    }
+  | { readonly kind: "card-review"; readonly token: string }
+  | { readonly kind: "card-frame" }
   | { readonly kind: "menu-unlock"; readonly token: string }
   | { readonly kind: "menu-identities"; readonly token: string }
   | {
@@ -133,6 +147,7 @@ interface OptionMessage {
 
 export type OfferRequest =
   | ({ readonly kind: "capture" } & CapturedPassword)
+  | ({ readonly kind: "card-capture" } & CapturedCard)
   | { readonly kind: "form-gone" }
   | { readonly kind: "offer-open"; readonly signInForm: boolean }
   | { readonly kind: "offer-review"; readonly token: string }
@@ -143,6 +158,7 @@ export type LinkRefusal = "not-key" | LinkFailure;
 
 export type MenuContent =
   | CredentialMenuContent
+  | CardMenuContent
   | FileMenuContent
   | OfferMenuContent
   | SignInCardContent
@@ -212,6 +228,17 @@ export type CredentialMenuContent =
   | { readonly state: "locked"; readonly purpose: SuggestPurpose }
   | { readonly state: "not-open"; readonly purpose: SuggestPurpose };
 
+export type CardListing =
+  | { readonly state: "list"; readonly cards: readonly CardOption[] }
+  | { readonly state: "locked" }
+  | { readonly state: "not-open" };
+
+/** A card field's menu. */
+export interface CardMenuContent {
+  readonly state: "cards";
+  readonly listing: CardListing;
+}
+
 export type FileMenuContent =
   | ({ readonly state: "files" } & FileDestination)
   | { readonly state: "no-destination" };
@@ -269,6 +296,10 @@ export interface Answers {
     | { ok: true; code: OneTimeCode }
     | { ok: false; reason: CredentialFailure };
   "menu-fill-code": { ok: true } | { ok: false; reason: CredentialFailure };
+  "menu-fill-card": { ok: true } | { ok: false; reason: CredentialFailure };
+  /** Null once the menu closed. */
+  "card-review": { listing: CardListing | null };
+  "card-frame": { ok: true };
   "menu-unlock": { ok: true } | { ok: false; reason: MenuFailure };
   "menu-identities":
     | { ok: true; identities: readonly IdentityFiles[] }
@@ -282,6 +313,7 @@ export interface Answers {
   /** Null once the card closed. */
   "menu-review": { listing: CredentialMenuContent | null };
   capture: { ok: true };
+  "card-capture": { ok: true };
   "form-gone": { ok: true };
   "offer-open": { token: string | null };
   "offer-review":
@@ -311,6 +343,11 @@ export type FrameMessage =
       readonly kind: "fill-code";
       readonly token: string;
       readonly code: string;
+    }
+  | {
+      readonly kind: "fill-card";
+      readonly token: string;
+      readonly values: CardValues;
     }
   | {
       readonly kind: "place-file";
@@ -363,6 +400,13 @@ export interface CardShown {
   readonly shown: boolean;
 }
 
+/** Sent to a frame of the tab that reported payment fields, other than the one a card was chosen in, with what that
+ * frame may receive; the number and security code are empty for a frame of another origin. */
+export interface CardFillFrame {
+  readonly kind: "card-fill-frame";
+  readonly values: CardValues;
+}
+
 /** Sent to the frame a sign-in card opened for; answered with a `Submission` or a `FormPresence`. */
 export type FormMessage =
   | ({ readonly kind: "form-sign-in" } & FillValues)
@@ -387,7 +431,7 @@ export interface FileMenuOpen {
 /** Asks the frame to open the field menu for the input it last saw right-clicked. */
 export interface FieldMenuOpen {
   readonly kind: "field-menu-open";
-  readonly field: Extract<FieldKind, "login" | "code">;
+  readonly field: Extract<MenuField, "login" | "code" | "card">;
 }
 
 /** Posted by the framing content script to the menu's window; a page can post it too. */
@@ -421,6 +465,7 @@ export const vaultStatePort = "vault-state";
 const frameMessageKinds = [
   "fill",
   "fill-code",
+  "fill-card",
   "place-file",
   "share-progress",
   "fill-progress",
@@ -445,8 +490,12 @@ const cardShow = kind("card-show");
 const fileMenuOpen = kind("file-menu-open");
 const fieldMenuOpen = v.object({
   kind: v.literal("field-menu-open"),
-  field: v.picklist(["login", "code"]),
+  field: v.picklist(["login", "code", "card"]),
 });
+const cardFillFrame = v.object({
+  kind: v.literal("card-fill-frame"),
+  values: cardValues,
+}) satisfies v.GenericSchema<unknown, CardFillFrame>;
 const menuMovedMessage = kind("menu-moved");
 const offerShow = kind("offer-show");
 const passkeyAnswer = kind("passkey-answer");
@@ -486,6 +535,10 @@ export function isFileMenuOpen(message: unknown): message is FileMenuOpen {
 
 export function isFieldMenuOpen(message: unknown): message is FieldMenuOpen {
   return v.is(fieldMenuOpen, message);
+}
+
+export function isCardFillFrame(message: unknown): message is CardFillFrame {
+  return v.is(cardFillFrame, message);
 }
 
 export function isMenuMoved(message: unknown): message is MenuMoved {

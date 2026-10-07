@@ -65,12 +65,14 @@ function typeInto(input: HTMLInputElement, text: string): void {
   if (input.value === before) setValue(input, text);
 }
 
-function setValue(input: HTMLInputElement, value: string): void {
+export function setValue(input: HTMLInputElement, value: string): void {
   setNativeValue?.call(input, value);
   announceChange(input);
 }
 
-export function announceChange(input: HTMLInputElement): void {
+export function announceChange(
+  input: HTMLInputElement | HTMLSelectElement,
+): void {
   input.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
   input.dispatchEvent(new Event("change", { bubbles: true }));
 }

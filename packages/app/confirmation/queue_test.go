@@ -540,14 +540,15 @@ func TestAwaitEndFollowsOneRequest(t *testing.T) {
 
 func TestEachReasonIsWordedForItsKind(t *testing.T) {
 	for reason, want := range map[Reason]string{
-		passport:                         "share passport.pdf from Alex with example.com",
-		SavingPasskey("example.com"):     "save a passkey for example.com",
-		SigningIn("example.com", "alex"): "sign in to example.com as alex",
-		Filling("example.com", "alex"):   "fill alex on example.com",
-		ChangingUnlock():                 "change how the vault opens",
-		CreatingVault():                  "create a vault",
-		OpeningVault():                   "open a vault file",
-		DeletingVault("Personal"):        "delete Personal",
+		passport:                           "share passport.pdf from Alex with example.com",
+		SavingPasskey("example.com"):       "save a passkey for example.com",
+		SigningIn("example.com", "alex"):   "sign in to example.com as alex",
+		Filling("example.com", "alex"):     "fill alex on example.com",
+		FillingCard("example.com", "Visa"): "fill the card Visa on example.com",
+		ChangingUnlock():                   "change how the vault opens",
+		CreatingVault():                    "create a vault",
+		OpeningVault():                     "open a vault file",
+		DeletingVault("Personal"):          "delete Personal",
 	} {
 		if got := reason.Words(wording{}); got != want {
 			t.Fatalf("%+v reads %q, want %q", reason, got, want)
@@ -572,6 +573,10 @@ func (wording) SignInReason(site, account string) string {
 }
 
 func (wording) FillReason(site, account string) string { return "fill " + account + " on " + site }
+
+func (wording) FillCardReason(site, card string) string {
+	return "fill the card " + card + " on " + site
+}
 
 func (wording) ChangeUnlockReason() string { return "change how the vault opens" }
 

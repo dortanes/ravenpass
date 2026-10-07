@@ -20,4 +20,7 @@ export const saving: typeof english = {
   "saving.saved.updated": "Пароль обновлён",
   "saving.saved.site-added": "Сайт добавлен",
   "saving.error": "Не удалось сохранить пароль. Повторите попытку.",
+  "saving.card.name": "Карта {lastFour}",
+  "saving.card.saved.updated": "Карта обновлена",
+  "saving.card.error": "Не удалось сохранить карту. Повторите попытку.",
 };

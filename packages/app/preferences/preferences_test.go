@@ -368,6 +368,7 @@ func TestEveryOfferedLanguageHasDialogs(t *testing.T) {
 				catalog.SavePasskeyReason("example.com"):                   {"example.com"},
 				catalog.SignInReason("example.com", "alex@example.com"):    {"example.com", "alex@example.com"},
 				catalog.FillReason("example.com", "alex@example.com"):      {"example.com", "alex@example.com"},
+				catalog.FillCardReason("example.com", "Travel Visa"):       {"example.com", "Travel Visa"},
 				catalog.DeleteVaultReason("Personal"):                      {"Personal"},
 				catalog.RevealReason("Wallet"):                             {"Wallet"},
 			} {
@@ -387,7 +388,7 @@ func TestTitledPromptsGiveATitleAndASentence(t *testing.T) {
 		for _, prompt := range []string{
 			catalog.ShareReason("passport.pdf", "Alex", "example.com"), catalog.SavePasskeyReason("example.com"),
 			catalog.SignInReason("example.com", "alex"), catalog.FillReason("example.com", "alex"),
-			catalog.ChangeUnlockReason(), catalog.CreateVaultReason(),
+			catalog.FillCardReason("example.com", "Travel Visa"), catalog.ChangeUnlockReason(), catalog.CreateVaultReason(),
 			catalog.OpenVaultReason(), catalog.DeleteVaultReason("Personal"), catalog.UnlockVault,
 			catalog.RevealReason("Wallet"),
 		} {

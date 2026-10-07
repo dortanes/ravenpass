@@ -36,6 +36,10 @@ func (wording) SignInReason(site, account string) string {
 
 func (wording) FillReason(site, account string) string { return "fill " + account + " on " + site }
 
+func (wording) FillCardReason(site, card string) string {
+	return "fill the card " + card + " on " + site
+}
+
 func (wording) ChangeUnlockReason() string { return "change how the vault opens" }
 
 func (wording) CreateVaultReason() string { return "create a vault" }

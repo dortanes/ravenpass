@@ -382,7 +382,7 @@ export interface Confirmation {
     "kind": string;
 
     /**
-     * Reason is "share", "save-passkey", "sign-in", "fill" or "change-unlock" for a verify request.
+     * Reason is "share", "save-passkey", "sign-in", "fill", "fill-card" or "change-unlock" for a verify request.
      */
     "reason": string;
     "file": string;

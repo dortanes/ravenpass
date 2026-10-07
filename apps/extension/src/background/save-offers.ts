@@ -1,6 +1,5 @@
 import { logFailure } from "../failures.ts";
 import {
-  type CapturedPassword,
   type CaptureOffer,
   type LinkClient,
   type SaveChoice,
@@ -18,7 +17,7 @@ import { shownOffer, type TabOffer, type TabOffers } from "./tab-offers.ts";
 
 export type OfferClient = Pick<
   LinkClient,
-  "capture" | "review" | "save" | "discard"
+  "capture" | "captureCard" | "review" | "save" | "discard"
 >;
 
 export interface SaveOffersDependencies {
@@ -30,7 +29,8 @@ export interface SaveOffersDependencies {
   readonly show: (tabId: number) => Promise<void>;
 }
 
-export const captureFailure = "Ravenpass could not offer to save a password.";
+export const captureFailure =
+  "Ravenpass could not offer to save a password or a card.";
 
 type TokenRequest = Extract<OfferRequest, { token: string }>;
 
@@ -69,8 +69,18 @@ export class SaveOffers {
     sender: Sender,
   ): Promise<Answers[OfferRequest["kind"]]> {
     switch (request.kind) {
-      case "capture":
-        return this.capture(request, sender);
+      case "capture": {
+        const { kind: _, ...captured } = request;
+        return this.capture(sender, (origin) =>
+          this.client.capture(origin, captured),
+        );
+      }
+      case "card-capture": {
+        const { kind: _, ...card } = request;
+        return this.capture(sender, (origin) =>
+          this.client.captureCard(origin, card),
+        );
+      }
       case "form-gone":
         return this.formGone(sender);
       case "offer-open":
@@ -88,15 +98,16 @@ export class SaveOffers {
     await this.end(tabId);
   }
 
+  /** `send` sends the capture for the frame's origin as Chrome reports it. */
   private async capture(
-    captured: CapturedPassword,
     sender: Sender,
+    send: (origin: string) => Promise<CaptureOffer>,
   ): Promise<Answers["capture"]> {
     const page = this.sessions.pageOf(sender);
     if (!page) throw new RefusedRequest("capture");
     let answer: CaptureOffer;
     try {
-      answer = await this.client.capture(page.origin, captured);
+      answer = await send(page.origin);
     } catch (error) {
       logFailure(captureFailure, error);
       return { ok: true };
@@ -226,14 +237,17 @@ export class SaveOffers {
   }
 }
 
-/** A later document still showing a sign-in form for the capture's site means the sign-in likely failed. */
+/** A later document still showing a sign-in form for the capture's site means the sign-in likely failed; any later
+ * document follows a card's checkout. */
 function signedIn(
   offer: TabOffer,
   page: PageFrame,
   signInForm: boolean,
 ): boolean {
   if (page.documentId === offer.capturedIn) return false;
-  return !signInForm || siteOf(page.origin) !== offer.site;
+  return (
+    offer.kind === "card" || !signInForm || siteOf(page.origin) !== offer.site
+  );
 }
 
 function offerFailure(error: unknown): OfferFailure {

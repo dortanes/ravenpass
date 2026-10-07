@@ -33,6 +33,9 @@ const (
 	RequestPasskeys      = "passkeys"
 	RequestPasskeyCreate = "passkey-create"
 	RequestPasskeySign   = "passkey-sign"
+	RequestCards         = "cards"
+	RequestCardFill      = "card-fill"
+	RequestCardCapture   = "card-capture"
 
 	ErrorUnknownRequest      = "unknown-request"
 	ErrorLocked              = "locked"
@@ -136,6 +139,7 @@ type Request struct {
 	Target     string
 	Name       string
 	Passkey    PasskeyFields
+	Card       CardFields
 }
 
 // ParseRequest reads a session request, which must carry an integer id and a type.
@@ -156,6 +160,7 @@ func ParseRequest(plaintext []byte) (Request, error) {
 		Target     string  `json:"target"`
 		Name       string  `json:"name"`
 		PasskeyFields
+		CardFields
 	}
 	if err := json.Unmarshal(plaintext, &fields); err != nil || fields.ID == nil || fields.Type == "" {
 		return Request{}, ErrMalformed
@@ -165,6 +170,7 @@ func ParseRequest(plaintext []byte) (Request, error) {
 		Credential: fields.Credential, Site: fields.Site, Identity: fields.Identity, File: fields.File,
 		Account: fields.Account, Password: fields.Password, Current: fields.Current,
 		Pending: fields.Pending, Target: fields.Target, Name: fields.Name, Passkey: fields.PasskeyFields,
+		Card: fields.CardFields,
 	}, nil
 }
 
@@ -241,18 +247,22 @@ const (
 	SaveAddSite SaveAction = "add-site"
 )
 
-// CaptureOffer is the result of a capture or review request; an empty Suggested means a new credential.
+// CaptureOffer is the result of a capture, card capture or review request; an empty Suggested means a new item. Only
+// a card's offer carries Card, and its Account is empty.
 type CaptureOffer struct {
+	Kind      CaptureKind  `json:"kind"`
 	State     CaptureState `json:"state"`
 	Pending   string       `json:"pending,omitempty"`
 	Site      string       `json:"site"`
 	Account   string       `json:"account"`
 	Name      string       `json:"name"`
+	Card      *CardFace    `json:"card,omitempty"`
 	Targets   []SaveTarget `json:"targets"`
 	Suggested string       `json:"suggested"`
 }
 
-// SaveTarget is a credential a capture can go to. Account is its login, else its email.
+// SaveTarget is a credential or a card a capture can go to. Account is a credential's login, else its email; a card's
+// is empty.
 type SaveTarget struct {
 	Credential string     `json:"credential"`
 	Label      string     `json:"label"`

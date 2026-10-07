@@ -19,7 +19,7 @@ export interface OfferShown {
   readonly documentId: string;
 }
 
-/** Never holds the captured password; `expiresAt` is when the desktop app forgets it, in Unix milliseconds. */
+/** Never holds the captured password or card; `expiresAt` is when the desktop app forgets it, in Unix milliseconds. */
 export interface TabOffer extends PendingCapture {
   readonly expiresAt: number;
   readonly capturedIn: string;
@@ -53,11 +53,13 @@ export class TabOffers {
     const earlier = await this.take(capturedIn.tabId);
     if (capture) {
       const offer: TabOffer = {
+        kind: capture.kind,
         state: capture.state,
         pending: capture.pending,
         site: capture.site,
         account: capture.account,
         name: capture.name,
+        card: capture.card,
         targets: capture.targets,
         suggested: capture.suggested,
         expiresAt: this.now() + captureLifetimeMs,
@@ -104,10 +106,12 @@ export class TabOffers {
     if (!offer || offer.pending !== capture.pending) return null;
     const revised: TabOffer = {
       ...offer,
+      kind: capture.kind,
       state: capture.state,
       site: capture.site,
       account: capture.account,
       name: capture.name,
+      card: capture.card,
       targets: capture.targets,
       suggested: capture.suggested,
     };
@@ -140,10 +144,12 @@ export class TabOffers {
 /** Leaves out the pending capture id and the menu token. */
 export function shownOffer(offer: TabOffer): SaveOffer {
   return {
+    kind: offer.kind,
     state: offer.state,
     site: offer.site,
     account: offer.account,
     name: offer.name,
+    card: offer.card,
     targets: offer.targets,
     suggested: offer.suggested,
     expiresAt: offer.expiresAt,

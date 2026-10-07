@@ -27,6 +27,7 @@ export const system: typeof english = {
     "войти на сайт {site} как «{account}» с ключом доступа",
   "system.reason.fill-sign-in":
     "вставить данные входа «{account}» на сайте {site}",
+  "system.reason.fill-card": "вставить карту «{card}» на сайте {site}",
   "system.reason.change-unlock": "изменить способ разблокировки хранилища",
   "system.reason.create-vault": "создать новое хранилище",
   "system.reason.open-vault": "открыть другой файл хранилища",
@@ -45,6 +46,9 @@ export const system: typeof english = {
   "system.prompt.fill-sign-in.title": "Вставка данных входа",
   "system.prompt.fill-sign-in":
     "Подтвердите, что это вы, чтобы вставить данные входа «{account}» на сайте {site}.",
+  "system.prompt.fill-card.title": "Вставка карты",
+  "system.prompt.fill-card":
+    "Подтвердите, что это вы, чтобы вставить карту «{card}» на сайте {site}.",
   "system.prompt.change-unlock.title": "Изменение разблокировки",
   "system.prompt.change-unlock":
     "Подтвердите, что это вы, чтобы изменить способ разблокировки хранилища.",

@@ -31,6 +31,46 @@ func (n CardNetwork) known() bool {
 	return n <= NetworkNaranja
 }
 
+// networkNames are the credit-card-type names clients exchange networks by.
+var networkNames = [...]string{
+	NetworkVisa:            "visa",
+	NetworkMastercard:      "mastercard",
+	NetworkAmericanExpress: "american-express",
+	NetworkDiscover:        "discover",
+	NetworkDinersClub:      "diners-club",
+	NetworkJCB:             "jcb",
+	NetworkUnionPay:        "unionpay",
+	NetworkMaestro:         "maestro",
+	NetworkMir:             "mir",
+	NetworkElo:             "elo",
+	NetworkHiper:           "hiper",
+	NetworkHipercard:       "hipercard",
+	NetworkTroy:            "troy",
+	NetworkVerve:           "verve",
+	NetworkNaranja:         "naranja",
+}
+
+// Name is the network's credit-card-type name, such as "american-express"; empty for none or an unknown network.
+func (n CardNetwork) Name() string {
+	if !n.known() {
+		return ""
+	}
+	return networkNames[n]
+}
+
+// ParseCardNetwork reads a Name; the empty name is no network.
+func ParseCardNetwork(name string) (CardNetwork, bool) {
+	if name == "" {
+		return 0, true
+	}
+	for network, known := range networkNames {
+		if network > 0 && known == name {
+			return CardNetwork(network), true
+		}
+	}
+	return 0, false
+}
+
 // Card limits count characters, except the ASCII digits of the number, security code and PIN.
 const (
 	MinCardNumberLength   = 12
@@ -183,7 +223,23 @@ func expiryEnd(expiry string) string {
 }
 
 func cardFace(input CardInput) CardFace {
-	return CardFace{Network: input.Network, LastFour: input.Number[len(input.Number)-4:], Color: input.Color}
+	return CardFace{Network: input.Network, LastFour: LastFour(input.Number), Color: input.Color}
+}
+
+// LastFour is the end of a card number, empty for a number shorter than four characters.
+func LastFour(number string) string {
+	if len(number) < 4 {
+		return ""
+	}
+	return number[len(number)-4:]
+}
+
+// BillingAddress is the address the card bills to, its link's or its own; nil for none.
+func (c Card) BillingAddress() *Address {
+	if c.Linked != nil {
+		return c.Linked
+	}
+	return c.Billing
 }
 
 // validCardFace holds the index rules for a card's face.
@@ -298,9 +354,8 @@ func (s *Session) ReadSelectedCard(ticket Selection) (Card, error) {
 	}
 	input.Label = entry.label
 	input.Tags = slices.Clone(entry.tags)
-	card := Card{ID: entry.id, CardInput: input}
 	if input.BillingLink == nil {
-		return card, nil
+		return Card{ID: entry.id, CardInput: input}, nil
 	}
 	// Resolving the link under the lock keeps the ticket current until the card is returned.
 	s.mu.Lock()
@@ -308,10 +363,46 @@ func (s *Session) ReadSelectedCard(ticket Selection) (Card, error) {
 	if !s.ticketCurrent(ticket) {
 		return Card{}, ErrStaleSelection
 	}
-	if card.Linked, err = s.linkedAddress(*input.BillingLink); err != nil {
+	return s.resolvedCard(entry.id, input)
+}
+
+// ReadCard decrypts one card and the address its link names without taking the selection.
+func (s *Session) ReadCard(id ID) (Card, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.locked {
+		return Card{}, ErrLocked
+	}
+	index := s.findKind(id, KindCard)
+	if index < 0 {
+		return Card{}, ErrNotFound
+	}
+	plaintext, err := s.openRecord(index)
+	if err != nil {
 		return Card{}, err
 	}
-	if card.Linked == nil {
+	input, err := decodeCardRecord(plaintext)
+	clear(plaintext)
+	if err != nil {
+		return Card{}, err
+	}
+	input.Label = s.entries[index].label
+	input.Tags = slices.Clone(s.entries[index].tags)
+	return s.resolvedCard(id, input)
+}
+
+// resolvedCard is input as read, with its link resolved or dropped when its address is gone. The caller holds s.mu.
+func (s *Session) resolvedCard(id ID, input CardInput) (Card, error) {
+	card := Card{ID: id, CardInput: input}
+	if input.BillingLink == nil {
+		return card, nil
+	}
+	linked, err := s.linkedAddress(*input.BillingLink)
+	if err != nil {
+		return Card{}, err
+	}
+	card.Linked = linked
+	if linked == nil {
 		card.BillingLink = nil
 	}
 	return card, nil

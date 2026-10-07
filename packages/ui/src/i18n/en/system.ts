@@ -26,6 +26,7 @@ export const system = {
   "system.reason.sign-in-passkey":
     "sign in to {site} as {account} with a passkey",
   "system.reason.fill-sign-in": "fill the sign-in for {account} on {site}",
+  "system.reason.fill-card": "fill the card “{card}” on {site}",
   "system.reason.change-unlock": "change how your vault unlocks",
   "system.reason.create-vault": "create a new vault",
   "system.reason.open-vault": "open another vault file",
@@ -44,6 +45,9 @@ export const system = {
   "system.prompt.fill-sign-in.title": "Fill a sign-in",
   "system.prompt.fill-sign-in":
     "Confirm it's you to fill the sign-in for {account} on {site}.",
+  "system.prompt.fill-card.title": "Fill a card",
+  "system.prompt.fill-card":
+    "Confirm it's you to fill the card “{card}” on {site}.",
   "system.prompt.change-unlock.title": "Change unlock settings",
   "system.prompt.change-unlock":
     "Confirm it's you to change how your vault unlocks.",

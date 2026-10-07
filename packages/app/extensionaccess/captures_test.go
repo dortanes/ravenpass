@@ -32,6 +32,15 @@ func (f *fakeCredentials) SaveCapture(vaultservice.Capture, vaultservice.Capture
 	return false, f.err
 }
 
+// CardCaptureOffer and SaveCardCapture answer err alone, for the tests that never reach a card capture.
+func (f *fakeCredentials) CardCaptureOffer(vaultservice.CardCapture) (vaultservice.CaptureOffer, error) {
+	return vaultservice.CaptureOffer{}, f.err
+}
+
+func (f *fakeCredentials) SaveCardCapture(vaultservice.CardCapture, vaultservice.CaptureChoice, string) (bool, error) {
+	return false, f.err
+}
+
 // capturingCredentials answers captures with offer and saves with created, recording what it is asked.
 type capturingCredentials struct {
 	*fakeCredentials
@@ -83,7 +92,7 @@ func TestACaptureOfferNamesItsTargetsAndSuggestion(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := linkproto.CaptureOffer{
-		State: linkproto.CaptureReady, Site: "login.example.com", Account: "alex", Name: "login.example.com",
+		Kind: linkproto.CapturePassword, State: linkproto.CaptureReady, Site: "login.example.com", Account: "alex", Name: "login.example.com",
 		Targets: []linkproto.SaveTarget{
 			{Credential: updateID.String(), Label: "Example", Account: "alex", Action: linkproto.SaveUpdate, Tags: []string{"Personal"}},
 			{Credential: addSiteID.String(), Label: "Mail", Account: "alex@example.test", Action: linkproto.SaveAddSite},
@@ -102,7 +111,7 @@ func TestACaptureOfferNamesItsTargetsAndSuggestion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want = linkproto.CaptureOffer{State: linkproto.CaptureReady, Site: "xn--bcher-kva.example", Name: "bücher.example", Targets: []linkproto.SaveTarget{}}
+	want = linkproto.CaptureOffer{Kind: linkproto.CapturePassword, State: linkproto.CaptureReady, Site: "xn--bcher-kva.example", Name: "bücher.example", Targets: []linkproto.SaveTarget{}}
 	if !reflect.DeepEqual(offer, want) {
 		t.Fatalf("offer for a new credential = %+v, want %+v", offer, want)
 	}
@@ -115,7 +124,7 @@ func TestACaptureOfferSaysWhenThereIsNothingToOfferOrTheVaultIsLocked(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := linkproto.CaptureOffer{State: linkproto.CaptureNone, Site: "login.example.com", Account: "alex", Name: "login.example.com", Targets: []linkproto.SaveTarget{}}
+	want := linkproto.CaptureOffer{Kind: linkproto.CapturePassword, State: linkproto.CaptureNone, Site: "login.example.com", Account: "alex", Name: "login.example.com", Targets: []linkproto.SaveTarget{}}
 	if !reflect.DeepEqual(offer, want) {
 		t.Fatalf("offer with nothing to offer = %+v", offer)
 	}
@@ -125,7 +134,7 @@ func TestACaptureOfferSaysWhenThereIsNothingToOfferOrTheVaultIsLocked(t *testing
 	if err != nil {
 		t.Fatal(err)
 	}
-	want = linkproto.CaptureOffer{State: linkproto.CaptureLocked, Site: "https://exa_mple.com", Account: "alex", Name: "https://exa_mple.com", Targets: []linkproto.SaveTarget{}}
+	want = linkproto.CaptureOffer{Kind: linkproto.CapturePassword, State: linkproto.CaptureLocked, Site: "https://exa_mple.com", Account: "alex", Name: "https://exa_mple.com", Targets: []linkproto.SaveTarget{}}
 	if !reflect.DeepEqual(offer, want) {
 		t.Fatalf("offer while locked = %+v", offer)
 	}

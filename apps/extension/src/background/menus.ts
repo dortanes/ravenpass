@@ -4,6 +4,7 @@ import { base64 } from "@scure/base";
 import type { FieldKind } from "../content/fields.ts";
 import { logRejection } from "../failures.ts";
 import {
+  type CardValues,
   type FillValues,
   type LinkClient,
   type PasskeyOption,
@@ -13,9 +14,15 @@ import {
   type Suggestion,
   type SuggestPurpose,
 } from "../link/client.ts";
-import { type MatchStrength, matchStrength } from "../match-strength.ts";
+import {
+  isSecure,
+  type MatchStrength,
+  matchStrength,
+} from "../match-strength.ts";
 import {
   type Answers,
+  type CardFillFrame,
+  type CardListing,
   type CardShow,
   type CredentialFailure,
   type CredentialMenuContent,
@@ -35,6 +42,7 @@ import {
   type Request,
   type ShareFailure,
 } from "../messages.ts";
+import type { CardFrames } from "./card-frames.ts";
 import type { PagePasskeys } from "./page-passkeys.ts";
 import type { PendingSignIns } from "./pending-sign-ins.ts";
 import type { RecentFills } from "./recent-fills.ts";
@@ -61,7 +69,12 @@ export type FrameMessenger = (
 /** A FrameMessenger that also reaches whatever document a tab's frame currently holds. */
 export type TabMessenger = (
   target: TabDocument | TabFrame,
-  message: FrameMessage | FormMessage | CardShow | PasskeyAnswerMessage,
+  message:
+    | FrameMessage
+    | FormMessage
+    | CardShow
+    | CardFillFrame
+    | PasskeyAnswerMessage,
 ) => Promise<unknown>;
 
 export type MenuClient = Pick<
@@ -69,6 +82,8 @@ export type MenuClient = Pick<
   | "suggest"
   | "fill"
   | "code"
+  | "cards"
+  | "fillCard"
   | "addWebsite"
   | "icon"
   | "unlock"
@@ -85,6 +100,7 @@ export interface MenuRouterDependencies {
   readonly passkeys: PagePasskeys;
   readonly recentFills: RecentFills;
   readonly pendingSignIns: PendingSignIns;
+  readonly cardFrames: CardFrames;
   /** The sign-in style the desktop app reported last. */
   readonly signInStyle: () => Promise<SignInStyle>;
   readonly relay: TabMessenger;
@@ -97,6 +113,12 @@ type FillRequest = Extract<MenuRequest, { confirmed: boolean }>;
 type ShareRequest = Extract<MenuRequest, { kind: "menu-share" }>;
 
 type PasskeySignRequest = Extract<MenuRequest, { kind: "passkey-sign" }>;
+
+type CardFillRequest = Extract<MenuRequest, { kind: "menu-fill-card" }>;
+
+interface CardSession extends MenuSession {
+  readonly content: Extract<MenuContent, { state: "cards" }>;
+}
 
 interface Listing {
   readonly session: MenuSession;
@@ -124,6 +146,7 @@ export class MenuRouter {
   private readonly passkeys: PagePasskeys;
   private readonly recentFills: RecentFills;
   private readonly pendingSignIns: PendingSignIns;
+  private readonly cardFrames: CardFrames;
   private readonly signInStyle: () => Promise<SignInStyle>;
   private readonly relay: TabMessenger;
 
@@ -134,6 +157,7 @@ export class MenuRouter {
     passkeys,
     recentFills,
     pendingSignIns,
+    cardFrames,
     signInStyle,
     relay,
   }: MenuRouterDependencies) {
@@ -143,6 +167,7 @@ export class MenuRouter {
     this.passkeys = passkeys;
     this.recentFills = recentFills;
     this.pendingSignIns = pendingSignIns;
+    this.cardFrames = cardFrames;
     this.signInStyle = signInStyle;
     this.relay = relay;
   }
@@ -153,7 +178,18 @@ export class MenuRouter {
   ): Promise<Answers[MenuRequest["kind"]]> {
     switch (request.kind) {
       case "menu-open":
-        return this.open(sender, request.field, request.requested);
+        return request.field === "card"
+          ? this.openCards(sender, request.requested)
+          : this.open(sender, request.field, request.requested);
+      case "menu-fill-card":
+        return this.fillCard(request, sender);
+      case "card-review":
+        return this.reviewCards(await this.fromCardMenu(request, sender));
+      case "card-frame": {
+        const page = this.sessions.pageOf(sender);
+        if (page) await this.cardFrames.report(page);
+        return { ok: true };
+      }
       case "file-menu":
         return this.openFileMenu(sender, request.destination);
       case "menu": {
@@ -243,7 +279,112 @@ export class MenuRouter {
       this.sessions.endTab(tabId),
       this.recentFills.forget(tabId),
       this.pendingSignIns.forget(tabId),
+      this.cardFrames.forget(tabId),
     ]);
+  }
+
+  /** A card menu opens only where both the field's frame and the top frame are secure, and replaces the sign-in card.
+   * One the person requested from the context menu opens even with no card to list. */
+  private async openCards(
+    sender: Sender,
+    requested: boolean,
+  ): Promise<Answers["menu-open"]> {
+    const page = this.sessions.pageOf(sender);
+    const top = topOriginOf(sender);
+    if (!page || !top || !isSecure(page.origin) || !isSecure(top)) {
+      return { token: null };
+    }
+    const listing = await this.cardListing(page.origin);
+    if (
+      !listing ||
+      (!requested && listing.state === "list" && listing.cards.length === 0)
+    ) {
+      return { token: null };
+    }
+    if ((await this.signInStyle()) === "card") {
+      await this.cards.withdraw(page.tabId);
+    }
+    return {
+      token: await this.sessions.open(page, { state: "cards", listing }),
+    };
+  }
+
+  private async cardListing(origin: string): Promise<CardListing | null> {
+    try {
+      return { state: "list", cards: await this.client.cards(origin) };
+    } catch (error) {
+      if (error instanceof SessionError) {
+        if (error.reason === "locked") return { state: "locked" };
+        if (error.reason === "not-open") return { state: "not-open" };
+      }
+      return null;
+    }
+  }
+
+  /** Fills the card into the chosen field's form, then into the tab's other payment frames what each may receive. */
+  private async fillCard(
+    request: CardFillRequest,
+    sender: Sender,
+  ): Promise<Answers["menu-fill-card"]> {
+    const session = await this.fromCardMenu(request, sender);
+    const { listing } = session.content;
+    const top = topOriginOf(sender);
+    if (
+      listing.state !== "list" ||
+      !listing.cards.some(({ id }) => id === request.id) ||
+      !top
+    ) {
+      throw new RefusedRequest(request.kind);
+    }
+    let values: CardValues;
+    try {
+      values = await this.client.fillCard(
+        request.id,
+        session.page.origin,
+        this.progressTo(session, "fill-progress"),
+      );
+    } catch (error) {
+      return { ok: false, reason: credentialFailure(error) };
+    }
+    await this.relay(session.page, {
+      kind: "fill-card",
+      token: session.token,
+      values,
+    });
+    for (const delivery of await this.cardFrames.deliveries(
+      session.page,
+      top,
+      values,
+    )) {
+      await this.relay(delivery.frame, {
+        kind: "card-fill-frame",
+        values: delivery.values,
+      });
+    }
+    await this.sessions.end(session.token);
+    return { ok: true };
+  }
+
+  /** A card menu closes only when Ravenpass cannot answer. */
+  private async reviewCards(
+    session: CardSession,
+  ): Promise<Answers["card-review"]> {
+    const listing = await this.cardListing(session.page.origin);
+    if (!listing) {
+      await this.endFromMenu(session);
+      return { listing: null };
+    }
+    await this.sessions.revise(session.token, { state: "cards", listing });
+    return { listing };
+  }
+
+  private async fromCardMenu(
+    request: Extract<MenuRequest, { token: string }>,
+    sender: Sender,
+  ): Promise<CardSession> {
+    const session = await this.fromMenu(request, sender);
+    if (!isCardSession(session)) throw new RefusedRequest(request.kind);
+    return session;
   }
 
   /** In the card style, shows the sign-in card even when the person closed it; a field menu replaces the card. A menu
@@ -769,10 +910,19 @@ function listingOf(content: MenuContent): CredentialMenuContent | null {
   }
 }
 
-/** A save offer's new credential and its update targets all take the offer site's icon. */
+function isCardSession(session: MenuSession): session is CardSession {
+  return session.content.state === "cards";
+}
+
+/** A save offer's new credential and its update targets all take the offer site's icon; a card its bank's. */
 function sitesOf({ content, page }: MenuSession): string[] {
   if (content.state === "offer") return [content.offer.site];
   if (content.state === "passkey") return [siteOf(page.origin)];
+  if (content.state === "cards") {
+    return content.listing.state === "list"
+      ? content.listing.cards.flatMap(({ site }) => (site ? [site] : []))
+      : [];
+  }
   const listing = listingOf(content);
   return listing?.state === "list"
     ? listing.credentials.map(({ site }) => site)

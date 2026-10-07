@@ -86,6 +86,11 @@ type Vault interface {
 	Share(ctx context.Context, identity, file, origin string, asked func(linkproto.Progress)) (linkproto.SharedFile, []byte, error)
 	// ShowUnlock asks the person to unlock the vault on the device.
 	ShowUnlock()
+	// Cards lists the cards a checkout can take.
+	Cards() ([]linkproto.CardOption, error)
+	// FillCard reads a card for origin to the linked extension once the person verifies it, every time; ErrNotFound for
+	// an unknown one.
+	FillCard(ctx context.Context, card, origin string, asked func(linkproto.Progress)) (linkproto.CardFill, error)
 	// CaptureOffer answers where capture can be saved; while locked it reports CaptureLocked with no target.
 	CaptureOffer(capture Capture) (linkproto.CaptureOffer, error)
 	// SaveCapture saves capture as chosen; ErrNotFound, ErrInvalidAccount or ErrInvalidName when refused.

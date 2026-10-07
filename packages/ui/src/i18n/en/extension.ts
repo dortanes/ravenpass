@@ -58,8 +58,18 @@ export const extension = {
   "extension.menu.codes.empty.title": "No codes for this site",
   "extension.menu.codes.empty.detail":
     "One-time codes you set up in Ravenpass for this site appear here.",
+  "extension.menu.cards.label": "Cards in Ravenpass",
+  "extension.menu.cards.locked.detail": "Unlock it to fill in cards.",
+  "extension.menu.cards.not-open.detail":
+    "Open it on this computer to fill in cards.",
+  "extension.menu.cards.empty.title": "No cards in Ravenpass",
+  "extension.menu.cards.empty.detail":
+    "Cards you add in Ravenpass appear here.",
+  "extension.menu.cards.error":
+    "Ravenpass could not fill this card. Try again.",
   "extension.context.passwords": "Show passwords",
   "extension.context.codes": "Show one-time codes",
+  "extension.context.cards": "Show cards",
   "extension.menu.code.waiting": "Next code fills in {seconds}s",
   "extension.menu.passkey.detail": "Passkey · {account}",
   "extension.menu.hint.show": "show",
@@ -91,6 +101,7 @@ export const extension = {
   "extension.fill.unverifiable":
     "Turn on biometrics or set a PIN in Ravenpass to confirm fills.",
   "extension.offer.locked.detail": "Unlock it to save this password.",
+  "extension.offer.card.locked.detail": "Unlock it to save this card.",
   "extension.offer.not-open.detail":
     "Open it on this computer to save passwords.",
   "extension.passkey.sign-in.title": "Sign in with a passkey",

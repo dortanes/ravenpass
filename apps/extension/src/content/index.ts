@@ -1,3 +1,4 @@
+import { CardFrames } from "./card-frames.ts";
 import { CornerCard } from "./corner-card.ts";
 import { FieldMenus } from "./field-menus.ts";
 import { FileMenus } from "./file-menus.ts";
@@ -8,6 +9,7 @@ import { SubmissionWatcher } from "./submissions.ts";
 export default function main(): () => void {
   const fieldMenus = new FieldMenus(document);
   const fileMenus = new FileMenus(document);
+  const cardFrames = new CardFrames(document);
   const submissions = new SubmissionWatcher(document);
   const signInForms = new SignInForms(document, {
     typing: (inputs) => fieldMenus.dismiss(inputs),
@@ -16,12 +18,14 @@ export default function main(): () => void {
   const cornerCard = window === window.top ? new CornerCard(document) : null;
   fieldMenus.start();
   fileMenus.start();
+  cardFrames.start();
   submissions.start();
   signInForms.start();
   cornerCard?.start();
   return () => {
     fieldMenus.stop();
     fileMenus.stop();
+    cardFrames.stop();
     submissions.stop();
     signInForms.stop();
     cornerCard?.stop();

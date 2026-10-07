@@ -3,6 +3,8 @@ import test from "node:test";
 import type { SignInStyle } from "@ravenpass/ui/extensions/sign-in-style.ts";
 import type { OneTimeCode, SiteIcon } from "@ravenpass/ui/vault-api.ts";
 import {
+  type CardOption,
+  type CardValues,
   type CodeSuggestion,
   type FillValues,
   type IdentityFiles,
@@ -13,6 +15,7 @@ import {
   type SuggestPurpose,
 } from "../link/client.ts";
 import type { Answers, MenuRequest, Submission } from "../messages.ts";
+import { CardFrames } from "./card-frames.ts";
 import { type MenuClient, MenuRouter, type TabMessenger } from "./menus.ts";
 import { PagePasskeys } from "./page-passkeys.ts";
 import { PendingPasskeys } from "./pending-passkeys.ts";
@@ -47,6 +50,25 @@ const values: FillValues = {
   login: "alex",
   email: "alex@example.com",
   password: "correct horse",
+};
+
+const travelCard: CardOption = {
+  id: "c3",
+  label: "Travel",
+  bankName: "Example Bank",
+  site: "bank.example",
+  network: "visa",
+  lastFour: "1111",
+  color: "",
+  expiresOn: "2029-08-31",
+};
+
+const cardValues: CardValues = {
+  holder: "Alex Example",
+  number: "4111111111111111",
+  expiry: "2029-08",
+  securityCode: "739",
+  billing: null,
 };
 
 /** The content script of a sign-in form in a frame of the tab. */
@@ -124,6 +146,25 @@ class ScriptedRavenpass implements MenuClient {
   share(): Promise<SharedFile> {
     return Promise.reject(new Error("Sign-in shares no file."));
   }
+
+  cardList: readonly CardOption[] = [travelCard];
+  readonly cardFills: [string, string][] = [];
+
+  async cards(): Promise<CardOption[]> {
+    if (this.refusal) throw this.refusal;
+    return [...this.cardList];
+  }
+
+  async fillCard(
+    id: string,
+    origin: string,
+    onProgress: (progress: ShareProgress) => void,
+  ): Promise<CardValues> {
+    this.cardFills.push([id, origin]);
+    if (this.refusal) throw this.refusal;
+    this.verify(onProgress);
+    return cardValues;
+  }
 }
 
 type Relayed = [Parameters<TabMessenger>[0], Parameters<TabMessenger>[1]];
@@ -164,6 +205,7 @@ function router(style: SignInStyle = "card") {
     }),
     recentFills: new RecentFills({ area, now: clock.now }),
     pendingSignIns: new PendingSignIns({ area, now: clock.now }),
+    cardFrames: new CardFrames({ area }),
     signInStyle: async () => style,
     relay,
   });
@@ -477,10 +519,12 @@ async function openOffer(
     {
       state: "offer",
       offer: {
+        kind: "password",
         state: "locked",
         site: "github.com",
         account: "alex",
         name: "github.com",
+        card: null,
         targets: [],
         suggested: "",
         expiresAt: Date.now() + 180_000,
@@ -1156,4 +1200,132 @@ test("a fill the owner's choice does not hold shows no step in its menu", async 
 
     assert.deepEqual(kinds(relayed), [filled]);
   }
+});
+
+/** The content script of a payment provider's frame in a checkout of github.com. */
+const providerOrigin = "https://js.payments.example";
+const numberFrame = pageSender({
+  frameId: 4,
+  documentId: "number-frame",
+  url: `${providerOrigin}/card-number`,
+  origin: providerOrigin,
+});
+
+async function openCardMenu(
+  serve: (request: MenuRequest, sender: Sender) => Promise<unknown>,
+  requested = false,
+): Promise<string | null> {
+  const { token } = (await serve(
+    { kind: "menu-open", field: "card", requested },
+    numberFrame,
+  )) as Answers["menu-open"];
+  if (token) await serve({ kind: "menu", token }, menuSender());
+  return token;
+}
+
+test("a card field's menu lists the vault's cards in both styles", async () => {
+  for (const style of ["card", "field"] as const) {
+    const { sessions, serve } = router(style);
+    const token = await openCardMenu(serve);
+    assert.ok(token);
+    const session = await sessions.forMenu(token, menuSender());
+    assert.deepEqual(session?.content, {
+      state: "cards",
+      listing: { state: "list", cards: [travelCard] },
+    });
+  }
+});
+
+test("a card menu opens nowhere insecure, and for no card only when asked", async () => {
+  const { ravenpass, serve } = router("field");
+  for (const sender of [
+    pageSender({ origin: "http://shop.example.com" }),
+    pageSender({ tab: { id: tabId, url: "http://shop.example.com/pay" } }),
+  ]) {
+    assert.deepEqual(
+      await serve(
+        { kind: "menu-open", field: "card", requested: true },
+        sender,
+      ),
+      { token: null },
+    );
+  }
+  ravenpass.cardList = [];
+  assert.equal(await openCardMenu(serve), null);
+  assert.ok(await openCardMenu(serve, true));
+});
+
+test("a chosen card fills its frame, then what each other payment frame may receive", async () => {
+  const { ravenpass, relayed, serve, sessions } = router("field");
+  for (const [documentId, frameOrigin, url] of [
+    ["number-frame", providerOrigin, `${providerOrigin}/card-number`],
+    ["expiry-frame", providerOrigin, `${providerOrigin}/card-expiry`],
+    ["page-document", origin, "https://github.com/login"],
+    ["ad-frame", "https://ads.example", "https://ads.example/banner"],
+  ] as const) {
+    await serve(
+      { kind: "card-frame" },
+      pageSender({ documentId, origin: frameOrigin, url, frameId: 5 }),
+    );
+  }
+  const token = await openCardMenu(serve);
+  assert.ok(token);
+  ravenpass.progress = ["confirm-on-device"];
+
+  const answer = await serve(
+    { kind: "menu-fill-card", token, id: "c3" },
+    menuSender(),
+  );
+
+  assert.deepEqual(answer, { ok: true });
+  assert.deepEqual(ravenpass.cardFills, [["c3", providerOrigin]]);
+  assert.deepEqual(relayed, [
+    [
+      menuDocument,
+      { kind: "fill-progress", token, progress: "confirm-on-device" },
+    ],
+    [
+      { tabId, documentId: "number-frame", origin: providerOrigin },
+      { kind: "fill-card", token, values: cardValues },
+    ],
+    [
+      { tabId, documentId: "expiry-frame" },
+      { kind: "card-fill-frame", values: cardValues },
+    ],
+    [
+      { tabId, documentId: "page-document" },
+      {
+        kind: "card-fill-frame",
+        values: { ...cardValues, number: "", securityCode: "" },
+      },
+    ],
+  ]);
+  assert.equal(await sessions.forMenu(token, menuSender()), null);
+});
+
+test("a card the menu does not list is refused, and a declined fill fills nothing", async () => {
+  const { ravenpass, relayed, serve } = router("field");
+  const token = await openCardMenu(serve);
+  assert.ok(token);
+  await assert.rejects(
+    serve({ kind: "menu-fill-card", token, id: "a1" }, menuSender()),
+    { name: "RefusedRequest" },
+  );
+  ravenpass.verification = new SessionError("declined");
+  assert.deepEqual(
+    await serve({ kind: "menu-fill-card", token, id: "c3" }, menuSender()),
+    { ok: false, reason: "declined" },
+  );
+  assert.deepEqual(kinds(relayed), []);
+});
+
+test("a locked card menu lists the cards once Ravenpass is unlocked", async () => {
+  const { ravenpass, serve } = router("field");
+  ravenpass.refusal = new SessionError("locked");
+  const token = await openCardMenu(serve);
+  assert.ok(token);
+  ravenpass.refusal = null;
+  assert.deepEqual(await serve({ kind: "card-review", token }, menuSender()), {
+    listing: { state: "list", cards: [travelCard] },
+  });
 });

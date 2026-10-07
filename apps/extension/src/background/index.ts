@@ -21,6 +21,7 @@ import { sendIgnoringClosedPort } from "../messaging/send.ts";
 import { StoredSignInStyle } from "../sign-in-style.ts";
 import { ColorSchemePage } from "../toolbar/color-scheme-page.ts";
 import { toolbarIcon } from "../toolbar/icon.ts";
+import { CardFrames } from "./card-frames.ts";
 import { ContextMenu } from "./context-menu.ts";
 import { MenuRouter, type TabMessenger } from "./menus.ts";
 import { PagePasskeys } from "./page-passkeys.ts";
@@ -87,6 +88,7 @@ const menus = new MenuRouter({
   passkeys,
   recentFills: new RecentFills({ area: chrome.storage.session }),
   pendingSignIns: new PendingSignIns({ area: chrome.storage.session }),
+  cardFrames: new CardFrames({ area: chrome.storage.session }),
   signInStyle: () => signIn.signInStyle(),
   relay,
 });
@@ -174,6 +176,7 @@ function serve(
     case "color-scheme":
       return servePage(request, sender);
     case "capture":
+    case "card-capture":
     case "form-gone":
     case "offer-open":
     case "offer-review":

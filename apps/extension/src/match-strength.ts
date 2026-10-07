@@ -21,7 +21,8 @@ export function matchStrength(
   return sameSite(origin, `https://${site}`) ? "same-site" : "other-site";
 }
 
-function isSecure(origin: string): boolean {
+/** An `https` origin, or an `http` one on `localhost` or a `.localhost` host. */
+export function isSecure(origin: string): boolean {
   if (!URL.canParse(origin)) return false;
   const { protocol, hostname } = new URL(origin);
   if (protocol === "https:") return true;

@@ -12,6 +12,7 @@ var reasonKinds = map[confirmation.ReasonKind]string{
 	confirmation.ReasonSavePasskey:  "save-passkey",
 	confirmation.ReasonSignIn:       "sign-in",
 	confirmation.ReasonFill:         "fill",
+	confirmation.ReasonFillCard:     "fill-card",
 	confirmation.ReasonChangeUnlock: "change-unlock",
 }
 
@@ -26,7 +27,7 @@ type Confirmation struct {
 	ID string `json:"id"`
 	// Kind is "verify" or "unlock".
 	Kind string `json:"kind"`
-	// Reason is "share", "save-passkey", "sign-in", "fill" or "change-unlock" for a verify request.
+	// Reason is "share", "save-passkey", "sign-in", "fill", "fill-card" or "change-unlock" for a verify request.
 	Reason   string `json:"reason"`
 	File     string `json:"file"`
 	Identity string `json:"identity"`

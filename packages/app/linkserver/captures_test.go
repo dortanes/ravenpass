@@ -19,10 +19,13 @@ import (
 
 // CaptureOffer answers locked, nothing for alex's known "secret", else the example credential as target.
 func (v *fakeVault) CaptureOffer(capture Capture) (linkproto.CaptureOffer, error) {
+	if capture.Card != nil {
+		return v.cardCaptureOffer(capture)
+	}
 	if err := v.call(fmt.Sprintf("capture %s %s %s %s", capture.Origin, capture.Account, capture.Password, capture.Current)); err != nil {
 		return linkproto.CaptureOffer{}, err
 	}
-	offer := linkproto.CaptureOffer{State: linkproto.CaptureLocked, Site: "example.com", Account: capture.Account, Name: "example.com"}
+	offer := linkproto.CaptureOffer{Kind: linkproto.CapturePassword, State: linkproto.CaptureLocked, Site: "example.com", Account: capture.Account, Name: "example.com"}
 	switch {
 	case !v.Unlocked():
 	case capture.Account == "alex" && capture.Password == "secret":
@@ -39,7 +42,11 @@ func (v *fakeVault) CaptureOffer(capture Capture) (linkproto.CaptureOffer, error
 
 // SaveCapture creates a credential for an empty target and updates the target otherwise.
 func (v *fakeVault) SaveCapture(capture Capture, choice SaveChoice) (linkproto.Saved, error) {
-	if err := v.call(fmt.Sprintf("save %s to %q as %s %s", capture.Password, choice.Target, choice.Account, choice.Name)); err != nil {
+	saved := capture.Password
+	if capture.Card != nil {
+		saved = capture.Card.Number
+	}
+	if err := v.call(fmt.Sprintf("save %s to %q as %s %s", saved, choice.Target, choice.Account, choice.Name)); err != nil {
 		return linkproto.Saved{}, err
 	}
 	if !v.Unlocked() {
@@ -115,7 +122,7 @@ func (c *captureSession) discard(pending string) string {
 }
 
 func readyOffer(pending, account, suggested string) string {
-	return `{"id":1,"result":{"state":"ready","pending":"` + pending + `","site":"example.com","account":"` + account +
+	return `{"id":1,"result":{"kind":"password","state":"ready","pending":"` + pending + `","site":"example.com","account":"` + account +
 		`","name":"example.com","targets":[{"credential":"` + exampleID + `","label":"Example","account":"alex","action":"update"}],"suggested":"` + suggested + `"}}`
 }
 
@@ -170,7 +177,7 @@ func TestAKnownPasswordIsOfferedNothingAndNotHeld(t *testing.T) {
 	vault.unlocked.Store(true)
 	session := openCaptureSession(t, server)
 	reply := session.ask(map[string]any{"type": "capture", "origin": exampleOrigin, "account": "alex", "password": "secret"})
-	if reply != `{"id":1,"result":{"state":"none","site":"example.com","account":"alex","name":"example.com","targets":[],"suggested":""}}` {
+	if reply != `{"id":1,"result":{"kind":"password","state":"none","site":"example.com","account":"alex","name":"example.com","targets":[],"suggested":""}}` {
 		t.Fatalf("a known password answered %s", reply)
 	}
 	if held := server.held.Count(session.id); held != 0 {
@@ -189,7 +196,7 @@ func TestALockedVaultKeepsTheCaptureUntilItIsReviewed(t *testing.T) {
 		t.Fatal(err)
 	}
 	pending := answer.Result.Pending
-	locked := `{"id":1,"result":{"state":"locked","pending":"` + pending + `","site":"example.com","account":"alex","name":"example.com","targets":[],"suggested":""}}`
+	locked := `{"id":1,"result":{"kind":"password","state":"locked","pending":"` + pending + `","site":"example.com","account":"alex","name":"example.com","targets":[],"suggested":""}}`
 	if reply != locked || !pendingID.MatchString(pending) {
 		t.Fatalf("a capture while locked answered %s", reply)
 	}
@@ -223,7 +230,7 @@ func TestAReviewThatFindsNothingToOfferForgetsTheCapture(t *testing.T) {
 		t.Fatalf("a capture while locked answered %s", reply)
 	}
 	vault.unlocked.Store(true)
-	if reply := session.review(answer.Result.Pending); reply != `{"id":1,"result":{"state":"none","site":"example.com","account":"alex","name":"example.com","targets":[],"suggested":""}}` {
+	if reply := session.review(answer.Result.Pending); reply != `{"id":1,"result":{"kind":"password","state":"none","site":"example.com","account":"alex","name":"example.com","targets":[],"suggested":""}}` {
 		t.Fatalf("a review of a known password = %s", reply)
 	}
 	if reply := session.review(answer.Result.Pending); reply != notFound {

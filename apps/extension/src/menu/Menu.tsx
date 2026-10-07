@@ -16,6 +16,7 @@ import {
   type MenuContent,
 } from "../messages.ts";
 import { sendIgnoringClosedPort } from "../messaging/send.ts";
+import { CardMenu } from "./Cards.tsx";
 import { ClickGateProvider } from "./ClickGateProvider.tsx";
 import { CredentialList, useCredentials } from "./Credentials.tsx";
 import { FileMenu } from "./FileMenu.tsx";
@@ -150,6 +151,9 @@ function MenuBody({
   }
   if (isFileMenu(content)) {
     return <FileMenu token={token} site={site} content={content} />;
+  }
+  if (content.state === "cards") {
+    return <CardMenu token={token} initial={content.listing} />;
   }
   return (
     <CredentialMenu token={token} site={site} host={host} initial={content} />

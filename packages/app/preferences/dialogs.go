@@ -40,7 +40,9 @@ type Dialogs struct {
 	// SignInWithPasskey is a reason with {site} and {account} placeholders.
 	SignInWithPasskey string
 	// FillSignIn is a reason with {site} and {account} placeholders.
-	FillSignIn   string
+	FillSignIn string
+	// FillCard is a reason with {site} and {card} placeholders.
+	FillCard     string
 	ChangeUnlock string
 	CreateVault  string
 	OpenVault    string
@@ -76,6 +78,7 @@ func dialogsIn(catalog messages.Catalog, titled bool) Dialogs {
 		SavePasskey:         catalog.Text("system.reason.save-passkey"),
 		SignInWithPasskey:   catalog.Text("system.reason.sign-in-passkey"),
 		FillSignIn:          catalog.Text("system.reason.fill-sign-in"),
+		FillCard:            catalog.Text("system.reason.fill-card"),
 		ChangeUnlock:        catalog.Text("system.reason.change-unlock"),
 		CreateVault:         catalog.Text("system.reason.create-vault"),
 		OpenVault:           catalog.Text("system.reason.open-vault"),
@@ -90,6 +93,7 @@ func dialogsIn(catalog messages.Catalog, titled bool) Dialogs {
 		dialogs.SavePasskey = prompt("system.prompt.save-passkey.title", "system.prompt.save-passkey")
 		dialogs.SignInWithPasskey = prompt("system.prompt.sign-in-passkey.title", "system.prompt.sign-in-passkey")
 		dialogs.FillSignIn = prompt("system.prompt.fill-sign-in.title", "system.prompt.fill-sign-in")
+		dialogs.FillCard = prompt("system.prompt.fill-card.title", "system.prompt.fill-card")
 		dialogs.ChangeUnlock = prompt("system.prompt.change-unlock.title", "system.prompt.change-unlock")
 		dialogs.CreateVault = prompt("system.prompt.create-vault.title", "system.prompt.create-vault")
 		dialogs.OpenVault = prompt("system.prompt.open-vault.title", "system.prompt.open-vault")
@@ -118,6 +122,11 @@ func (d Dialogs) SignInReason(site, account string) string {
 // FillReason is the reason the prompt gives for filling the sign-in of account on site from a linked extension.
 func (d Dialogs) FillReason(site, account string) string {
 	return strings.NewReplacer("{site}", site, "{account}", account).Replace(d.FillSignIn)
+}
+
+// FillCardReason is the reason the prompt gives for filling the card labelled card on site from a linked extension.
+func (d Dialogs) FillCardReason(site, card string) string {
+	return strings.NewReplacer("{site}", site, "{card}", card).Replace(d.FillCard)
 }
 
 // ChangeUnlockReason is the reason the prompt gives for changing how the vault opens.

@@ -18,11 +18,13 @@ const lifetimeMs = 3 * 60_000;
 const loginPage = { tabId, documentId: "login-document" };
 
 const capture: PendingCapture = {
+  kind: "password",
   state: "ready",
   pending: "p1",
   site: "github.com",
   account: "alex",
   name: "github.com",
+  card: null,
   targets: [
     {
       credential: "a1",

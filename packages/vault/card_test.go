@@ -611,6 +611,86 @@ func TestLockedSessionRefusesCardOperations(t *testing.T) {
 	}
 }
 
+func TestReadCardReadsOneCardOutsideTheSelection(t *testing.T) {
+	session, credential := populatedSession(t)
+	defer session.Lock()
+	owner := commitIdentity(t, session, homeAndWork(), nil)
+	input := linkedCard(t, session, owner, 1, "Linked")
+	id := commitCard(t, session, input, nil)
+	want := selectIdentity(t, session, owner).Addresses[1]
+	ticket, err := session.BeginSelection(credential)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card, err := session.ReadCard(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(card.CardInput, input) || card.Linked == nil || *card.Linked != want {
+		t.Fatalf("card = %#v, linked = %#v", card.CardInput, card.Linked)
+	}
+	if !session.ticketCurrent(ticket) {
+		t.Fatal("reading a card ended the selection")
+	}
+	for name, other := range map[string]ID{"a credential": credential, "an identity": owner, "an unknown item": {0xee}} {
+		if _, err := session.ReadCard(other); !errors.Is(err, ErrNotFound) {
+			t.Fatalf("reading %s as a card: %v", name, err)
+		}
+	}
+	pending, err := session.PrepareTrash(id, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := session.Commit(pending); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := session.ReadCard(id); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("reading a trashed card: %v", err)
+	}
+	session.Lock()
+	if _, err := session.ReadCard(id); !errors.Is(err, ErrLocked) {
+		t.Fatalf("reading a card while locked: %v", err)
+	}
+}
+
+func TestACardBillsToItsLinkedAddressFirst(t *testing.T) {
+	own, linked := &Address{City: "Own"}, &Address{City: "Linked"}
+	if (Card{CardInput: CardInput{Billing: own}, Linked: linked}).BillingAddress() != linked {
+		t.Fatal("a linked address does not come first")
+	}
+	if (Card{CardInput: CardInput{Billing: own}}).BillingAddress() != own || (Card{}).BillingAddress() != nil {
+		t.Fatal("a card without a link does not bill to its own address")
+	}
+	if LastFour("4111111111111111") != "1111" || LastFour("411") != "" {
+		t.Fatal("last four digits misread")
+	}
+}
+
+func TestCardNetworksHaveStableNames(t *testing.T) {
+	seen := map[string]bool{}
+	for network := NetworkVisa; network <= NetworkNaranja; network++ {
+		name := network.Name()
+		if name == "" || seen[name] {
+			t.Fatalf("network %d is named %q", network, name)
+		}
+		seen[name] = true
+		if parsed, known := ParseCardNetwork(name); !known || parsed != network {
+			t.Fatalf("%q reads as %d", name, parsed)
+		}
+	}
+	if NetworkVisa.Name() != "visa" || NetworkAmericanExpress.Name() != "american-express" || CardNetwork(0).Name() != "" || (NetworkNaranja+1).Name() != "" {
+		t.Fatal("network names moved")
+	}
+	if network, known := ParseCardNetwork(""); !known || network != 0 {
+		t.Fatal("the empty name is not no network")
+	}
+	for _, name := range []string{"Visa", "amex", "none", " visa"} {
+		if _, known := ParseCardNetwork(name); known {
+			t.Fatalf("%q was read as a network", name)
+		}
+	}
+}
+
 func homeAndWork() IdentityInput {
 	return IdentityInput{Label: "Alex", Addresses: []Address{
 		{Label: "Home", Street: "1 Example Street", City: "Springfield"},

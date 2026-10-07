@@ -818,9 +818,10 @@ export type VerificationReason =
   | "save-passkey"
   | "sign-in"
   | "fill"
+  | "fill-card"
   | "change-unlock";
 
-/** Fields the verification `reason` does not name are empty. */
+/** Fields the verification `reason` does not name are empty; `fill-card` names the card in `file`. */
 export type Confirmation =
   | {
       id: string;

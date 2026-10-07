@@ -59,8 +59,19 @@ export const extension: typeof english = {
   "extension.menu.codes.empty.title": "Для этого сайта нет кодов",
   "extension.menu.codes.empty.detail":
     "Здесь появятся одноразовые коды, настроенные в Ravenpass для этого сайта.",
+  "extension.menu.cards.label": "Карты в Ravenpass",
+  "extension.menu.cards.locked.detail":
+    "Разблокируйте его, чтобы подставлять карты.",
+  "extension.menu.cards.not-open.detail":
+    "Откройте его на этом компьютере, чтобы подставлять карты.",
+  "extension.menu.cards.empty.title": "В Ravenpass нет карт",
+  "extension.menu.cards.empty.detail":
+    "Здесь появятся карты, добавленные в Ravenpass.",
+  "extension.menu.cards.error":
+    "Не удалось подставить карту. Повторите попытку.",
   "extension.context.passwords": "Показать пароли",
   "extension.context.codes": "Показать одноразовые коды",
+  "extension.context.cards": "Показать карты",
   "extension.menu.code.waiting": "Следующий код подставится через {seconds} с",
   "extension.menu.passkey.detail": "Ключ доступа · {account}",
   "extension.menu.hint.show": "показать",
@@ -92,6 +103,8 @@ export const extension: typeof english = {
   "extension.fill.unverifiable":
     "Включите биометрию или задайте пин-код в Ravenpass, чтобы подтверждать подстановку.",
   "extension.offer.locked.detail": "Разблокируйте его, чтобы сохранить пароль.",
+  "extension.offer.card.locked.detail":
+    "Разблокируйте его, чтобы сохранить карту.",
   "extension.offer.not-open.detail":
     "Откройте его на этом компьютере, чтобы сохранять пароли.",
   "extension.passkey.sign-in.title": "Войти с ключом доступа",

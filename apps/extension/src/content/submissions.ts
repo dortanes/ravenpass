@@ -1,6 +1,8 @@
+import type { CapturedCard } from "../link/client.ts";
 import { ask, captureLifetimeMs } from "../messages.ts";
 import { sendIgnoringClosedPort } from "../messaging/send.ts";
 import { captureOf, type SubmittedInput, TypedValues } from "./captures.ts";
+import { cardCaptureOf } from "./card-captures.ts";
 import {
   boxInputs,
   boxOf,
@@ -12,6 +14,7 @@ import {
 } from "./fields.ts";
 import { Arming, Leaving } from "./leaving.ts";
 import { changesAround } from "./page-changes.ts";
+import { paymentFieldsIn } from "./payment-fields.ts";
 import { controlEffect, controlSelector, readControls } from "./submit.ts";
 
 interface ArmedForm {
@@ -28,6 +31,12 @@ interface ArmedForm {
 /** `ready` for a form that already left the page; `none` for a page being hidden. */
 type AfterCapture = "watch" | "ready" | "none";
 
+interface TypedCard {
+  readonly card: CapturedCard;
+  /** The number input, whose leaving shows the checkout moved on. */
+  readonly number: HTMLInputElement;
+}
+
 /** Remembers of what the person typed only the value each input holds, which the page holds too. */
 export class SubmissionWatcher {
   private readonly document: Document;
@@ -40,6 +49,8 @@ export class SubmissionWatcher {
   /** Trusted `input` events seen; tells a new submission of a box from a repeat of the captured one. */
   private keystrokes = 0;
   private readonly captured = new WeakMap<FormBox, number>();
+  /** The card number last captured from each box. */
+  private readonly capturedCards = new WeakMap<FormBox, string>();
   /** The form last captured, watched until it leaves the page. */
   private leaving: Leaving | null = null;
   private readonly arming = new Arming<ArmedForm>({
@@ -95,11 +106,17 @@ export class SubmissionWatcher {
     const control = clickedControl(event.composedPath());
     if (!control) return;
     const box = boxOf(control);
-    if (!this.typedPassword(box)) return;
+    const card = this.typedCard(box);
+    if (!card && !this.typedPassword(box)) return;
     const { controls, descriptions } = readControls(box);
     const clicked = controls.indexOf(control);
     if (clicked < 0) return;
-    switch (controlEffect(descriptions, clicked)) {
+    const effect = controlEffect(descriptions, clicked);
+    if (card) {
+      if (effect !== "unsent") this.captureCard(box, card);
+      return;
+    }
+    switch (effect) {
       case "sends":
         this.capture(box);
         break;
@@ -130,6 +147,11 @@ export class SubmissionWatcher {
 
   private capture(box: FormBox): void {
     this.arming.disarm((armed) => armed.box === box);
+    const card = this.typedCard(box);
+    if (card) {
+      this.captureCard(box, card);
+      return;
+    }
     if (this.captured.get(box) === this.keystrokes) return;
     const inputs = boxInputs(box);
     if (!inputs.some((input) => this.isPassword(input))) return;
@@ -198,6 +220,46 @@ export class SubmissionWatcher {
         );
       }
     }
+  }
+
+  /** The box's payment fields as submitted, when the person typed its card number. */
+  private typedCard(box: FormBox): TypedCard | null {
+    const fields = paymentFieldsIn(box);
+    const number = fields.find(({ part }) => part === "number")?.control;
+    if (
+      !(number instanceof HTMLInputElement) ||
+      !this.typed.typedDigits(number, number.value)
+    ) {
+      return null;
+    }
+    const submitted = fields.map(({ part, control }) => ({
+      part,
+      value: control.value,
+      text:
+        control instanceof HTMLSelectElement
+          ? (control.selectedOptions[0]?.text ?? "")
+          : "",
+      typed: control === number,
+    }));
+    const card = cardCaptureOf(submitted);
+    return card && { card, number };
+  }
+
+  /** Sends a typed card once per number and box; the offer shows once the number field leaves the page. */
+  private captureCard(box: FormBox, { card, number }: TypedCard): void {
+    if (this.capturedCards.get(box) === card.number) return;
+    this.capturedCards.set(box, card.number);
+    const sent = sendIgnoringClosedPort(ask({ kind: "card-capture", ...card }));
+    const gone = () => {
+      void sent.then(() => sendIgnoringClosedPort(ask({ kind: "form-gone" })));
+    };
+    this.leaving?.stop();
+    this.leaving = new Leaving(
+      () => formLeft(box, number),
+      gone,
+      captureLifetimeMs,
+      changesAround(number),
+    );
   }
 
   private typedPassword(box: FormBox): HTMLInputElement | undefined {

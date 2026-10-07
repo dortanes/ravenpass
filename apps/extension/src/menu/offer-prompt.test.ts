@@ -17,10 +17,12 @@ afterEach(() => {
 });
 
 const ready: SaveOffer = {
+  kind: "password",
   state: "ready",
   site: "github.com",
   account: "alex",
   name: "github.com",
+  card: null,
   targets: [
     {
       credential: "a1",

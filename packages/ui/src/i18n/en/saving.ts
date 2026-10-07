@@ -16,4 +16,7 @@ export const saving = {
   "saving.saved.updated": "Password updated",
   "saving.saved.site-added": "Site added",
   "saving.error": "Ravenpass could not save this password. Try again.",
+  "saving.card.name": "Card {lastFour}",
+  "saving.card.saved.updated": "Card updated",
+  "saving.card.error": "Ravenpass could not save this card. Try again.",
 };

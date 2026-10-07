@@ -18,6 +18,9 @@ export const sharing = {
   "sharing.prompt.fill.description":
     "Enter your PIN to let the browser extension fill {account} on {site}.",
   "sharing.prompt.fill.confirm": "Fill",
+  "sharing.prompt.fill-card.title": "Fill “{file}” on {site}?",
+  "sharing.prompt.fill-card.description":
+    "Enter your PIN to let the browser extension fill this card on {site}.",
   "sharing.prompt.passkey.error":
     "Ravenpass could not confirm this request. Try again.",
 };

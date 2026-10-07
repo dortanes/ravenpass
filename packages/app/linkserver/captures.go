@@ -8,12 +8,23 @@ import (
 	"github.com/dortanes/ravenpass/packages/app/linkstore"
 )
 
-// Capture is a password submitted on a page at Origin; Current is the old password a change form asked for.
+// Capture is a password submitted on a page at Origin, or with Card a card; Current is the old password a change form
+// asked for.
 type Capture struct {
 	Origin   string
 	Account  string
 	Password string
 	Current  string
+	Card     *CardCapture
+}
+
+// CardCapture is a card typed on a page; Expiry is YYYY-MM and Network a credit-card-type name.
+type CardCapture struct {
+	Holder       string
+	Number       string
+	Expiry       string
+	SecurityCode string
+	Network      string
 }
 
 // SaveChoice is where a person saves a capture; an empty Target means a new credential.
@@ -37,7 +48,22 @@ func (s *Server) offerCapture(extension linkstore.Extension, request linkproto.R
 	if !linkproto.ValidOrigin(request.Origin) {
 		return linkproto.Response{ID: request.ID, Error: linkproto.ErrorInvalidOrigin}, false, nil
 	}
-	capture := Capture{Origin: request.Origin, Account: request.Account, Password: request.Password, Current: request.Current}
+	return s.holdCapture(extension, request, Capture{Origin: request.Origin, Account: request.Account, Password: request.Password, Current: request.Current})
+}
+
+// offerCardCapture answers a card capture request from a secure page as offerCapture does.
+func (s *Server) offerCardCapture(extension linkstore.Extension, request linkproto.Request) (linkproto.Response, bool, error) {
+	if !linkproto.ValidOrigin(request.Origin) || !linkproto.SecureOrigin(request.Origin) {
+		return linkproto.Response{ID: request.ID, Error: linkproto.ErrorInvalidOrigin}, false, nil
+	}
+	card := request.Card
+	return s.holdCapture(extension, request, Capture{Origin: request.Origin, Card: &CardCapture{
+		Holder: card.Holder, Number: card.Number, Expiry: card.Expiry, SecurityCode: card.SecurityCode, Network: card.Network,
+	}})
+}
+
+// holdCapture answers request with where capture can be saved, holding it unless there is nothing to offer.
+func (s *Server) holdCapture(extension linkstore.Extension, request linkproto.Request, capture Capture) (linkproto.Response, bool, error) {
 	offer, err := s.vault.CaptureOffer(capture)
 	if err != nil {
 		return refusal(request, err)

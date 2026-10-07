@@ -20,6 +20,9 @@ export const sharing: typeof english = {
   "sharing.prompt.fill.description":
     "Введите пин-код, чтобы расширение браузера вставило данные входа «{account}» на {site}.",
   "sharing.prompt.fill.confirm": "Вставить",
+  "sharing.prompt.fill-card.title": "Вставить «{file}» на {site}?",
+  "sharing.prompt.fill-card.description":
+    "Введите пин-код, чтобы расширение браузера вставило эту карту на {site}.",
   "sharing.prompt.passkey.error":
     "Не удалось подтвердить запрос. Повторите попытку.",
 };

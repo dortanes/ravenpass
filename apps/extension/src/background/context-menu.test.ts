@@ -33,7 +33,7 @@ function contextMenu(language = "en") {
   return { menu, created, updated, sent };
 }
 
-test("the passwords and codes items show on editable fields only, beside the upload item", async () => {
+test("the passwords, codes and cards items show on editable fields only, beside the upload item", async () => {
   const { menu, created } = contextMenu();
   await menu.create();
 
@@ -43,18 +43,21 @@ test("the passwords and codes items show on editable fields only, beside the upl
     [
       ["show-passwords", "Show passwords"],
       ["show-codes", "Show one-time codes"],
+      ["show-cards", "Show cards"],
       ["upload-identity-file", "Upload identity file…"],
     ],
   );
   assert.deepEqual(items[0]?.contexts, ["editable"]);
   assert.deepEqual(items[1]?.contexts, ["editable"]);
-  assert.ok(items[2]?.contexts?.includes("page"));
+  assert.deepEqual(items[2]?.contexts, ["editable"]);
+  assert.ok(items[3]?.contexts?.includes("page"));
 });
 
 test("a chosen item asks the clicked frame to open its menu", async () => {
   const { menu, sent } = contextMenu();
   await menu.clicked({ menuItemId: "show-passwords", frameId: 3 }, { id: 7 });
   await menu.clicked({ menuItemId: "show-codes" }, { id: 7 });
+  await menu.clicked({ menuItemId: "show-cards", frameId: 2 }, { id: 7 });
   await menu.clicked(
     { menuItemId: "upload-identity-file", frameId: 1 },
     { id: 7 },
@@ -63,6 +66,7 @@ test("a chosen item asks the clicked frame to open its menu", async () => {
   assert.deepEqual(sent, [
     [7, 3, { kind: "field-menu-open", field: "login" }],
     [7, 0, { kind: "field-menu-open", field: "code" }],
+    [7, 2, { kind: "field-menu-open", field: "card" }],
     [7, 1, { kind: "file-menu-open" }],
   ]);
 });
@@ -80,6 +84,7 @@ test("the items follow the language", async () => {
   assert.deepEqual(updated, [
     ["show-passwords", "Показать пароли"],
     ["show-codes", "Показать одноразовые коды"],
+    ["show-cards", "Показать карты"],
     ["upload-identity-file", "Загрузить файл из профиля…"],
   ]);
 });

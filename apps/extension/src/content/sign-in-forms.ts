@@ -22,6 +22,7 @@ import {
   formIntent,
 } from "./form-intent.ts";
 import { changesAround } from "./page-changes.ts";
+import { cardFieldOf } from "./payment-fields.ts";
 import { sendingControlText, submitForm } from "./submit.ts";
 
 /** How often at most a page that keeps changing is searched for a sign-in form again. */
@@ -165,10 +166,12 @@ export function showsSignInForm(document: Document): boolean {
   return field !== null && field.kind !== "code";
 }
 
-/** An input's field, or null when its form creates an account. */
+/** An input's field, or null when its form creates an account or the input is a card's field. */
 export function signInFieldOf(input: HTMLInputElement): Field | null {
   const field = fieldOf(input);
-  return field && intentOf(boxOf(input)) === "sign-in" ? field : null;
+  return field && intentOf(boxOf(input)) === "sign-in" && !cardFieldOf(input)
+    ? field
+    : null;
 }
 
 function signInField(document: Document): Field | null {
@@ -187,7 +190,8 @@ function signInField(document: Document): Field | null {
     return intent === "sign-in";
   };
   const fields = Array.from(inputs, fieldOf).filter(
-    (field): field is Field => field !== null && signsIn(field),
+    (field): field is Field =>
+      field !== null && signsIn(field) && !cardFieldOf(field.inputs[0]),
   );
   for (const kind of reportedKinds) {
     const field = fields.find((candidate) => candidate.kind === kind);

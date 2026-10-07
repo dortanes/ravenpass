@@ -76,36 +76,6 @@ type IdentityAddresses struct {
 	Addresses  []Address `json:"addresses"`
 }
 
-var cardNetworkNames = map[vault.CardNetwork]string{
-	vault.NetworkVisa:            "visa",
-	vault.NetworkMastercard:      "mastercard",
-	vault.NetworkAmericanExpress: "american-express",
-	vault.NetworkDiscover:        "discover",
-	vault.NetworkDinersClub:      "diners-club",
-	vault.NetworkJCB:             "jcb",
-	vault.NetworkUnionPay:        "unionpay",
-	vault.NetworkMaestro:         "maestro",
-	vault.NetworkMir:             "mir",
-	vault.NetworkElo:             "elo",
-	vault.NetworkHiper:           "hiper",
-	vault.NetworkHipercard:       "hipercard",
-	vault.NetworkTroy:            "troy",
-	vault.NetworkVerve:           "verve",
-	vault.NetworkNaranja:         "naranja",
-}
-
-func cardNetworkNamed(name string) (vault.CardNetwork, bool) {
-	if name == "" {
-		return 0, true
-	}
-	for network, known := range cardNetworkNames {
-		if known == name {
-			return network, true
-		}
-	}
-	return 0, false
-}
-
 // ListCards reports every card from the index.
 func (s *Service) ListCards() ([]CardSummary, error) {
 	entries, usage, err := s.listKind(vault.KindCard)
@@ -119,7 +89,7 @@ func (s *Service) ListCards() ([]CardSummary, error) {
 			Label:      entry.Label,
 			BankName:   entry.Detail,
 			LastFour:   entry.Card.LastFour,
-			Network:    cardNetworkNames[entry.Card.Network],
+			Network:    entry.Card.Network.Name(),
 			Color:      entry.Card.Color,
 			Site:       entry.Site,
 			Pinned:     entry.Pinned,
@@ -298,7 +268,7 @@ func expiryDisplay(expiry string) string {
 }
 
 func (input CardInput) toVault() (vault.CardInput, error) {
-	network, known := cardNetworkNamed(input.Network)
+	network, known := vault.ParseCardNetwork(input.Network)
 	if !known {
 		return vault.CardInput{}, fail(failureInvalidItem)
 	}
@@ -328,7 +298,7 @@ func (input CardInput) toVault() (vault.CardInput, error) {
 func fromVaultCard(card vault.CardInput) CardInput {
 	input := CardInput{
 		Label: card.Label, Holder: card.Holder, Number: card.Number, Expiry: card.Expiry,
-		SecurityCode: card.SecurityCode, PIN: card.PIN, Network: cardNetworkNames[card.Network],
+		SecurityCode: card.SecurityCode, PIN: card.PIN, Network: card.Network.Name(),
 		BankName: card.BankName, BankSite: card.BankSite, Color: card.Color, Notes: card.Notes,
 		Tags: append([]string{}, card.Tags...),
 	}

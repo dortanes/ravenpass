@@ -173,6 +173,19 @@ test("a value the person typed counts as typed", () => {
   assert.equal(values.typed(password, "correct horse"), true);
 });
 
+test("digits the person typed stay typed when the page spaces them", () => {
+  const values = new TypedValues<object>();
+  const number = {};
+
+  values.input(number, "41111", true);
+  assert.equal(values.typedDigits(number, "4111 1"), true);
+  assert.equal(values.typedDigits(number, "4111 2"), false);
+
+  values.input(number, "4111 1111", false);
+  assert.equal(values.typedDigits(number, "4111 1111"), false);
+  assert.equal(values.typedDigits({}, ""), false);
+});
+
 test("a value set with an untrusted event is not typed until the person types again", () => {
   const values = new TypedValues<object>();
   const password = {};

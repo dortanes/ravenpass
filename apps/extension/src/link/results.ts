@@ -1,3 +1,4 @@
+import { isCardNetwork } from "@ravenpass/ui/cards/networks.ts";
 import {
   type SignInStyle,
   signInStyleOf,
@@ -106,10 +107,21 @@ const saveTarget = v.object({
   tags: v.optional(v.array(v.string()), []),
 }) satisfies v.GenericSchema<unknown, SaveTarget>;
 
+const cardNetwork = v.pipe(v.string(), v.guard(isCardNetwork));
+
+const cardFace = v.pipe(
+  v.object({ network: cardNetwork, lastFour: v.string() }),
+  v.readonly(),
+);
+
 const offerEntries = {
+  // An older Ravenpass offers passwords alone and names no kind.
+  kind: v.optional(v.picklist(["password", "card"]), "password"),
   site: v.string(),
   account: v.string(),
   name: v.string(),
+  // The typed card of a card's offer.
+  card: v.optional(v.nullable(cardFace), null),
   targets: v.pipe(v.array(saveTarget), v.readonly()),
   suggested: v.string(),
 };
@@ -136,6 +148,50 @@ export const captureOffer = v.union([
   ),
   pendingCapture,
 ]);
+
+export const cardOption = v.pipe(
+  v.object({
+    id: v.string(),
+    label: v.string(),
+    bankName: v.string(),
+    // The bank's host, empty for none.
+    site: v.string(),
+    network: cardNetwork,
+    lastFour: v.string(),
+    color: v.string(),
+    // The last day of the expiry month, YYYY-MM-DD, empty for none.
+    expiresOn: v.string(),
+  }),
+  v.readonly(),
+);
+
+export const cardOptions = v.pipe(
+  v.object({ cards: v.array(cardOption) }),
+  v.transform(({ cards }) => cards),
+);
+
+const billingAddress = v.pipe(
+  v.object({
+    street: v.string(),
+    city: v.string(),
+    region: v.string(),
+    postalCode: v.string(),
+    country: v.string(),
+  }),
+  v.readonly(),
+);
+
+export const cardValues = v.pipe(
+  v.object({
+    holder: v.string(),
+    number: v.string(),
+    // YYYY-MM, empty for none.
+    expiry: v.string(),
+    securityCode: v.string(),
+    billing: v.nullable(billingAddress),
+  }),
+  v.readonly(),
+);
 
 export const savedAs = v.pipe(
   v.object({ saved: v.picklist(["created", "updated"]) }),

@@ -1,3 +1,4 @@
+import { digitsOf } from "@ravenpass/ui/cards/networks.ts";
 import type { CapturedPassword } from "../link/client.ts";
 import { classify, type FieldDescription, pairedLogin } from "./fields.ts";
 
@@ -75,5 +76,12 @@ export class TypedValues<Field extends object> {
 
   typed(field: Field, value: string): boolean {
     return this.values.get(field) === value;
+  }
+
+  /** Whether the person typed the digits `value` holds; a page's formatting may add separators after the keystroke. */
+  typedDigits(field: Field, value: string): boolean {
+    const typed = this.values.get(field);
+    const digits = digitsOf(value);
+    return typed !== undefined && digits !== "" && digitsOf(typed) === digits;
   }
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/dortanes/ravenpass/packages/vault"
 )
@@ -109,6 +110,82 @@ func TestCardWritesRefuseAnotherKind(t *testing.T) {
 	}
 }
 
+func TestFillableCardsListUnexpiredCardsFirstByUse(t *testing.T) {
+	service := newTestService(t, &memoryFiles{}, newMemoryKeys())
+	createTestVault(t, service)
+	service.now = func() time.Time { return time.Date(2027, time.March, 1, 12, 0, 0, 0, time.Local) }
+	card := func(label, expiry string) vault.ID {
+		input := testCard()
+		input.Label, input.Expiry = label, expiry
+		id, err := service.CreateCard(input, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return id
+	}
+	lapsed := card("Lapsed", "2027-02")
+	current := card("Current", "2027-03")
+	undated := card("Undated", "")
+	used := card("Used", "2030-01")
+	if _, err := service.CreateCredential(vault.CredentialInput{Label: "Mail", Password: "secret"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.MarkUsed(used); err != nil {
+		t.Fatal(err)
+	}
+	cards, err := service.FillableCards()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var order []vault.ID
+	for _, entry := range cards {
+		order = append(order, entry.ID)
+	}
+	if want := []vault.ID{used, current, undated, lapsed}; !reflect.DeepEqual(order, want) {
+		t.Fatalf("fillable cards = %v, want %v", order, want)
+	}
+}
+
+func TestFillCardResolvesTheBillingAddressAndRecordsTheUse(t *testing.T) {
+	service := newTestService(t, &memoryFiles{}, newMemoryKeys())
+	createTestVault(t, service)
+	owner, err := service.CreateIdentity(vault.IdentityInput{Label: "Alex", Addresses: []vault.Address{{City: "Aarhus"}}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addresses, err := service.IdentityAddresses()
+	if err != nil {
+		t.Fatal(err)
+	}
+	linked := testCard()
+	linked.Billing, linked.BillingLink = nil, &vault.AddressLink{Identity: owner, Address: addresses[0].Addresses[0].ID}
+	id, err := service.CreateCard(linked, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card, err := service.FillCard(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if billing := card.BillingAddress(); card.Number != linked.Number || card.SecurityCode != linked.SecurityCode || billing == nil || billing.City != "Aarhus" {
+		t.Fatalf("filled card = %+v, billing = %+v", card.CardInput, billing)
+	}
+	usage, err := service.Usage()
+	if err != nil || usage[id] <= 0 {
+		t.Fatalf("usage after a fill = %v, error = %v", usage, err)
+	}
+	own, err := service.CreateCard(testCard(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if card, err := service.FillCard(own); err != nil || card.BillingAddress().Street != "Vestergade 8-16" {
+		t.Fatalf("own billing address = %+v, error = %v", card.BillingAddress(), err)
+	}
+	if _, err := service.FillCard(owner); !errors.Is(err, vault.ErrNotFound) {
+		t.Fatalf("filling an identity as a card: %v", err)
+	}
+}
+
 func TestCardMethodsNeedAnOpenVault(t *testing.T) {
 	service := newTestService(t, &memoryFiles{}, newMemoryKeys())
 	cases := []struct {
@@ -119,6 +196,13 @@ func TestCardMethodsNeedAnOpenVault(t *testing.T) {
 		{name: "CreateCard", call: func() error { _, err := service.CreateCard(testCard(), nil); return err }},
 		{name: "EditCard", call: func() error { return service.EditCard(vault.ID{1}, testCard(), nil) }},
 		{name: "IdentityAddresses", call: func() error { _, err := service.IdentityAddresses(); return err }},
+		{name: "FillableCards", call: func() error { _, err := service.FillableCards(); return err }},
+		{name: "FillCard", call: func() error { _, err := service.FillCard(vault.ID{1}); return err }},
+		{name: "CardCaptureOffer", call: func() error { _, err := service.CardCaptureOffer(typedCard()); return err }},
+		{name: "SaveCardCapture", call: func() error {
+			_, err := service.SaveCardCapture(typedCard(), CaptureChoice{Name: "Card"}, "")
+			return err
+		}},
 	}
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {

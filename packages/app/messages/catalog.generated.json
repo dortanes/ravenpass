@@ -87,6 +87,10 @@
     "en": "fill the sign-in for {account} on {site}",
     "ru": "вставить данные входа «{account}» на сайте {site}"
   },
+  "system.reason.fill-card": {
+    "en": "fill the card “{card}” on {site}",
+    "ru": "вставить карту «{card}» на сайте {site}"
+  },
   "system.reason.change-unlock": {
     "en": "change how your vault unlocks",
     "ru": "изменить способ разблокировки хранилища"
@@ -142,6 +146,14 @@
   "system.prompt.fill-sign-in": {
     "en": "Confirm it's you to fill the sign-in for {account} on {site}.",
     "ru": "Подтвердите, что это вы, чтобы вставить данные входа «{account}» на сайте {site}."
+  },
+  "system.prompt.fill-card.title": {
+    "en": "Fill a card",
+    "ru": "Вставка карты"
+  },
+  "system.prompt.fill-card": {
+    "en": "Confirm it's you to fill the card “{card}” on {site}.",
+    "ru": "Подтвердите, что это вы, чтобы вставить карту «{card}» на сайте {site}."
   },
   "system.prompt.change-unlock.title": {
     "en": "Change unlock settings",

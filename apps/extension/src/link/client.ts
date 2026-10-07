@@ -20,6 +20,9 @@ import type { KeySource } from "./keys.ts";
 import { HandshakeState, type Transport } from "./noise.ts";
 import {
   captureOffer,
+  type cardOption,
+  cardOptions,
+  cardValues,
   type codeSuggestion,
   codeSuggestions,
   desktopStatus,
@@ -97,6 +100,10 @@ export type CodeSuggestion = v.InferOutput<typeof codeSuggestion>;
 
 export type FillValues = v.InferOutput<typeof fillValues>;
 
+export type CardOption = v.InferOutput<typeof cardOption>;
+
+export type CardValues = v.InferOutput<typeof cardValues>;
+
 export type IdentityFile = v.InferOutput<typeof identityFile>;
 
 export type IdentityFiles = v.InferOutput<typeof identity>;
@@ -122,6 +129,15 @@ export interface CapturedPassword {
   readonly password: string;
   // Set when the form asked for the current password beside a new one.
   readonly current?: string;
+}
+
+/** A card typed on a page; `expiry` is YYYY-MM and `network` a credit-card-type name, each empty for none. */
+export interface CapturedCard {
+  readonly holder: string;
+  readonly number: string;
+  readonly expiry: string;
+  readonly securityCode: string;
+  readonly network: string;
 }
 
 export type { SaveChoice, SaveTarget };
@@ -204,6 +220,13 @@ type SessionRequest =
       readonly account: string;
       readonly password: string;
       readonly current: string | undefined;
+    }
+  | ({ readonly type: "card-capture"; readonly origin: string } & CapturedCard)
+  | { readonly type: "cards"; readonly origin: string }
+  | {
+      readonly type: "card-fill";
+      readonly card: string;
+      readonly origin: string;
     }
   | { readonly type: "review" | "discard"; readonly pending: string }
   | ({ readonly type: "save"; readonly pending: string } & SaveChoice)
@@ -425,6 +448,32 @@ export class LinkClient {
       captureOffer,
       await this.ask({ type: "capture", origin, account, password, current }),
     );
+  }
+
+  /** Ravenpass refuses a page that is not `https`, or `http` on `localhost`. */
+  async captureCard(origin: string, card: CapturedCard): Promise<CaptureOffer> {
+    return resultOf(
+      captureOffer,
+      await this.ask({ type: "card-capture", origin, ...card }),
+    );
+  }
+
+  /** Ravenpass refuses a page that is not `https`, or `http` on `localhost`. */
+  async cards(origin: string): Promise<CardOption[]> {
+    return resultOf(cardOptions, await this.ask({ type: "cards", origin }));
+  }
+
+  /** `onProgress` hears what Ravenpass asks of the person, which it does on every card fill. */
+  async fillCard(
+    id: string,
+    origin: string,
+    onProgress: ProgressListener,
+  ): Promise<CardValues> {
+    const { result } = await this.served(
+      { type: "card-fill", card: id, origin },
+      onProgress,
+    );
+    return resultOf(cardValues, result);
   }
 
   async review(pending: string): Promise<CaptureOffer> {

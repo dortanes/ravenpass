@@ -282,7 +282,9 @@ export type FormBox = HTMLFormElement | Document | ShadowRoot;
 
 export function boxOf(element: Element): FormBox {
   const form =
-    element instanceof HTMLInputElement || element instanceof HTMLButtonElement
+    element instanceof HTMLInputElement ||
+    element instanceof HTMLSelectElement ||
+    element instanceof HTMLButtonElement
       ? element.form
       : element.closest("form");
   return form ?? scopeOf(element);
@@ -314,7 +316,7 @@ export function isVisible(
   );
 }
 
-function labelOf(input: HTMLInputElement): string {
+export function labelOf(input: HTMLInputElement | HTMLSelectElement): string {
   const parts = [input.getAttribute("aria-label") ?? ""];
   for (const label of input.labels ?? []) parts.push(label.textContent ?? "");
   const scope = scopeOf(input);

@@ -1,14 +1,21 @@
+import { cardLine } from "@ravenpass/ui/cards/card.ts";
+import { networkName } from "@ravenpass/ui/cards/networks.ts";
 import { DestinationAvatar } from "@ravenpass/ui/components/saving/DestinationAvatar.tsx";
 import { OfferField } from "@ravenpass/ui/components/saving/OfferField.tsx";
 import { Button } from "@ravenpass/ui/components/ui/button.tsx";
+import { CardTile } from "@ravenpass/ui/components/workspace/CardFace.tsx";
 import {
   ItemRowContent,
   itemRowClass,
 } from "@ravenpass/ui/components/workspace/ItemRowContent.tsx";
-import { useTranslator } from "@ravenpass/ui/i18n/translator.tsx";
+import {
+  type Translator,
+  useTranslator,
+} from "@ravenpass/ui/i18n/translator.tsx";
 import {
   destinationsOf,
   destinationTitle,
+  type SaveTarget,
   saveActionOf,
   savedTitles,
   targetOf,
@@ -42,7 +49,9 @@ export function SavePrompt({
   offer: SaveOffer;
 }) {
   const { t } = useTranslator();
-  const [prompt] = useState(() => new OfferPrompt(offer, requestsOf(token)));
+  const [prompt] = useState(
+    () => new OfferPrompt(named(offer, t), requestsOf(token)),
+  );
   const view = useSyncExternalStore(prompt.subscribe, prompt.view);
 
   useEffect(() => {
@@ -76,6 +85,16 @@ export function SavePrompt({
   );
 }
 
+/** A card's offer names a new card by its network, or as a card, with its last four digits. */
+function named(offer: SaveOffer, t: Translator["t"]): SaveOffer {
+  if (!offer.card || offer.name) return offer;
+  const { network, lastFour } = offer.card;
+  const name = networkName(network)
+    ? `${networkName(network)} ${lastFour}`
+    : t("saving.card.name", { lastFour });
+  return { ...offer, name };
+}
+
 function requestsOf(token: string): OfferRequests {
   return {
     review: () => ask({ kind: "offer-review", token }),
@@ -97,7 +116,11 @@ function OfferBody({ prompt, view }: { prompt: OfferPrompt; view: ShownView }) {
         <div role="status">
           <StateRow
             icon={CircleCheck}
-            title={t(savedTitles[view.result])}
+            title={t(
+              view.offer.kind === "card" && view.result === "updated"
+                ? "saving.card.saved.updated"
+                : savedTitles[view.result],
+            )}
             detail={
               targetOf(view.offer, view.choice.target)?.label ||
               view.choice.name ||
@@ -112,7 +135,11 @@ function OfferBody({ prompt, view }: { prompt: OfferPrompt; view: ShownView }) {
       return view.offer.state === "locked" ? (
         <>
           <LockedRow
-            detail={t("extension.offer.locked.detail")}
+            detail={t(
+              view.offer.kind === "card"
+                ? "extension.offer.card.locked.detail"
+                : "extension.offer.locked.detail",
+            )}
             onUnlock={() => void prompt.unlock()}
           />
           {view.unlockFailed && (
@@ -135,6 +162,17 @@ function SaveForm({ prompt, view }: { prompt: OfferPrompt; view: AskingView }) {
     void prompt.save();
   }
 
+  const card = offer.card;
+  const avatarOf = (option: SaveTarget | null) =>
+    card ? (
+      <CardTile network={card.network} color="" size="row" />
+    ) : (
+      <DestinationAvatar offer={offer} target={option} />
+    );
+  const detailOf = (option: SaveTarget | null) => {
+    if (card) return cardLine("", card.network, card.lastFour);
+    return option ? option.account || t("credential.login.empty") : offer.site;
+  };
   const options = destinationsOf(offer).map((destination) => {
     const option = targetOf(offer, destination);
     return {
@@ -142,10 +180,8 @@ function SaveForm({ prompt, view }: { prompt: OfferPrompt; view: AskingView }) {
       key: destination || "new",
       title: destinationTitle(offer, destination, t),
       tags: option?.tags,
-      detail: option
-        ? option.account || t("credential.login.empty")
-        : offer.site,
-      avatar: <DestinationAvatar offer={offer} target={option} />,
+      detail: detailOf(option),
+      avatar: avatarOf(option),
     };
   });
 
@@ -162,10 +198,13 @@ function SaveForm({ prompt, view }: { prompt: OfferPrompt; view: AskingView }) {
           <div className={itemRowClass(false, "menu")}>
             <ItemRowContent
               active={false}
-              avatar={<DestinationAvatar offer={offer} target={target} />}
-              title={target.label || t("credential.untitled")}
+              avatar={avatarOf(target)}
+              title={
+                target.label ||
+                t(card ? "card.untitled" : "credential.untitled")
+              }
               tags={target.tags}
-              detail={{ text: target.account || t("credential.login.empty") }}
+              detail={{ text: detailOf(target) }}
               look="menu"
             />
           </div>
@@ -179,20 +218,26 @@ function SaveForm({ prompt, view }: { prompt: OfferPrompt; view: AskingView }) {
               dense
               onChange={(name) => prompt.edit({ name })}
             />
-            <OfferField
-              label={t("saving.account")}
-              value={choice.account}
-              error={
-                view.refused === "account" ? t("saving.account.refused") : ""
-              }
-              disabled={saving}
-              dense
-              onChange={(account) => prompt.edit({ account })}
-            />
+            {!card && (
+              <OfferField
+                label={t("saving.account")}
+                value={choice.account}
+                error={
+                  view.refused === "account" ? t("saving.account.refused") : ""
+                }
+                disabled={saving}
+                dense
+                onChange={(account) => prompt.edit({ account })}
+              />
+            )}
           </div>
         )}
       </DestinationPicker>
-      {view.failed && <FailureNote>{t("saving.error")}</FailureNote>}
+      {view.failed && (
+        <FailureNote>
+          {t(card ? "saving.card.error" : "saving.error")}
+        </FailureNote>
+      )}
       <div className="mt-1 flex gap-1.5">
         <Button
           type="button"

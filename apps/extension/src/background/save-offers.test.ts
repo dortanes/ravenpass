@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  type CapturedCard,
   type CapturedPassword,
   type CaptureOffer,
   type PendingCapture,
@@ -27,11 +28,13 @@ const currentPassword = "old horse";
 const lifetimeMs = 3 * 60_000;
 
 const ready: PendingCapture = {
+  kind: "password",
   state: "ready",
   pending: "p1",
   site: "github.com",
   account: "alex",
   name: "github.com",
+  card: null,
   targets: [
     {
       credential: "a1",
@@ -71,6 +74,13 @@ class ScriptedRavenpass implements OfferClient {
         ? { account, password }
         : { account, password, current },
     ]);
+    return this.answer();
+  }
+
+  readonly cardCaptures: [string, CapturedCard][] = [];
+
+  async captureCard(origin: string, card: CapturedCard): Promise<CaptureOffer> {
+    this.cardCaptures.push([origin, card]);
     return this.answer();
   }
 
@@ -359,6 +369,35 @@ test("a later document showing a sign-in form for the site keeps the offer waiti
   await router.serve(capture, pageSender({ documentId: "next-document" }));
   assert.deepEqual(ravenpass.discards, ["p1"]);
   assert.deepEqual(shown, []);
+});
+
+test("a typed card goes to Ravenpass for its frame's origin, and any later document readies its offer", async () => {
+  const { ravenpass, router, offerOpen } = saveOffers();
+  const card = {
+    holder: "Alex Example",
+    number: "4111111111111111",
+    expiry: "2029-08",
+    securityCode: "739",
+    network: "visa",
+  };
+  ravenpass.answers = [
+    {
+      ...ready,
+      kind: "card",
+      account: "",
+      name: "",
+      card: { network: "visa", lastFour: "1111" },
+      targets: [],
+      suggested: "",
+    },
+  ];
+
+  assert.deepEqual(
+    await router.serve({ kind: "card-capture", ...card }, pageSender()),
+    { ok: true },
+  );
+  assert.deepEqual(ravenpass.cardCaptures, [["https://github.com", card]]);
+  assert.equal(await offerOpen("next-document", true), "token-1");
 });
 
 test("a sign-in form on another site readies the offer", async () => {

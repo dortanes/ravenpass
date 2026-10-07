@@ -269,6 +269,8 @@ func (s *Server) serve(c *connection, transport *linkproto.Transport, extension 
 		return false, s.share(c, transport, request)
 	case linkproto.RequestFill:
 		return false, s.fill(c, transport, extension, request)
+	case linkproto.RequestCardFill:
+		return false, s.fillCard(c, transport, request)
 	case linkproto.RequestCode:
 		return false, s.code(c, transport, request)
 	case linkproto.RequestPasskeyCreate:
@@ -351,6 +353,16 @@ func (s *Server) fill(c *connection, transport *linkproto.Transport, extension l
 	}
 	return answerVerified(s, c, transport, request, func(ctx context.Context, asked func(linkproto.Progress)) (linkproto.Fill, error) {
 		return s.vault.Fill(ctx, extension.ID, request.Credential, request.Origin, asked)
+	})
+}
+
+// fillCard answers a card fill request from a secure page once the vault releases the card.
+func (s *Server) fillCard(c *connection, transport *linkproto.Transport, request linkproto.Request) error {
+	if !linkproto.ValidOrigin(request.Origin) || !linkproto.SecureOrigin(request.Origin) {
+		return c.reply(transport, linkproto.Response{ID: request.ID, Error: linkproto.ErrorInvalidOrigin})
+	}
+	return answerVerified(s, c, transport, request, func(ctx context.Context, asked func(linkproto.Progress)) (linkproto.CardFill, error) {
+		return s.vault.FillCard(ctx, request.Card.Card, request.Origin, asked)
 	})
 }
 
@@ -464,8 +476,20 @@ func (s *Server) answer(c *connection, extension linkstore.Extension, request li
 		}
 		// No identity is sent as [], never null.
 		return linkproto.Response{ID: request.ID, Result: linkproto.Identities{Identities: append([]linkproto.Identity{}, identities...)}}, false, nil
+	case linkproto.RequestCards:
+		if !linkproto.ValidOrigin(request.Origin) || !linkproto.SecureOrigin(request.Origin) {
+			return linkproto.Response{ID: request.ID, Error: linkproto.ErrorInvalidOrigin}, false, nil
+		}
+		cards, err := s.vault.Cards()
+		if err != nil {
+			return refusal(request, err)
+		}
+		// No card is sent as [], never null.
+		return linkproto.Response{ID: request.ID, Result: linkproto.Cards{Cards: append([]linkproto.CardOption{}, cards...)}}, false, nil
 	case linkproto.RequestCapture:
 		return s.offerCapture(extension, request)
+	case linkproto.RequestCardCapture:
+		return s.offerCardCapture(extension, request)
 	case linkproto.RequestReview:
 		return s.reviewCapture(extension, request)
 	case linkproto.RequestSave:

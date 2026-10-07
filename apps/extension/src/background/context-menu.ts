@@ -39,6 +39,12 @@ const items: readonly Item[] = [
     message: { kind: "field-menu-open", field: "code" },
   },
   {
+    id: "show-cards",
+    title: "extension.context.cards",
+    contexts: ["editable"],
+    message: { kind: "field-menu-open", field: "card" },
+  },
+  {
     id: "upload-identity-file",
     title: "extension.upload.menu",
     contexts: pageContexts,

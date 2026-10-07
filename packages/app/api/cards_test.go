@@ -94,10 +94,8 @@ func mustReadCard(t *testing.T, service *Service, id string) Card {
 
 func TestCardNetworksCrossTheBridgeByName(t *testing.T) {
 	service := newReadyService(t)
-	for network, name := range cardNetworkNames {
-		if parsed, known := cardNetworkNamed(name); !known || parsed != network {
-			t.Fatalf("%q reads as %d", name, parsed)
-		}
+	for network := vault.NetworkVisa; network <= vault.NetworkNaranja; network++ {
+		name := network.Name()
 		input := testCardInput()
 		input.Network = name
 		id, err := service.CreateCard(input, nil)
@@ -107,9 +105,6 @@ func TestCardNetworksCrossTheBridgeByName(t *testing.T) {
 		if card := mustReadCard(t, service, id); card.Network != name {
 			t.Fatalf("network %q read as %q", name, card.Network)
 		}
-	}
-	if len(cardNetworkNames) != int(vault.NetworkNaranja) {
-		t.Fatalf("%d network names", len(cardNetworkNames))
 	}
 	for _, name := range []string{"Visa", "amex", "none", " visa"} {
 		input := testCardInput()

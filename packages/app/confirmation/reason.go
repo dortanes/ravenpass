@@ -22,6 +22,8 @@ const (
 	ReasonFill
 	// ReasonReveal shows or copies a hidden note or a seed's secret in the app.
 	ReasonReveal
+	// ReasonFillCard releases a card to a site through a linked extension.
+	ReasonFillCard
 )
 
 // Reason names what one verification allows; fields its Kind does not use are empty.
@@ -51,6 +53,11 @@ func SigningIn(site, account string) Reason {
 // Filling is the reason for filling the sign-in of account, a credential's account or else its label, on site.
 func Filling(site, account string) Reason {
 	return Reason{Kind: ReasonFill, Site: site, Account: account}
+}
+
+// FillingCard is the reason for filling the card labelled card on site.
+func FillingCard(site, card string) Reason {
+	return Reason{Kind: ReasonFillCard, File: card, Site: site}
 }
 
 // Revealing is the reason for showing the secret of the item labelled item.
@@ -84,6 +91,7 @@ type Wording interface {
 	SavePasskeyReason(site string) string
 	SignInReason(site, account string) string
 	FillReason(site, account string) string
+	FillCardReason(site, card string) string
 	ChangeUnlockReason() string
 	CreateVaultReason() string
 	OpenVaultReason() string
@@ -100,6 +108,8 @@ func (r Reason) Words(wording Wording) string {
 		return wording.SignInReason(r.Site, r.Account)
 	case ReasonFill:
 		return wording.FillReason(r.Site, r.Account)
+	case ReasonFillCard:
+		return wording.FillCardReason(r.Site, r.File)
 	case ReasonChangeUnlock:
 		return wording.ChangeUnlockReason()
 	case ReasonCreateVault:
