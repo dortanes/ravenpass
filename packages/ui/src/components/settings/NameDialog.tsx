@@ -63,8 +63,10 @@ export function NameDialog({
         if (!next) close();
       }}
     >
-      <ResponsiveDialogContent className="sm:max-w-[360px]">
-        <form onSubmit={submit} className="grid gap-3">
+      <ResponsiveDialogContent
+        className={onDelete ? "sm:max-w-[440px]" : "sm:max-w-[360px]"}
+      >
+        <form onSubmit={submit} className="grid min-w-0 gap-3">
           <ResponsiveDialogHeader>
             <ResponsiveDialogTitle>{title}</ResponsiveDialogTitle>
           </ResponsiveDialogHeader>
@@ -80,13 +82,13 @@ export function NameDialog({
             disabled={busy}
             onChange={(event) => setName(event.target.value)}
           />
-          <ResponsiveDialogFooter>
+          <ResponsiveDialogFooter className="sm:flex-wrap">
             {onDelete && (
               <Button
                 type="button"
                 variant="quiet"
                 size="pill"
-                className="text-destructive"
+                className="text-destructive sm:mr-auto"
                 disabled={busy}
                 onClick={onDelete.run}
               >
