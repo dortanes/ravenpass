@@ -8,7 +8,8 @@ export const general: typeof english = {
   "app.opening.title": "Открываем Ravenpass",
   "app.opening.detail": "Проверяем хранилище…",
   "app.error.title": "Не удалось открыть Ravenpass",
-  "app.error.detail": "Не удалось открыть хранилище. Перезапустите Ravenpass.",
+  "app.error.detail": "Не удалось открыть хранилище. Повторите попытку.",
+  "app.error.retry": "Повторить",
   "app.error.capabilities":
     "Не удалось проверить возможности устройства, поэтому часть функций скрыта. Перезапустите Ravenpass, чтобы повторить попытку.",
   "app.error.setting-read":

@@ -188,7 +188,8 @@ func New(files Storage, keys KeyStore, device Device) (*Service, error) {
 	return &Service{files: files, keys: keys, owner: device.Owner, pins: pins, platforms: platforms, pinThrottle: unlock.NewThrottle(time.Now), now: time.Now}, nil
 }
 
-// State reports the current phase and whether the bound location holds a vault.
+// State reports the current phase and whether the bound location holds a vault; a vault file that cannot be read fails
+// with storage.ErrUnavailable, never as a missing one.
 func (s *Service) State() (State, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -213,7 +214,7 @@ func (s *Service) State() (State, error) {
 		return State{Phase: PhaseLocked, VaultMissing: s.lostVault()}, nil
 	}
 	if err != nil {
-		return State{}, err
+		return State{}, fmt.Errorf("%w: %w", storage.ErrUnavailable, err)
 	}
 	return State{Phase: PhaseLocked, VaultExists: true}, nil
 }

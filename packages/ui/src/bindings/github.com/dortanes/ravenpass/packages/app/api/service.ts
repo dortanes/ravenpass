@@ -657,7 +657,8 @@ export function GetSiteIcons(): $CancellablePromise<$models.SiteIcons> {
 }
 
 /**
- * GetState reports the vault's phase, abandoning an unfinished creation or recovery.
+ * GetState reports the vault's phase, abandoning an unfinished creation or recovery; a location that cannot be reached,
+ * or whose vault file cannot be read, is the storage phase.
  */
 export function GetState(): $CancellablePromise<$models.State> {
     return $Call.ByID(89553227);

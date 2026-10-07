@@ -324,12 +324,16 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 	return s, nil
 }
 
-// GetState reports the vault's phase, abandoning an unfinished creation or recovery.
+// GetState reports the vault's phase, abandoning an unfinished creation or recovery; a location that cannot be reached,
+// or whose vault file cannot be read, is the storage phase.
 func (s *Service) GetState() (State, error) {
 	if location := s.vault.Storage(); !location.Available {
 		return State{Phase: "storage"}, nil
 	}
 	status, err := s.vault.State()
+	if errors.Is(err, storage.ErrUnavailable) {
+		return State{Phase: "storage"}, nil
+	}
 	if err != nil {
 		return State{}, present(err)
 	}

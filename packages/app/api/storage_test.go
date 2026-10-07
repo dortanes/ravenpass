@@ -65,6 +65,42 @@ func TestStorageStatusReportsTheBoundLocation(t *testing.T) {
 	}
 }
 
+func TestAVaultFileThatCannotBeReadShowsTheStorageScreen(t *testing.T) {
+	home := t.TempDir()
+	vaultPath := filepath.Join(home, localfile.DefaultVaultName)
+	service, files := newServiceWithStorage(t, filepath.Join(home, "storage.json"), vaultPath)
+	if err := files.Open(); err != nil {
+		t.Fatal(err)
+	}
+	phrase, err := service.BeginCreation()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := service.ConfirmCreation(phrase, UnlockChoice{Biometry: true}); err != nil {
+		t.Fatal(err)
+	}
+	if err := service.Lock(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(vaultPath); err != nil {
+		t.Fatal(err)
+	}
+	// A directory in the file's place opens and fails on read, as a document its provider will not deliver does.
+	if err := os.Mkdir(vaultPath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+
+	if state, err := service.GetState(); err != nil || state.Phase != "storage" {
+		t.Fatalf("state with an unreadable file = %+v, error = %v", state, err)
+	}
+	if err := os.Remove(vaultPath); err != nil {
+		t.Fatal(err)
+	}
+	if state, err := service.GetState(); err != nil || state.Phase != "locked" {
+		t.Fatalf("state once the file reads as gone = %+v, error = %v", state, err)
+	}
+}
+
 func TestAVaultFileThatWentKeepsTheLockedScreen(t *testing.T) {
 	home := t.TempDir()
 	vaultPath := filepath.Join(home, localfile.DefaultVaultName)

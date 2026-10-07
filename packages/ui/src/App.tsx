@@ -4,6 +4,7 @@ import { useState } from "react";
 import { LockedView } from "./components/LockedView.tsx";
 import { SetupWizard } from "./components/SetupWizard.tsx";
 import { StorageUnavailableView } from "./components/StorageUnavailableView.tsx";
+import { Button } from "./components/ui/button.tsx";
 import { Toaster } from "./components/ui/sonner.tsx";
 import { VaultScreen } from "./components/VaultScreen.tsx";
 import { VaultView } from "./components/VaultView.tsx";
@@ -114,6 +115,10 @@ export function App({ api }: { api?: VaultApi }) {
           title="app.error.title"
           detail="app.error.detail"
           error={opening.error}
+          retry={{
+            busy: opening.isFetching,
+            run: () => void opening.refetch(),
+          }}
         />
       );
     }
@@ -149,11 +154,13 @@ function CenteredMessage({
   detail,
   error,
   loading = false,
+  retry,
 }: {
   title: MessageKey;
   detail: MessageKey;
   error?: unknown;
   loading?: boolean;
+  retry?: { busy: boolean; run: () => void };
 }) {
   const { t, failure } = useTranslator();
   return (
@@ -178,6 +185,19 @@ function CenteredMessage({
           <span>{failure(error, detail)}</span>
         </span>
       }
-    />
+    >
+      {retry && (
+        <Button
+          type="button"
+          variant="raised"
+          size="pill"
+          className="mt-6"
+          disabled={retry.busy}
+          onClick={retry.run}
+        >
+          {t("app.error.retry")}
+        </Button>
+      )}
+    </VaultScreen>
   );
 }

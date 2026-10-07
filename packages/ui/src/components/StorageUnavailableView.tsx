@@ -87,12 +87,10 @@ export function StorageUnavailableView({
   const detail = describe();
 
   function describe() {
-    if (!status || status.available)
-      return t("storage-unavailable.description");
-    if (status.reason === "selection-unusable") {
+    if (status?.reason === "selection-unusable") {
       return t("storage-unavailable.errors.unreadable");
     }
-    return status.path
+    return status?.path
       ? t("storage-unavailable.description-folder", { place: status.place })
       : t("storage-unavailable.description");
   }
