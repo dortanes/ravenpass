@@ -1,42 +1,26 @@
 package importers
 
 import (
-	"net/url"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/dortanes/ravenpass/packages/vault"
 )
 
-// siteRoot is the scheme and host of a web address, or empty when it names none the vault holds.
-func siteRoot(address string) string {
-	parsed, err := url.Parse(strings.TrimSpace(address))
-	if err != nil || parsed.Scheme == "" || parsed.Host == "" {
-		return ""
-	}
-	root := (&url.URL{Scheme: parsed.Scheme, Host: parsed.Host}).String()
-	if utf8.RuneCountInString(root) > vault.MaxOriginLength {
-		return ""
-	}
-	return root
-}
-
-// Websites returns the addresses as a credential's websites; one overlong or past the limit goes to extras, an overlong one leaving its site root.
+// Websites returns the addresses as a credential's websites, each cut by vault.WebsiteOf to what the vault matches it
+// by and kept once; one still over-long, or past what a credential holds, goes to extras as given.
 func Websites(addresses []string, label string, extras *Extras) []string {
 	var websites []string
 	for _, address := range addresses {
 		address = strings.TrimSpace(address)
-		website := address
-		if utf8.RuneCountInString(address) > vault.MaxOriginLength {
-			extras.Add(label, address)
-			website = siteRoot(address)
-		}
+		website := vault.WebsiteOf(address)
 		switch {
-		case website == "":
-		case len(websites) < vault.MaxCredentialWebsites:
-			websites = append(websites, website)
-		case website == address:
+		case website == "" || slices.Contains(websites, website):
+		case utf8.RuneCountInString(website) > vault.MaxOriginLength || len(websites) >= vault.MaxCredentialWebsites:
 			extras.Add(label, address)
+		default:
+			websites = append(websites, website)
 		}
 	}
 	return websites

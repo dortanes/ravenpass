@@ -12,6 +12,7 @@ function suggestion(id: string, strength: MatchStrength): Listed<Suggestion> {
     account: "alex",
     site: "example.com",
     exact: strength === "strong" || strength === "insecure-page",
+    tags: [],
     strength,
   };
 }

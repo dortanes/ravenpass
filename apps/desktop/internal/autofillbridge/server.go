@@ -340,7 +340,7 @@ func (s *Server) search(requesters []autofill.Requester, query string, codes boo
 	listed := make([]suggestion, len(listing.Results))
 	for i, result := range listing.Results {
 		listed[i] = suggestion{
-			ID: result.ID, Label: result.Label, Account: result.Account, Site: result.Site, Matches: result.Matches,
+			ID: result.ID, Label: result.Label, Account: result.Account, Site: result.Site, Matches: result.Matches, Tags: result.Tags,
 		}
 	}
 	reply := answer{Scope: listing.Scope, Suggestions: listed}

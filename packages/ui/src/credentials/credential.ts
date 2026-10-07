@@ -9,6 +9,7 @@ export const emptyCredential: CredentialInput = {
   notes: "",
   totp: "",
   apps: [],
+  tags: [],
 };
 
 export interface CredentialDraft {

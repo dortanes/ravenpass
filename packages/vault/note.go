@@ -1,6 +1,9 @@
 package vault
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 // Note limits are counted in characters.
 const (
@@ -16,6 +19,7 @@ type NoteInput struct {
 	Label  string
 	Body   string
 	Hidden bool
+	Tags   []string
 }
 
 // Note is a note as read.
@@ -29,6 +33,11 @@ func acceptNote(input NoteInput) (NoteInput, error) {
 	if !fits(input.Label, MaxLabelLength) || strings.TrimSpace(input.Label) == "" || !fits(input.Body, MaxNoteBodyLength) {
 		return NoteInput{}, ErrInvalidInput
 	}
+	tags, err := AcceptTags(input.Tags)
+	if err != nil {
+		return NoteInput{}, err
+	}
+	input.Tags = tags
 	return input, nil
 }
 
@@ -52,7 +61,7 @@ func notePreview(input NoteInput) string {
 
 // noteEntry is what the index shows of an accepted note.
 func noteEntry(input NoteInput, groups []ID) entryMeta {
-	return entryMeta{kind: KindNote, label: input.Label, detail: notePreview(input), note: NoteFace{Hidden: input.Hidden}, groups: groups}
+	return entryMeta{kind: KindNote, label: input.Label, detail: notePreview(input), note: NoteFace{Hidden: input.Hidden}, groups: groups, tags: input.Tags}
 }
 
 // A note record is [10, body, hidden]; the label lives in the index.
@@ -112,6 +121,7 @@ func (s *Session) ReadSelectedNote(ticket Selection) (Note, error) {
 		return Note{}, err
 	}
 	input.Label = entry.label
+	input.Tags = slices.Clone(entry.tags)
 	return Note{ID: entry.id, NoteInput: input}, nil
 }
 

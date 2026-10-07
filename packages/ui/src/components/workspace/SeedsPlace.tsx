@@ -56,7 +56,7 @@ export function SeedsPlace({
   opening: OpeningPane;
   ref?: Ref<PlaceHandle>;
 }) {
-  const { api, groups, busy } = shell;
+  const { api, groups, busy, report } = shell;
   const { data: limits = null } = useQuery({
     queryKey: queryKeys.limits("seeds"),
     queryFn: () => api.seedLimits(),
@@ -86,6 +86,8 @@ export function SeedsPlace({
         <SeedDetail
           seed={seed}
           controls={controls}
+          host={api}
+          onFailure={report}
           onCopy={(field, notice) =>
             copy(() => api.copySeedField(seed.id, field), notice)
           }

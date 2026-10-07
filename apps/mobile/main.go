@@ -19,6 +19,7 @@ var assets embed.FS
 func init() {
 	application.RegisterAndroidMain(main)
 	bridge.ServeAutofill(core.Autofill)
+	bridge.ReceiveCodeSetups(core.ReceiveCodeSetup)
 }
 
 func main() {

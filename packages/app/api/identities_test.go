@@ -13,6 +13,7 @@ import (
 func testIdentityInput() IdentityInput {
 	return IdentityInput{
 		Label:    "Alex",
+		Tags:     []string{},
 		FullName: "Alex Example",
 		Birthday: "1990-04-17",
 		Emails:   []string{"alex@example.com", "alex@work.example"},
@@ -63,8 +64,8 @@ func TestListingSplitsByKind(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []IdentitySummary{
-		{ID: identity, Label: "Alex", Email: "alex@example.com", Groups: []string{family}, ExpiresOn: "2027-06-30"},
-		{ID: bare, Label: "Bare", Groups: []string{}},
+		{ID: identity, Label: "Alex", Email: "alex@example.com", Groups: []string{family}, Tags: []string{}, ExpiresOn: "2027-06-30"},
+		{ID: bare, Label: "Bare", Groups: []string{}, Tags: []string{}},
 	}
 	if !reflect.DeepEqual(identities, want) {
 		t.Fatalf("identities = %+v", identities)

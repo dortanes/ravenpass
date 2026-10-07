@@ -35,6 +35,8 @@ import {
   NotesField,
   RemoveButton,
   roomFor,
+  TagField,
+  type Tagging,
   toggled,
   useRemaining,
   useRows,
@@ -62,6 +64,7 @@ export type EditorHost = PhotoService &
 export function IdentityEditor({
   initial,
   initialGroups,
+  tagging,
   groups,
   limits,
   busy,
@@ -73,6 +76,7 @@ export function IdentityEditor({
   initial?: Identity;
   /** The groups the identity starts in, which for a new one is the chosen default. */
   initialGroups: string[];
+  tagging: Tagging;
   groups: Group[];
   limits: IdentityLimits | null;
   busy: boolean;
@@ -94,6 +98,7 @@ export function IdentityEditor({
   // Tiles for the scans chosen in this session, which the vault does not hold yet.
   const [staged, setStaged] = useState<ScanSummary[]>([]);
   const [membership, setMembership] = useState<string[]>(initialGroups);
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const emails = useRows(initial?.emails ?? []);
   const phones = useRows(initial?.phones ?? []);
   const addresses = useRows<Address>(initial?.addresses ?? []);
@@ -122,6 +127,7 @@ export function IdentityEditor({
     documents: documents.values,
     notes,
     photo,
+    tags,
   };
 
   // Leaving the editor any way drops its staged scans; after a save the host already used them.
@@ -261,6 +267,12 @@ export function IdentityEditor({
                 onValidity={reportDate}
               />
             </EditorRow>
+            <TagField
+              tags={tags}
+              tagging={tagging}
+              busy={busy}
+              onChange={setTags}
+            />
             {groups.length > 0 && (
               <GroupField
                 groups={groups}

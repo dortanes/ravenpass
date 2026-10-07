@@ -67,7 +67,7 @@ func TestCSVReadsEachRowKind(t *testing.T) {
 		{
 			Content: vault.NewItem{Credential: &vault.CredentialInput{
 				Label:    "Mail",
-				Websites: []string{"https://mail.example.test", "https://webmail.example.test"},
+				Websites: []string{"mail.example.test", "webmail.example.test"},
 				Login:    "alexd",
 				Email:    "alex@example.test",
 				Password: "secret",
@@ -78,7 +78,7 @@ func TestCSVReadsEachRowKind(t *testing.T) {
 		},
 		{
 			Content: vault.NewItem{Credential: &vault.CredentialInput{
-				Label: "Example", Websites: []string{"https://example.test"}, Email: "alex@example.test", Password: "pw",
+				Label: "Example", Websites: []string{"example.test"}, Email: "alex@example.test", Password: "pw",
 			}},
 			Origin:  importers.OriginLogin,
 			Folders: []string{"Work/Projects"},
@@ -121,7 +121,7 @@ func TestCSVReadsAnExportMadeBeforeCards(t *testing.T) {
 		{
 			Content: vault.NewItem{Credential: &vault.CredentialInput{
 				Label:    "Forum",
-				Websites: []string{"https://forum.example.test"},
+				Websites: []string{"forum.example.test"},
 				Login:    "alexd",
 				Email:    "alex@example.test",
 				Password: "pw",

@@ -27,6 +27,7 @@ const everything: Capabilities = {
   systemAutofill: true,
   autoBackups: true,
   print: true,
+  qrCodes: true,
 };
 
 const nothing: Capabilities = {
@@ -46,6 +47,7 @@ const nothing: Capabilities = {
   systemAutofill: false,
   autoBackups: false,
   print: false,
+  qrCodes: false,
 };
 
 /** What the Mac and the Android phone offer. */
@@ -60,6 +62,7 @@ const mac: Capabilities = {
   identityList: true,
   copyScans: true,
   print: true,
+  qrCodes: true,
 };
 const android: Capabilities = {
   ...nothing,

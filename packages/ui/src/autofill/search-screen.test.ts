@@ -16,6 +16,7 @@ const mail: AutofillCredential = {
   account: "alex",
   site: "example.com",
   matches: true,
+  tags: [],
 };
 const bank: AutofillCredential = {
   id: "b2",
@@ -23,6 +24,7 @@ const bank: AutofillCredential = {
   account: "alex",
   site: "bank.example",
   matches: false,
+  tags: [],
 };
 
 const opening: SearchOpening = {

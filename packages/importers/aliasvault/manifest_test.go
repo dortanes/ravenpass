@@ -81,7 +81,7 @@ func TestLoginMapsOntoACredential(t *testing.T) {
 	wantItem(t, onlyItem(t, loginItem), importers.Item{
 		Content: vault.NewItem{Credential: &vault.CredentialInput{
 			Label:    "Example",
-			Websites: []string{"https://example.test/login", "https://second.example.test"},
+			Websites: []string{"example.test", "second.example.test"},
 			Login:    "alex",
 			Email:    "alex@example.test",
 			Password: "  secret  ",
@@ -113,11 +113,10 @@ func TestLoginKeepsWhatRavenpassHasNoFieldForInItsNotes(t *testing.T) {
 			{"name": null, "secretKey": "otpauth://totp/Example:alex?secret=GEZDGNBVGY3TQOJQ&issuer=Example"}
 		], "passkeys": []}]}`
 	credential := readContent(t, avuxOf(t, manifest)).Items[0].Content.Credential
-	want := "Website: " + long + "\n" +
-		"One-time code setup (Steam): steam://ABCDEF\n" +
+	want := "One-time code setup (Steam): steam://ABCDEF\n" +
 		"One-time code setup: otpauth://totp/Example:alex?secret=GEZDGNBVGY3TQOJQ&issuer=Example\n" +
 		"PIN hint: hint\nRecovery: first recovery\nRecovery: second recovery\norphan\nlogin.otp_hint: legacy"
-	if credential.Notes != want || credential.TOTP != normalized(t, "JBSWY3DPEHPK3PXP") || !reflect.DeepEqual(credential.Websites, []string{"https://login.example.test"}) {
+	if credential.Notes != want || credential.TOTP != normalized(t, "JBSWY3DPEHPK3PXP") || !reflect.DeepEqual(credential.Websites, []string{"login.example.test"}) {
 		t.Fatalf("read %+v\nnotes %q", credential, credential.Notes)
 	}
 }

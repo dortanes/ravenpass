@@ -222,7 +222,7 @@ func TestSuggestionsCarryNoValueAndFollowTheExtensionsOrder(t *testing.T) {
 		{ID: exact, Label: "Zulu", Account: "zed", Site: "example.com", Exact: true},
 		{ID: domain, Label: "Alpha", Account: "al@example.test", Site: "login.example.com"},
 	}
-	if !slices.Equal(got, want) {
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("suggestions = %+v, want %+v", got, want)
 	}
 	extension, err := core.Suggestions(vaultservice.OriginRequester("https://example.com"), vaultservice.PurposeSignIn)
@@ -240,7 +240,7 @@ func TestFillReleasesALinkedAppsCredentialAfterCheckingTheMatchAndRecordsTheUse(
 	core, service := openVault(t, "")
 	id := create(t, core, vault.CredentialInput{Label: "Mail", Login: "alex", Email: "alex@example.test", Password: "app-secret", Apps: []vault.App{{Package: mailPackage, Signer: mailSigner}}})
 	suggestions, err := service.Suggest(Requester{App: mailApp}, false)
-	if err != nil || !slices.Equal(suggestions, []Suggestion{{ID: id, Label: "Mail", Account: "alex", Exact: true}}) {
+	if err != nil || !reflect.DeepEqual(suggestions, []Suggestion{{ID: id, Label: "Mail", Account: "alex", Exact: true}}) {
 		t.Fatalf("suggestions = %+v, error = %v", suggestions, err)
 	}
 	if suggestions, err := service.Suggest(Requester{App: lookAlike}, false); err != nil || len(suggestions) != 0 {
@@ -377,7 +377,7 @@ func TestASiteAddedFromSearchIsSuggestedAndFilledNextTime(t *testing.T) {
 	if login, err := service.Fill(id, page); err != nil || login.Password != "secret" {
 		t.Fatalf("fill after the site was added = %+v, error = %v", login, err)
 	}
-	if websites := read(t, core, id).Websites; !slices.Equal(websites, []string{"https://mail.example.org", "https://example.com"}) {
+	if websites := read(t, core, id).Websites; !slices.Equal(websites, []string{"https://mail.example.org", "example.com"}) {
 		t.Fatalf("websites = %q", websites)
 	}
 	for name, test := range map[string]struct {
@@ -437,14 +437,14 @@ func TestASignInHeldFromAnAppIsSavedWithTheAppLinkedInTheDefaultGroup(t *testing
 
 func TestSavingOverACredentialNeedsATargetTheOfferNamedAndLinksTheApp(t *testing.T) {
 	core, service := openVault(t, "")
-	site := create(t, core, vault.CredentialInput{Label: "Mail", Websites: []string{"https://mail.example.com"}, Login: "alex", Password: "old"})
+	site := create(t, core, vault.CredentialInput{Label: "Mail", Websites: []string{"https://mail.example.com"}, Login: "alex", Password: "old", Tags: []string{"Work"}})
 	unrelated := create(t, core, vault.CredentialInput{Label: "Other", Websites: []string{"https://example.org"}, Login: "sam", Password: "other"})
 	capture := Capture{Requester: Requester{App: mailApp, Sites: []string{"mail.example.com"}}, Account: "alex", Password: "new"}
 	offer, err := service.Hold(capture)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []Target{{ID: site, Label: "Mail", Account: "alex", Action: SaveUpdate}}; !slices.Equal(offer.Targets, want) || offer.Suggested != site || offer.Name != "mail.example.com" {
+	if want := []Target{{ID: site, Label: "Mail", Account: "alex", Action: SaveUpdate, Tags: []string{"Work"}}}; !reflect.DeepEqual(offer.Targets, want) || offer.Suggested != site || offer.Name != "mail.example.com" {
 		t.Fatalf("offer = %+v", offer)
 	}
 	for _, target := range []string{unrelated, "mail", vault.ID{0xff}.String()} {

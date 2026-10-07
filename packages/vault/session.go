@@ -61,7 +61,7 @@ func (s *Session) List() ([]Entry, error) {
 
 // listed is the entry as a client sees it, holding no memory the session holds.
 func (e entryMeta) listed() Entry {
-	return Entry{ID: e.id, Kind: e.kind, Label: e.label, Detail: e.detail, ExpiresOn: e.expiresOn, Thumbnail: bytes.Clone(e.thumbnail), Site: e.site, Sites: slices.Clone(e.sites), Email: e.email, Code: e.code, Passkeys: clonedFaces(e.passkeys), Apps: slices.Clone(e.apps), Card: e.card, Note: e.note, Seed: e.seed, Pinned: e.pinned, Groups: append([]ID(nil), e.groups...)}
+	return Entry{ID: e.id, Kind: e.kind, Label: e.label, Detail: e.detail, ExpiresOn: e.expiresOn, Thumbnail: bytes.Clone(e.thumbnail), Site: e.site, Sites: slices.Clone(e.sites), Email: e.email, Code: e.code, Passkeys: clonedFaces(e.passkeys), Apps: slices.Clone(e.apps), Card: e.card, Note: e.note, Seed: e.seed, Pinned: e.pinned, Groups: append([]ID(nil), e.groups...), Tags: slices.Clone(e.tags)}
 }
 
 // CurrentContainer returns a copy of the file the session shows, with its head.
@@ -232,6 +232,7 @@ func (s *Session) ReadSelected(ticket Selection) (Credential, error) {
 		return Credential{}, err
 	}
 	input.Label = entry.label
+	input.Tags = slices.Clone(entry.tags)
 	return Credential{ID: entry.id, CredentialInput: input}, nil
 }
 
@@ -355,7 +356,7 @@ func (s *Session) PrepareCreate(input CredentialInput, groups []ID) (*Pending, I
 
 // credentialEntry is what the index shows of an accepted credential.
 func credentialEntry(input CredentialInput, groups []ID) entryMeta {
-	return entryMeta{kind: KindCredential, label: input.Label, detail: input.Login, groups: groups, site: input.Site(), sites: input.Sites(), email: input.Email, code: input.CodeFace(), passkeys: passkeyFaces(input.Passkeys), apps: slices.Clone(input.Apps)}
+	return entryMeta{kind: KindCredential, label: input.Label, detail: input.Login, groups: groups, site: input.Site(), sites: input.Sites(), email: input.Email, code: input.CodeFace(), passkeys: passkeyFaces(input.Passkeys), apps: slices.Clone(input.Apps), tags: input.Tags}
 }
 
 // credentialToChange decrypts credential id for its next revision; the caller holds the lock and forgets the returned private keys.
@@ -412,6 +413,9 @@ func (s *Session) PrepareEdit(id ID, patch CredentialPatch) (*Pending, error) {
 	}
 	if patch.Apps != nil {
 		input.Apps = *patch.Apps
+	}
+	if patch.Tags != nil {
+		input.Tags = *patch.Tags
 	}
 	input, err = acceptInput(input)
 	if err != nil {

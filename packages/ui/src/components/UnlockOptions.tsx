@@ -457,8 +457,9 @@ function CurrentKeyDialog({
 }
 
 /** CurrentPinDialog takes the vault's PIN to confirm a change where the device cannot verify the owner. */
-function CurrentPinDialog({
+export function CurrentPinDialog({
   open,
+  description,
   note,
   attemptsLeft,
   minimum,
@@ -467,6 +468,8 @@ function CurrentPinDialog({
   onClose,
 }: {
   open: boolean;
+  /** What the PIN confirms, when it is not a change to how the vault unlocks. */
+  description?: string;
   /** What the change is doing while it saves. */
   note?: string;
   attemptsLeft?: number;
@@ -517,7 +520,7 @@ function CurrentPinDialog({
             {t("unlock-methods.confirm.title")}
           </ResponsiveDialogTitle>
           <ResponsiveDialogDescription>
-            {t("unlock-methods.confirm.description")}
+            {description ?? t("unlock-methods.confirm.description")}
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
         <form id={`${id}-form`} className="grid gap-2" onSubmit={confirm}>

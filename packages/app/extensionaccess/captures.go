@@ -34,7 +34,7 @@ func (a *Access) CaptureOffer(capture linkserver.Capture) (linkproto.CaptureOffe
 	}
 	for _, target := range offer.Targets {
 		answer.Targets = append(answer.Targets, linkproto.SaveTarget{
-			Credential: target.ID.String(), Label: target.Label, Account: target.Account, Action: saveActions[target.Action],
+			Credential: target.ID.String(), Label: target.Label, Account: target.Account, Action: saveActions[target.Action], Tags: target.Tags,
 		})
 	}
 	if offer.Suggested != (vault.ID{}) {

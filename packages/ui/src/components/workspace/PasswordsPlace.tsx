@@ -113,6 +113,8 @@ export function PasswordsPlace({
           groups={groups}
           limits={limits}
           busy={busy}
+          host={api}
+          onFailure={report}
         />
       )}
     />

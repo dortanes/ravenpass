@@ -53,7 +53,6 @@ export const card: typeof english = {
   "card.bank.looking-up": "Ищем банк…",
   "card.hint.bank-site":
     "Укажите сайт банка, чтобы автоматически заполнить его название и цвет.",
-  "card.hint.dismiss": "Понятно",
 
   "card.number.reveal": "Показать номер",
   "card.number.conceal": "Скрыть номер",

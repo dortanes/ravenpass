@@ -59,6 +59,8 @@ const suggestionEntries = {
   site: v.string(),
   // Whether the origin matched the host, not only its registrable domain.
   exact: v.boolean(),
+  // What tells two accounts on one site apart; an older Ravenpass sends none.
+  tags: v.optional(v.array(v.string()), []),
 };
 
 export const suggestion = v.pipe(v.object(suggestionEntries), v.readonly());
@@ -100,6 +102,8 @@ const saveTarget = v.object({
   label: v.string(),
   account: v.string(),
   action: v.picklist(["update", "add-site"]),
+  // An older Ravenpass sends none.
+  tags: v.optional(v.array(v.string()), []),
 }) satisfies v.GenericSchema<unknown, SaveTarget>;
 
 const offerEntries = {
@@ -163,6 +167,8 @@ export const passkeyTarget = v.pipe(
     label: v.string(),
     // The credential's login, else its email.
     account: v.string(),
+    // An older Ravenpass sends none.
+    tags: v.optional(v.array(v.string()), []),
   }),
   v.readonly(),
 );

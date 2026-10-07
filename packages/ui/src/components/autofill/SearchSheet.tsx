@@ -146,6 +146,7 @@ export function SearchSheet({
               key={credential.id}
               site={credential.site}
               title={label(credential)}
+              tags={credential.tags}
               detail={detailOf(credential, t("credential.login.empty"))}
               busy={busy}
               working={filling === credential.id}

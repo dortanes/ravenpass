@@ -855,7 +855,7 @@ func TestSeedsTravelThroughExport(t *testing.T) {
 	if value := selectSeed(t, restored, seed); !reflect.DeepEqual(value.SeedInput, fullPhraseSeed()) || value.CheckedOn != "2026-09-21" {
 		t.Fatalf("exported seed = %#v", value)
 	}
-	if value := selectNote(t, restored, note); value.NoteInput != fullNote() {
+	if value := selectNote(t, restored, note); !reflect.DeepEqual(value.NoteInput, fullNote()) {
 		t.Fatalf("exported note = %#v", value.NoteInput)
 	}
 }

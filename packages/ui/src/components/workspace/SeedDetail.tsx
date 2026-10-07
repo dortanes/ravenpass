@@ -24,6 +24,7 @@ import {
   TitledBlock,
 } from "./Fields.tsx";
 import { PhraseGrid } from "./PhraseGrid.tsx";
+import { type RevealHost, useRevealGate } from "./RevealGate.tsx";
 import { seedFace } from "./SeedList.tsx";
 import { toneText } from "./tones.ts";
 
@@ -33,9 +34,13 @@ export function SeedDetail({
   onCopy,
   onUseCode,
   onRecordCheck,
+  host,
+  onFailure,
 }: {
   seed: Seed;
   controls: DetailControls;
+  host: RevealHost;
+  onFailure: (cause: unknown, message: MessageKey) => void;
   /** Copies one value, and names the notice that says what was copied. */
   onCopy: (field: SeedField, notice: MessageKey) => void;
   /** Copies one unused code and marks it used, resolving whether that was written. */
@@ -50,6 +55,10 @@ export function SeedDetail({
   const [confirmCopy, setConfirmCopy] = useState(false);
   const [passphraseShown, setPassphraseShown] = useState(false);
   const [keyShown, setKeyShown] = useState(false);
+  const gate = useRevealGate(host, seed.label || t("seed.untitled"), onFailure);
+  /** Copies a secret of the seed once the owner confirms it is them. */
+  const copySecret = (field: SeedField, notice: MessageKey) =>
+    gate.after(() => onCopy(field, notice));
   const words = seed.words.length;
   const nextCode = nextUnusedCode(seed.codes);
   const addresses = seed.addresses.map((address, index) => ({
@@ -75,13 +84,17 @@ export function SeedDetail({
           title={seed.label || t("seed.untitled")}
           subtitle={[subtitle, seed.wallet].filter(Boolean).join(" · ")}
           deleteTitle={t("seed.delete.title")}
-          controls={controls}
+          controls={
+            seed.format === "codes"
+              ? controls
+              : { ...controls, onEdit: () => gate.after(controls.onEdit) }
+          }
         />
 
         {seed.format === "phrase" && (
           <>
             <PhraseStatus seed={seed} />
-            <PhraseGrid words={seed.words} />
+            <PhraseGrid words={seed.words} gate={gate} />
             <BackupCheck
               key={checkRound}
               open={checking}
@@ -102,9 +115,16 @@ export function SeedDetail({
                       concealLabel={t("seed.passphrase.conceal")}
                       copyLabel={t("seed.copy.passphrase")}
                       busy={busy}
-                      onReveal={() => setPassphraseShown((shown) => !shown)}
+                      onReveal={() =>
+                        passphraseShown
+                          ? setPassphraseShown(false)
+                          : gate.after(() => setPassphraseShown(true))
+                      }
                       onCopy={() =>
-                        onCopy({ kind: "passphrase" }, "seed.copied.passphrase")
+                        copySecret(
+                          { kind: "passphrase" },
+                          "seed.copied.passphrase",
+                        )
                       }
                     />
                   )}
@@ -141,8 +161,12 @@ export function SeedDetail({
                 concealLabel={t("seed.key.conceal")}
                 copyLabel={t("seed.copy.key")}
                 busy={busy}
-                onReveal={() => setKeyShown((shown) => !shown)}
-                onCopy={() => onCopy({ kind: "key" }, "seed.copied.key")}
+                onReveal={() =>
+                  keyShown
+                    ? setKeyShown(false)
+                    : gate.after(() => setKeyShown(true))
+                }
+                onCopy={() => copySecret({ kind: "key" }, "seed.copied.key")}
               />
             </FieldBlock>
           </TitledBlock>
@@ -229,7 +253,7 @@ export function SeedDetail({
               size="pill"
               className="flex-1 text-[13px]"
               disabled={busy}
-              onClick={() => onCopy({ kind: "key" }, "seed.copied.key")}
+              onClick={() => copySecret({ kind: "key" }, "seed.copied.key")}
             >
               <Copy data-icon="inline-start" />
               {t("seed.copy.key")}
@@ -251,6 +275,7 @@ export function SeedDetail({
         </div>
       </article>
 
+      {gate.dialog}
       <ConfirmDialog
         open={confirmCopy}
         title={t("seed.copy-phrase.title")}
@@ -261,7 +286,7 @@ export function SeedDetail({
         busy={busy}
         onConfirm={() => {
           setConfirmCopy(false);
-          onCopy({ kind: "phrase" }, "seed.copied.phrase");
+          copySecret({ kind: "phrase" }, "seed.copied.phrase");
         }}
         onCancel={() => setConfirmCopy(false)}
       />

@@ -20,6 +20,8 @@ const (
 	ReasonDeleteVault
 	// ReasonFill releases a credential's password or one-time code to a site through a linked extension.
 	ReasonFill
+	// ReasonReveal shows or copies a hidden note or a seed's secret in the app.
+	ReasonReveal
 )
 
 // Reason names what one verification allows; fields its Kind does not use are empty.
@@ -49,6 +51,11 @@ func SigningIn(site, account string) Reason {
 // Filling is the reason for filling the sign-in of account, a credential's account or else its label, on site.
 func Filling(site, account string) Reason {
 	return Reason{Kind: ReasonFill, Site: site, Account: account}
+}
+
+// Revealing is the reason for showing the secret of the item labelled item.
+func Revealing(item string) Reason {
+	return Reason{Kind: ReasonReveal, File: item}
 }
 
 // ChangingUnlock is the reason for changing how the vault opens on the device.
@@ -81,6 +88,7 @@ type Wording interface {
 	CreateVaultReason() string
 	OpenVaultReason() string
 	DeleteVaultReason(vault string) string
+	RevealReason(item string) string
 }
 
 // Words is the text wording gives the system prompt for r.
@@ -100,6 +108,8 @@ func (r Reason) Words(wording Wording) string {
 		return wording.OpenVaultReason()
 	case ReasonDeleteVault:
 		return wording.DeleteVaultReason(r.File)
+	case ReasonReveal:
+		return wording.RevealReason(r.File)
 	default:
 		return wording.ShareReason(r.File, r.Identity, r.Site)
 	}

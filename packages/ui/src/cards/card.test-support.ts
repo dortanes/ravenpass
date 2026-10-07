@@ -10,6 +10,7 @@ export const emptyCard: CardInput = {
   network: "",
   bankName: "",
   bankSite: "",
+  tags: [],
   color: "",
   billing: null,
   billingLink: null,

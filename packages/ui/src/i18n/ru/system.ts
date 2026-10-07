@@ -7,6 +7,7 @@ export const system: typeof english = {
   "system.dialog.save-recovery-key": "Сохраните ключ восстановления",
   "system.dialog.choose-photo": "Выберите фотографию",
   "system.dialog.choose-scan": "Выберите скан документа",
+  "system.dialog.choose-qr-code": "Выберите изображение с QR-кодом",
   "system.dialog.save-scan": "Сохраните незашифрованную копию скана",
   "system.dialog.select-import": "Выберите файл экспорта",
   "system.dialog.choose-backup-folder":
@@ -30,6 +31,7 @@ export const system: typeof english = {
   "system.reason.create-vault": "создать новое хранилище",
   "system.reason.open-vault": "открыть другой файл хранилища",
   "system.reason.delete-vault": "удалить хранилище «{vault}»",
+  "system.reason.reveal-item": "показать «{item}»",
   "system.reason.unlock-vault": "разблокировать хранилище",
   "system.prompt.share-file.title": "Передача файла",
   "system.prompt.share-file":
@@ -52,6 +54,9 @@ export const system: typeof english = {
   "system.prompt.open-vault.title": "Открытие файла хранилища",
   "system.prompt.open-vault":
     "Подтвердите, что это вы, чтобы открыть другой файл хранилища.",
+  "system.prompt.reveal-item.title": "Показ секрета",
+  "system.prompt.reveal-item":
+    "Подтвердите, что это вы, чтобы показать «{item}».",
   "system.prompt.delete-vault.title": "Удаление хранилища",
   "system.prompt.delete-vault":
     "Подтвердите, что это вы, чтобы удалить хранилище «{vault}».",

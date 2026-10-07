@@ -115,6 +115,7 @@ type IdentityInput struct {
 	Documents []Document
 	Notes     string
 	Photo     []byte
+	Tags      []string
 }
 
 // Identity is an identity as read.
@@ -128,6 +129,11 @@ func acceptIdentity(input IdentityInput) (IdentityInput, error) {
 	if !fits(input.Label, MaxLabelLength) || strings.TrimSpace(input.Label) == "" {
 		return IdentityInput{}, ErrInvalidInput
 	}
+	tags, err := AcceptTags(input.Tags)
+	if err != nil {
+		return IdentityInput{}, err
+	}
+	input.Tags = tags
 	if !fits(input.FullName, MaxFullNameLength) || !fits(input.Notes, MaxNotesLength) || !ValidDate(input.Birthday) {
 		return IdentityInput{}, ErrInvalidInput
 	}
@@ -256,7 +262,7 @@ func nilIfEmpty[T any](values []T) []T {
 
 // identityEntry is what the index shows of an identity, with the earliest expiry among its documents.
 func identityEntry(input IdentityInput, groups []ID, thumbnail []byte) entryMeta {
-	entry := entryMeta{kind: KindIdentity, label: input.Label, groups: groups, thumbnail: thumbnail}
+	entry := entryMeta{kind: KindIdentity, label: input.Label, groups: groups, thumbnail: thumbnail, tags: input.Tags}
 	if len(input.Emails) > 0 {
 		entry.detail = input.Emails[0]
 	}
@@ -420,6 +426,7 @@ func (s *Session) ReadSelectedIdentity(ticket Selection) (Identity, error) {
 		return Identity{}, err
 	}
 	input.Label = entry.label
+	input.Tags = slices.Clone(entry.tags)
 	return Identity{ID: entry.id, IdentityInput: input}, nil
 }
 

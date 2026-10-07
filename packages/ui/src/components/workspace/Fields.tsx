@@ -102,6 +102,10 @@ export function FieldRow({
   );
 }
 
+/** The look of a small action button at the end of a row. */
+export const rowButtonClass =
+  "size-7 shrink-0 rounded-md text-muted-foreground hover:text-foreground";
+
 /** RowButton is an icon button beside a row's value, such as a row's `accessory`. */
 function RowButton({
   label,
@@ -119,7 +123,7 @@ function RowButton({
       type="button"
       variant="ghost"
       size="icon-sm"
-      className="size-7 shrink-0 rounded-md text-muted-foreground hover:text-foreground"
+      className={rowButtonClass}
       onClick={onClick}
       aria-label={label}
       title={label}

@@ -50,7 +50,6 @@ export const card = {
   "card.bank.looking-up": "Looking up the bank…",
   "card.hint.bank-site":
     "Enter your bank's website to fill in its name and color automatically.",
-  "card.hint.dismiss": "Got it",
 
   "card.number.reveal": "Show number",
   "card.number.conceal": "Hide number",

@@ -106,7 +106,7 @@ func (a *Access) Suggest(origin string, purpose linkproto.Purpose) ([]linkproto.
 	for i, suggestion := range suggestions {
 		result[i] = linkproto.Suggestion{
 			ID: suggestion.ID.String(), Label: suggestion.Label, Account: suggestion.Account, Site: suggestion.Site, Exact: suggestion.Exact,
-			Digits: suggestion.Code.Digits, Period: suggestion.Code.Period,
+			Digits: suggestion.Code.Digits, Period: suggestion.Code.Period, Tags: suggestion.Tags,
 		}
 	}
 	return result, nil

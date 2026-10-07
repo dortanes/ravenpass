@@ -9,28 +9,13 @@ import (
 	"github.com/dortanes/ravenpass/packages/vault"
 )
 
-func TestSiteRootIsTheSchemeAndHost(t *testing.T) {
-	tests := map[string]string{
-		"https://login.example.test/sign-in?return=home": "https://login.example.test",
-		" http://example.test:8080/path ":                "http://example.test:8080",
-		"androidapp://com.example":                       "androidapp://com.example",
-		"example.test/path":                              "",
-		"https://":                                       "",
-		"https://" + strings.Repeat("a", vault.MaxOriginLength) + ".test/": "",
-		"": "",
-	}
-	for address, want := range tests {
-		if got := siteRoot(address); got != want {
-			t.Errorf("siteRoot(%q) = %q, want %q", address, got, want)
-		}
-	}
-}
-
 func TestWebsitesPlacesAddressesOnACredential(t *testing.T) {
 	long := "https://login.example.test/sign-in?return=" + strings.Repeat("a", vault.MaxOriginLength)
 	many := make([]string, vault.MaxCredentialWebsites+2)
+	domains := make([]string, len(many))
 	for i := range many {
-		many[i] = fmt.Sprintf("https://site%d.example", i)
+		domains[i] = fmt.Sprintf("site%d.example", i)
+		many[i] = fmt.Sprintf("https://site%d.example/login", i)
 	}
 	tests := []struct {
 		name      string
@@ -38,17 +23,20 @@ func TestWebsitesPlacesAddressesOnACredential(t *testing.T) {
 		websites  []string
 		notes     string
 	}{
-		{"trimmed in their order", []string{" https://a.example ", "", "  ", "androidapp://com.example"}, []string{"https://a.example", "androidapp://com.example"}, ""},
+		{"trimmed in their order", []string{" https://a.example ", "", "  ", "androidapp://com.example"}, []string{"a.example", "androidapp://com.example"}, ""},
+		{"cut to the domain", []string{"https://app.example.org/", "https://www.example.test/sign-in?return=home#top"}, []string{"app.example.org", "example.test"}, ""},
+		{"http keeps its scheme and port", []string{"http://localhost:8080/", "http://router.example/admin"}, []string{"http://localhost:8080", "http://router.example"}, ""},
+		{"one domain once", []string{"https://a.example/one", "a.example/two", "https://www.a.example"}, []string{"a.example"}, ""},
 		{"none", nil, nil, ""},
 		{"blank", []string{" "}, nil, ""},
-		{"over-long keeps its site root", []string{long}, []string{"https://login.example.test"}, "Website: " + long},
+		{"over-long keeps its domain", []string{long}, []string{"login.example.test"}, ""},
 		{"over-long without a site root", []string{strings.Repeat("a", vault.MaxOriginLength+1)}, nil, "Website: " + strings.Repeat("a", vault.MaxOriginLength+1)},
 		{
-			"beyond what a credential holds", many, many[:vault.MaxCredentialWebsites],
-			fmt.Sprintf("Website: https://site%d.example\nWebsite: https://site%d.example", vault.MaxCredentialWebsites, vault.MaxCredentialWebsites+1),
+			"beyond what a credential holds", many, domains[:vault.MaxCredentialWebsites],
+			fmt.Sprintf("Website: https://site%d.example/login\nWebsite: https://site%d.example/login", vault.MaxCredentialWebsites, vault.MaxCredentialWebsites+1),
 		},
 		{
-			"over-long beyond what a credential holds", append(many[:vault.MaxCredentialWebsites:vault.MaxCredentialWebsites], long), many[:vault.MaxCredentialWebsites],
+			"over-long beyond what a credential holds", append(many[:vault.MaxCredentialWebsites:vault.MaxCredentialWebsites], long), domains[:vault.MaxCredentialWebsites],
 			"Website: " + long,
 		},
 	}

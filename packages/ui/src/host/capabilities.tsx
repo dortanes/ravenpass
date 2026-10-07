@@ -22,6 +22,7 @@ const noCapabilities: Capabilities = {
   systemAutofill: false,
   autoBackups: false,
   print: false,
+  qrCodes: false,
 };
 
 const HostCapabilities = createContext<Capabilities>(noCapabilities);

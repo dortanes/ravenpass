@@ -65,7 +65,7 @@ func TestLoginKeepsWhatRavenpassHasNoFieldForInItsNotes(t *testing.T) {
 	wantItem(t, item, importers.Item{
 		Content: vault.NewItem{Pinned: true, Credential: &vault.CredentialInput{
 			Label:    "Example",
-			Websites: []string{"https://example.test/login", "https://second.example.test"},
+			Websites: []string{"example.test", "second.example.test"},
 			Email:    "alex@example.test",
 			Password: "  secret  ",
 			Notes:    "Own notes\n\nOne-time code setup: steam://ABCDEF\nRecovery: ABCD-EFGH",
@@ -87,7 +87,7 @@ func TestLoginKeepsItsWebsitesAndLogin(t *testing.T) {
 	wantItem(t, item, importers.Item{
 		Content: vault.NewItem{Credential: &vault.CredentialInput{
 			Label:    "App",
-			Websites: []string{"androidapp://com.example", "https://example.test"},
+			Websites: []string{"androidapp://com.example", "example.test"},
 			Login:    "Alex <alex@example.test>",
 			Password: "pw",
 			TOTP:     normalized,
@@ -105,7 +105,7 @@ func TestLoginKeepsItsWebsitesAndLogin(t *testing.T) {
 
 	long := "https://login.example.test/sign-in?return=" + strings.Repeat("a", vault.MaxOriginLength)
 	longSite := onlyItem(t, `{"type": 1, "name": "Long", "login": {"uris": [{"uri": "`+long+`"}]}}`)
-	if credential := longSite.Content.Credential; !reflect.DeepEqual(credential.Websites, []string{"https://login.example.test"}) || credential.Notes != "Website: "+long {
+	if credential := longSite.Content.Credential; !reflect.DeepEqual(credential.Websites, []string{"login.example.test"}) || credential.Notes != "" {
 		t.Fatalf("read %+v", credential)
 	}
 

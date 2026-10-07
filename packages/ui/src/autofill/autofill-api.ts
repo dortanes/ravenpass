@@ -10,6 +10,8 @@ export interface AutofillCredential {
   /** The site its icon is kept under. */
   readonly site: string;
   readonly matches: boolean;
+  /** What tells two accounts on one site apart. */
+  readonly tags: readonly string[];
 }
 
 /** A passkey for the site asking; `key` names it to the host and `label` is the item holding it. */

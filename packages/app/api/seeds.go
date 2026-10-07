@@ -32,6 +32,8 @@ type SeedInput struct {
 	Wallet     string        `json:"wallet"`
 	Addresses  []SeedAddress `json:"addresses"`
 	Notes      string        `json:"notes"`
+	// Tags tell the item apart from others like it.
+	Tags []string `json:"tags"`
 }
 
 // SeedSummary is a seed as the list shows it.
@@ -47,6 +49,7 @@ type SeedSummary struct {
 	Pinned     bool     `json:"pinned"`
 	LastUsedAt int64    `json:"lastUsedAt"`
 	Groups     []string `json:"groups"`
+	Tags       []string `json:"tags"`
 }
 
 // Seed is a seed as read.
@@ -106,6 +109,7 @@ func (s *Service) ListSeeds() ([]SeedSummary, error) {
 			Pinned:     entry.Pinned,
 			LastUsedAt: usage[entry.ID],
 			Groups:     idStrings(entry.Groups),
+			Tags:       append([]string{}, entry.Tags...),
 		}
 	}
 	return result, nil
@@ -276,7 +280,7 @@ func (input SeedInput) toVault() (vault.SeedInput, error) {
 	}
 	seed := vault.SeedInput{
 		Label: input.Label, Format: format, Words: input.Words, Passphrase: input.Passphrase,
-		Path: input.Path, Key: input.Key, Wallet: input.Wallet, Notes: input.Notes,
+		Path: input.Path, Key: input.Key, Wallet: input.Wallet, Notes: input.Notes, Tags: input.Tags,
 	}
 	if len(input.Codes) > 0 {
 		seed.Codes = make([]vault.BackupCode, len(input.Codes))
@@ -298,6 +302,7 @@ func fromVaultSeed(seed vault.SeedInput) SeedInput {
 		Label: seed.Label, Format: seedFormatNames[seed.Format], Words: append([]string{}, seed.Words...),
 		Passphrase: seed.Passphrase, Path: seed.Path, Key: seed.Key, Codes: make([]BackupCode, len(seed.Codes)),
 		Wallet: seed.Wallet, Addresses: make([]SeedAddress, len(seed.Addresses)), Notes: seed.Notes,
+		Tags: append([]string{}, seed.Tags...),
 	}
 	for i, code := range seed.Codes {
 		input.Codes[i] = BackupCode{Value: code.Value, Used: code.Used}

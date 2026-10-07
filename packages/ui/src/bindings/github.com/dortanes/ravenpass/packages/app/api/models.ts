@@ -186,6 +186,11 @@ export interface Capabilities {
      * Print reports that the host prints through the system print dialog; Host.Printer sets it.
      */
     "print": boolean;
+
+    /**
+     * QRCodes reports that the editor reads a one-time code setup from a QR code picture; Host.QRCodes sets it.
+     */
+    "qrCodes": boolean;
 }
 
 /**
@@ -225,6 +230,11 @@ export interface Card {
      */
     "billingLink": AddressLink | null;
     "notes": string;
+
+    /**
+     * Tags tell the item apart from others like it.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -256,6 +266,11 @@ export interface CardInput {
      */
     "billingLink": AddressLink | null;
     "notes": string;
+
+    /**
+     * Tags tell the item apart from others like it.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -298,6 +313,7 @@ export interface CardSummary {
     "pinned": boolean;
     "lastUsedAt": number;
     "groups": string[] | null;
+    "tags": string[] | null;
 
     /**
      * ExpiresOn is the last day of the expiry month as YYYY-MM-DD.
@@ -374,6 +390,11 @@ export interface Credential {
      * Apps are the apps the credential signs in to. A new credential has none.
      */
     "apps": LinkedApp[] | null;
+
+    /**
+     * Tags tell the item apart from others like it, such as two accounts on one site.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -392,6 +413,11 @@ export interface CredentialInput {
      * Apps are the apps the credential signs in to. A new credential has none.
      */
     "apps": LinkedApp[] | null;
+
+    /**
+     * Tags tell the item apart from others like it, such as two accounts on one site.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -429,6 +455,7 @@ export interface CredentialSummary {
     "pinned": boolean;
     "lastUsedAt": number;
     "groups": string[] | null;
+    "tags": string[] | null;
 
     /**
      * Sites, OneTimeCode and Passkeys come from the index, without decrypting the record.
@@ -503,6 +530,11 @@ export interface Identity {
      * Photo is base64, empty for none: the stored photo as read or the PNG CropIdentityPhoto returned.
      */
     "photo": string;
+
+    /**
+     * Tags tell the item apart from others like it.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -571,6 +603,11 @@ export interface IdentityInput {
      * Photo is base64, empty for none: the stored photo as read or the PNG CropIdentityPhoto returned.
      */
     "photo": string;
+
+    /**
+     * Tags tell the item apart from others like it.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -618,6 +655,7 @@ export interface IdentitySummary {
     "pinned": boolean;
     "lastUsedAt": number;
     "groups": string[] | null;
+    "tags": string[] | null;
 
     /**
      * ExpiresOn is the earliest document expiry as YYYY-MM-DD.
@@ -837,6 +875,11 @@ export interface Note {
     "label": string;
     "body": string;
     "hidden": boolean;
+
+    /**
+     * Tags tell the item apart from others like it.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -846,6 +889,11 @@ export interface NoteInput {
     "label": string;
     "body": string;
     "hidden": boolean;
+
+    /**
+     * Tags tell the item apart from others like it.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -871,6 +919,7 @@ export interface NoteSummary {
     "pinned": boolean;
     "lastUsedAt": number;
     "groups": string[] | null;
+    "tags": string[] | null;
 }
 
 /**
@@ -1022,6 +1071,11 @@ export interface Seed {
     "wallet": string;
     "addresses": SeedAddress[] | null;
     "notes": string;
+
+    /**
+     * Tags tell the item apart from others like it.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -1065,6 +1119,11 @@ export interface SeedInput {
     "wallet": string;
     "addresses": SeedAddress[] | null;
     "notes": string;
+
+    /**
+     * Tags tell the item apart from others like it.
+     */
+    "tags": string[] | null;
 }
 
 /**
@@ -1107,6 +1166,7 @@ export interface SeedSummary {
     "pinned": boolean;
     "lastUsedAt": number;
     "groups": string[] | null;
+    "tags": string[] | null;
 }
 
 /**
@@ -1137,6 +1197,21 @@ export interface SiteIcon {
  */
 export interface SiteIcons {
     "enabled": boolean;
+}
+
+/**
+ * SiteLookup is what a credential's typed or pasted website suggests.
+ */
+export interface SiteLookup {
+    /**
+     * Name is the site's declared name or its readable domain.
+     */
+    "name": string;
+
+    /**
+     * Website is the address cut to what the vault matches it by, as imports keep it.
+     */
+    "website": string;
 }
 
 /**
@@ -1212,6 +1287,14 @@ export interface SystemAutofillStatus {
      * PasskeyProviders reports that the device takes passkey providers; when false, Passkeys is false too.
      */
     "passkeyProviders": boolean;
+}
+
+/**
+ * TagLimits bound the tags of one item: each tag's length in characters and their count.
+ */
+export interface TagLimits {
+    "tag": number;
+    "tags": number;
 }
 
 /**

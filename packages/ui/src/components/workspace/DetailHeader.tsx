@@ -8,11 +8,15 @@ import { ConfirmDialog } from "../ConfirmDialog.tsx";
 import { Button } from "../ui/button.tsx";
 import { Avatar } from "./Avatar.tsx";
 import { GroupBadge } from "./GroupBadge.tsx";
+import { TagBadge } from "./TagBadge.tsx";
 
 /** What an open item's pane can do with the item as a whole, whatever its kind. */
 export interface DetailControls {
   /** The groups this item belongs to, named. */
   groups: Group[];
+  tags: string[];
+  /** Lists the items carrying a tag. */
+  onTag: (tag: string) => void;
   pinned: boolean;
   busy: boolean;
   confirmDelete: boolean;
@@ -40,6 +44,8 @@ export function DetailHeader({
   deleteTitle,
   controls: {
     groups,
+    tags,
+    onTag,
     pinned,
     busy,
     confirmDelete,
@@ -91,6 +97,14 @@ export function DetailHeader({
             {subtitle && <span className="truncate">{subtitle}</span>}
             {groups.map((group) => (
               <GroupBadge key={group.id} name={group.name} />
+            ))}
+            {tags.map((tag) => (
+              <TagBadge
+                key={tag}
+                tag={tag}
+                label={t("workspace.tags.show", { tag })}
+                onChoose={onTag}
+              />
             ))}
           </p>
         </span>

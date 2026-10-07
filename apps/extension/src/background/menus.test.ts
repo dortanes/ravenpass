@@ -38,6 +38,7 @@ const account: CodeSuggestion = {
   account: "alex",
   site: "github.com",
   exact: true,
+  tags: [],
   digits: 6,
   period: 30,
 };

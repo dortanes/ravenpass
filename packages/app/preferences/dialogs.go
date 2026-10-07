@@ -21,6 +21,7 @@ type Dialogs struct {
 	SaveRecoveryKey     string
 	ChoosePhoto         string
 	ChooseScan          string
+	ChooseQRCode        string
 	SaveScan            string
 	SelectImport        string
 	ChooseBackupFolder  string
@@ -44,7 +45,9 @@ type Dialogs struct {
 	CreateVault  string
 	OpenVault    string
 	// DeleteVault is a reason with a {vault} placeholder.
-	DeleteVault  string
+	DeleteVault string
+	// RevealItem is a reason with an {item} placeholder.
+	RevealItem   string
 	UnlockVault  string
 	OnThisDevice string
 }
@@ -57,6 +60,7 @@ func dialogsIn(catalog messages.Catalog, titled bool) Dialogs {
 		SaveRecoveryKey:     catalog.Text("system.dialog.save-recovery-key"),
 		ChoosePhoto:         catalog.Text("system.dialog.choose-photo"),
 		ChooseScan:          catalog.Text("system.dialog.choose-scan"),
+		ChooseQRCode:        catalog.Text("system.dialog.choose-qr-code"),
 		SaveScan:            catalog.Text("system.dialog.save-scan"),
 		SelectImport:        catalog.Text("system.dialog.select-import"),
 		ChooseBackupFolder:  catalog.Text("system.dialog.choose-backup-folder"),
@@ -76,6 +80,7 @@ func dialogsIn(catalog messages.Catalog, titled bool) Dialogs {
 		CreateVault:         catalog.Text("system.reason.create-vault"),
 		OpenVault:           catalog.Text("system.reason.open-vault"),
 		DeleteVault:         catalog.Text("system.reason.delete-vault"),
+		RevealItem:          catalog.Text("system.reason.reveal-item"),
 		UnlockVault:         catalog.Text("system.reason.unlock-vault"),
 		OnThisDevice:        catalog.Text("system.place.on-this-device"),
 	}
@@ -89,6 +94,7 @@ func dialogsIn(catalog messages.Catalog, titled bool) Dialogs {
 		dialogs.CreateVault = prompt("system.prompt.create-vault.title", "system.prompt.create-vault")
 		dialogs.OpenVault = prompt("system.prompt.open-vault.title", "system.prompt.open-vault")
 		dialogs.DeleteVault = prompt("system.prompt.delete-vault.title", "system.prompt.delete-vault")
+		dialogs.RevealItem = prompt("system.prompt.reveal-item.title", "system.prompt.reveal-item")
 		dialogs.UnlockVault = prompt("system.prompt.unlock-vault.title", "system.prompt.unlock-vault")
 	}
 	return dialogs
@@ -126,6 +132,11 @@ func (d Dialogs) OpenVaultReason() string { return d.OpenVault }
 // DeleteVaultReason is the reason the prompt gives for deleting the vault named vault.
 func (d Dialogs) DeleteVaultReason(vault string) string {
 	return strings.NewReplacer("{vault}", vault).Replace(d.DeleteVault)
+}
+
+// RevealReason is the reason the prompt gives for showing the secret of the item labelled item.
+func (d Dialogs) RevealReason(item string) string {
+	return strings.NewReplacer("{item}", item).Replace(d.RevealItem)
 }
 
 // RecoveryFileText wraps the phrase in the plaintext file the user asked Ravenpass to write.

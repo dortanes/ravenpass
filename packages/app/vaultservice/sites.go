@@ -33,6 +33,8 @@ type Suggestion struct {
 	Site    string
 	Exact   bool
 	Code    vault.CodeFace
+	// Tags tell two accounts on one site apart.
+	Tags []string
 }
 
 // Fill is what a credential gives a sign-in form.
@@ -77,7 +79,7 @@ func (s *Service) Suggestions(requester Requester, purpose Purpose) ([]Suggestio
 				continue
 			}
 		}
-		suggestions = append(suggestions, Suggestion{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry), Site: site, Exact: match == vault.MatchExact, Code: code})
+		suggestions = append(suggestions, Suggestion{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry), Site: site, Exact: match == vault.MatchExact, Code: code, Tags: entry.Tags})
 	}
 	slices.SortStableFunc(suggestions, func(a, b Suggestion) int {
 		return cmp.Or(setFirst(a.Exact, b.Exact), byUseThenLabel(lastUsed[a.ID], lastUsed[b.ID], a.Label, b.Label))
@@ -138,7 +140,7 @@ func (s *Service) MatchingCredential(id vault.ID, requester Requester) (Suggesti
 		return Suggestion{}, err
 	}
 	site, match := requester.match(entry)
-	return Suggestion{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry), Site: site, Exact: match == vault.MatchExact}, nil
+	return Suggestion{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry), Site: site, Exact: match == vault.MatchExact, Tags: entry.Tags}, nil
 }
 
 // readMatching reads credential id, and its entry, while it still matches requester. The caller holds s.mu.

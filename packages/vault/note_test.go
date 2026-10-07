@@ -52,7 +52,7 @@ func TestNoteRoundTripsEveryValue(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer reopened.Lock()
-	if note := selectNote(t, reopened, id); note.ID != id || note.NoteInput != input {
+	if note := selectNote(t, reopened, id); note.ID != id || !reflect.DeepEqual(note.NoteInput, input) {
 		t.Fatalf("note changed across a reopen: %#v", note.NoteInput)
 	}
 	want := Entry{ID: id, Kind: KindNote, Label: input.Label, Note: NoteFace{Hidden: true}}
@@ -69,7 +69,7 @@ func TestNoteWithoutOptionalValuesHasABareEntry(t *testing.T) {
 	defer session.Lock()
 	input := NoteInput{Label: "Empty"}
 	id := commitNote(t, session, input, nil)
-	if note := selectNote(t, session, id); note.NoteInput != input {
+	if note := selectNote(t, session, id); !reflect.DeepEqual(note.NoteInput, input) {
 		t.Fatalf("bare note = %#v", note.NoteInput)
 	}
 	want := Entry{ID: id, Kind: KindNote, Label: "Empty"}
@@ -114,7 +114,7 @@ func TestNoteAtItsLimitsRoundTrips(t *testing.T) {
 	defer session.Lock()
 	input := NoteInput{Label: strings.Repeat("ü", MaxLabelLength), Body: strings.Repeat("ü", MaxNoteBodyLength)}
 	id := commitNote(t, session, input, nil)
-	if note := selectNote(t, session, id); note.NoteInput != input {
+	if note := selectNote(t, session, id); !reflect.DeepEqual(note.NoteInput, input) {
 		t.Fatal("a note at its limits changed on its way through the vault")
 	}
 }
@@ -304,7 +304,7 @@ func TestPrepareEditNoteReplacesContentAndMembershipAndKeepsPin(t *testing.T) {
 	if session.entries[1].revision != 2 {
 		t.Fatalf("note revision after one edit = %d", session.entries[1].revision)
 	}
-	if value := selectNote(t, session, id); value.NoteInput != replacement {
+	if value := selectNote(t, session, id); !reflect.DeepEqual(value.NoteInput, replacement) {
 		t.Fatalf("note after the edit = %#v", value.NoteInput)
 	}
 	next, _ := currentRaw(t, session)

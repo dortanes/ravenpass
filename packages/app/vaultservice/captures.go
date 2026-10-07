@@ -45,6 +45,7 @@ type Target struct {
 	Label   string
 	Account string
 	Action  TargetAction
+	Tags    []string
 }
 
 // CaptureOffer is where a capture can be saved; a zero Suggested means a new credential.
@@ -134,7 +135,7 @@ func (s *Service) captureOffer(capture Capture) (CaptureOffer, error) {
 			continue
 		}
 		found := candidate{
-			target:   Target{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry), Action: TargetUpdate},
+			target:   Target{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry), Action: TargetUpdate, Tags: entry.Tags},
 			password: credential.Password,
 			holder:   holder,
 			lastUsed: lastUsed[entry.ID],

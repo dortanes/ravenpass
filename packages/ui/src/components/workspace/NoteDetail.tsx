@@ -1,5 +1,6 @@
 import { Eye, EyeOff, NotebookText } from "lucide-react";
 import { useId, useState } from "react";
+import type { MessageKey } from "../../i18n/messages.ts";
 import { useTranslator } from "../../i18n/translator.tsx";
 import { splitWords } from "../../seeds/phrase.ts";
 import type { Note } from "../../vault-api.ts";
@@ -7,32 +8,43 @@ import { Button } from "../ui/button.tsx";
 import { ScrollArea } from "../ui/scroll-area.tsx";
 import { type DetailControls, DetailHeader } from "./DetailHeader.tsx";
 import { CopyButton, RevealButton } from "./Fields.tsx";
+import { type RevealHost, useRevealGate } from "./RevealGate.tsx";
 
-/** NoteDetail owns a hidden note's reveal, so it ends with this pane. */
+/** NoteDetail owns a hidden note's reveal, so it ends with this pane; showing or copying a hidden note asks the owner first. */
 export function NoteDetail({
   note,
   controls,
   onCopy,
+  host,
+  onFailure,
 }: {
   note: Note;
   controls: DetailControls;
   onCopy: () => void;
+  host: RevealHost;
+  onFailure: (cause: unknown, message: MessageKey) => void;
 }) {
   const { t } = useTranslator();
   const { busy } = controls;
   const heading = useId();
   const [shown, setShown] = useState(false);
   const covered = note.hidden && !shown;
+  const title = note.label || t("note.untitled");
+  const gate = useRevealGate(host, title, onFailure);
 
   return (
     <article className="flex min-h-0 flex-1 flex-col gap-[11px]">
       <DetailHeader
         label={note.label}
-        title={note.label || t("note.untitled")}
+        title={title}
         icon={NotebookText}
         subtitle={t("note.words", { count: splitWords(note.body).length })}
         deleteTitle={t("note.delete.title")}
-        controls={controls}
+        controls={
+          note.hidden
+            ? { ...controls, onEdit: () => gate.after(controls.onEdit) }
+            : controls
+        }
       />
 
       <section
@@ -55,7 +67,11 @@ export function NoteDetail({
             />
           )}
           {note.body && (
-            <CopyButton label={t("note.copy")} busy={busy} onCopy={onCopy} />
+            <CopyButton
+              label={t("note.copy")}
+              busy={busy}
+              onCopy={() => (note.hidden ? gate.after(onCopy) : onCopy())}
+            />
           )}
         </div>
         {covered ? (
@@ -71,7 +87,7 @@ export function NoteDetail({
               type="button"
               variant="quiet"
               size="pill-sm"
-              onClick={() => setShown(true)}
+              onClick={() => gate.after(() => setShown(true))}
             >
               <Eye data-icon="inline-start" />
               {t("note.hidden.show")}
@@ -91,6 +107,7 @@ export function NoteDetail({
           </ScrollArea>
         )}
       </section>
+      {gate.dialog}
     </article>
   );
 }

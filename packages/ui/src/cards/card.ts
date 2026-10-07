@@ -119,8 +119,14 @@ export function maskedGroups(number: string, network: CardNetwork): string[] {
   );
 }
 
-export function bankAndLastFour(bankName: string, lastFour: string): string {
-  return [bankName, lastFour ? `•• ${lastFour}` : ""].filter(Boolean).join(" ");
+/** cardLine is what a card's row says under its name: the bank, the payment network and the last four digits. */
+export function cardLine(
+  bankName: string,
+  network: CardNetwork,
+  lastFour: string,
+): string {
+  const issuer = [bankName, networkName(network)].filter(Boolean).join(" · ");
+  return [issuer, lastFour ? `•• ${lastFour}` : ""].filter(Boolean).join(" ");
 }
 
 /** Only a complete number of a known network is checked; UnionPay numbers carry no Luhn digit. */

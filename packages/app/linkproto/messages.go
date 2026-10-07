@@ -197,6 +197,8 @@ type Suggestion struct {
 	Exact   bool   `json:"exact"`
 	Digits  int    `json:"digits,omitempty"`
 	Period  int    `json:"period,omitempty"`
+	// Tags tell two accounts on one site apart; an extension that knows none ignores them.
+	Tags []string `json:"tags,omitempty"`
 }
 
 // Fill is the result of a fill request.
@@ -256,6 +258,7 @@ type SaveTarget struct {
 	Label      string     `json:"label"`
 	Account    string     `json:"account"`
 	Action     SaveAction `json:"action"`
+	Tags       []string   `json:"tags,omitempty"`
 }
 
 // Saved is the result of a save request: whether it created a credential or updated one.

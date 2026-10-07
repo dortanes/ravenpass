@@ -443,6 +443,7 @@ export function CredentialRow({
         active={highlight.highlighted === credential.id}
         avatar={<SiteAvatar site={credential.site} label={credential.label} />}
         title={credential.label || t("credential.untitled")}
+        tags={credential.tags}
         detail={{
           text: detail ?? (credential.account || t("credential.login.empty")),
         }}

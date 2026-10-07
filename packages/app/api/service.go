@@ -62,6 +62,8 @@ type CredentialInput struct {
 	TOTP     string   `json:"totp"`
 	// Apps are the apps the credential signs in to. A new credential has none.
 	Apps []LinkedApp `json:"apps"`
+	// Tags tell the item apart from others like it, such as two accounts on one site.
+	Tags []string `json:"tags"`
 }
 
 // CredentialSummary is a credential as the list shows it.
@@ -77,6 +79,7 @@ type CredentialSummary struct {
 	Pinned     bool     `json:"pinned"`
 	LastUsedAt int64    `json:"lastUsedAt"`
 	Groups     []string `json:"groups"`
+	Tags       []string `json:"tags"`
 	// Sites, OneTimeCode and Passkeys come from the index, without decrypting the record.
 	OneTimeCode bool `json:"oneTimeCode"`
 	Passkeys    int  `json:"passkeys"`
@@ -114,6 +117,7 @@ type Service struct {
 	photoPicker PhotoPicker
 	saver       FileSaver
 	printer     Printer
+	qrCodes     QRCodeReader
 	photo       photoSlot
 	scans       scanStaging
 	imports     importStaging
@@ -171,6 +175,8 @@ type Host struct {
 	Saver FileSaver
 	// Printer is nil on a host without a system print dialog.
 	Printer Printer
+	// QRCodes is nil on a host that reads no QR code pictures.
+	QRCodes QRCodeReader
 	// OpenURL is nil where the Wails browser manager opens web addresses.
 	OpenURL func(address string) error
 	// Hold is held while a picker shows, so a host that locks when hidden keeps the vault open.
@@ -252,6 +258,7 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 		printer = host.Printer
 		offers.Print = true
 	}
+	offers.QRCodes = host.QRCodes != nil
 	openURL := host.OpenURL
 	if openURL == nil {
 		openURL = func(address string) error {
@@ -299,7 +306,7 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 	s := &Service{
 		vault: vault, preferences: settings, icons: icons, brands: siteicons.NewFetcher(), currentApp: host.CurrentApp,
 		pasteboard: clipboard, files: heldFiles{VaultFiles: files, hold: hold}, places: places, openURL: openURL, hold: hold, dialog: dialog,
-		photoPicker: heldPhotos{PhotoPicker: photoPicker, hold: hold}, saver: saver, printer: printer, links: links, identities: identities, offers: offers,
+		photoPicker: heldPhotos{PhotoPicker: photoPicker, hold: hold}, saver: saver, printer: printer, qrCodes: host.QRCodes, links: links, identities: identities, offers: offers,
 		shows: shows, screens: screens, systemAutofill: systemAutofill,
 		confirmations: confirmations.Queue, panel: panel,
 		showMain: confirmations.ShowMain, reloadMain: confirmations.ReloadMain, owner: confirmations.Owner,
@@ -414,6 +421,7 @@ func (s *Service) ListCredentials() ([]CredentialSummary, error) {
 			Pinned:      entry.Pinned,
 			LastUsedAt:  usage[entry.ID],
 			Groups:      idStrings(entry.Groups),
+			Tags:        append([]string{}, entry.Tags...),
 			OneTimeCode: entry.Code != vault.CodeFace{},
 			Passkeys:    len(entry.Passkeys),
 		}
@@ -620,7 +628,7 @@ func (s *Service) UpdateCredential(id string, input CredentialInput, groups []st
 	patch := vault.CredentialPatch{
 		Label: &input.Label, Websites: &input.Websites, Login: &input.Login,
 		Email: &input.Email, Password: &input.Password, Notes: &input.Notes,
-		TOTP: &input.TOTP, Apps: &apps, Groups: &membership, RemovePasskeys: removed,
+		TOTP: &input.TOTP, Apps: &apps, Groups: &membership, Tags: &input.Tags, RemovePasskeys: removed,
 	}
 	return present(s.vault.EditCredential(parsed, patch))
 }
@@ -798,7 +806,7 @@ func (input CredentialInput) toVault() vault.CredentialInput {
 	return vault.CredentialInput{
 		Label: input.Label, Websites: input.Websites, Login: input.Login,
 		Email: input.Email, Password: input.Password, Notes: input.Notes,
-		TOTP: input.TOTP,
+		TOTP: input.TOTP, Tags: input.Tags,
 	}
 }
 
@@ -807,7 +815,7 @@ func fromVaultInput(input vault.CredentialInput, apps AppNames) CredentialInput 
 	return CredentialInput{
 		Label: input.Label, Websites: append([]string{}, input.Websites...), Login: input.Login,
 		Email: input.Email, Password: input.Password, Notes: input.Notes,
-		TOTP: input.TOTP, Apps: linkedApps(input.Apps, apps),
+		TOTP: input.TOTP, Apps: linkedApps(input.Apps, apps), Tags: append([]string{}, input.Tags...),
 	}
 }
 

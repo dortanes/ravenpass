@@ -11,6 +11,8 @@ type NoteInput struct {
 	Label  string `json:"label"`
 	Body   string `json:"body"`
 	Hidden bool   `json:"hidden"`
+	// Tags tell the item apart from others like it.
+	Tags []string `json:"tags"`
 }
 
 // NoteSummary is a note as the list shows it.
@@ -23,6 +25,7 @@ type NoteSummary struct {
 	Pinned     bool     `json:"pinned"`
 	LastUsedAt int64    `json:"lastUsedAt"`
 	Groups     []string `json:"groups"`
+	Tags       []string `json:"tags"`
 }
 
 // Note is an opened note with its groups.
@@ -48,6 +51,7 @@ func (s *Service) ListNotes() ([]NoteSummary, error) {
 			Pinned:     entry.Pinned,
 			LastUsedAt: usage[entry.ID],
 			Groups:     idStrings(entry.Groups),
+			Tags:       append([]string{}, entry.Tags...),
 		}
 	}
 	return result, nil
@@ -108,9 +112,9 @@ func (s *Service) copyNote(id string, schedule func(time.Duration, func())) erro
 }
 
 func (input NoteInput) toVault() vault.NoteInput {
-	return vault.NoteInput{Label: input.Label, Body: input.Body, Hidden: input.Hidden}
+	return vault.NoteInput{Label: input.Label, Body: input.Body, Hidden: input.Hidden, Tags: input.Tags}
 }
 
 func fromVaultNote(note vault.NoteInput) NoteInput {
-	return NoteInput{Label: note.Label, Body: note.Body, Hidden: note.Hidden}
+	return NoteInput{Label: note.Label, Body: note.Body, Hidden: note.Hidden, Tags: append([]string{}, note.Tags...)}
 }

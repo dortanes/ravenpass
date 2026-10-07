@@ -30,8 +30,8 @@ func TestNotesListFromTheIndexAndReadAsWritten(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []NoteSummary{
-		{ID: id, Label: "Wi-Fi", Preview: "network ravenpass-home", Groups: []string{family}},
-		{ID: hidden, Label: "Diary", Hidden: true, Groups: []string{}},
+		{ID: id, Label: "Wi-Fi", Preview: "network ravenpass-home", Groups: []string{family}, Tags: []string{}},
+		{ID: hidden, Label: "Diary", Hidden: true, Groups: []string{}, Tags: []string{}},
 	}
 	if !reflect.DeepEqual(notes, want) {
 		t.Fatalf("notes = %+v", notes)
@@ -40,7 +40,7 @@ func TestNotesListFromTheIndexAndReadAsWritten(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if note.ID != id || !reflect.DeepEqual(note.Groups, []string{family}) || note.NoteInput != input {
+	if note.ID != id || !reflect.DeepEqual(note.Groups, []string{family}) || !reflect.DeepEqual(note.NoteInput, withTags(input)) {
 		t.Fatalf("note = %+v", note)
 	}
 	if notes, err := service.ListNotes(); err != nil || notes[0].LastUsedAt <= 0 || notes[1].LastUsedAt != 0 {
@@ -75,7 +75,7 @@ func TestUpdateNoteReplacesItAsAWhole(t *testing.T) {
 	if err := service.UpdateNote(id, replacement, nil); err != nil {
 		t.Fatal(err)
 	}
-	if note, err := service.ReadNote(id); err != nil || note.NoteInput != replacement {
+	if note, err := service.ReadNote(id); err != nil || !reflect.DeepEqual(note.NoteInput, withTags(replacement)) {
 		t.Fatalf("note after the update = %+v, error = %v", note, err)
 	}
 	if notes, err := service.ListNotes(); err != nil || !notes[0].Pinned || notes[0].Preview != "" || !notes[0].Hidden {
@@ -135,4 +135,10 @@ func TestNoteLimitsMatchTheVault(t *testing.T) {
 	if err != nil || limits != (NoteLimits{Label: vault.MaxLabelLength, Body: vault.MaxNoteBodyLength}) {
 		t.Fatalf("limits = %+v, error = %v", limits, err)
 	}
+}
+
+// withTags is a note as read back: its tags never null.
+func withTags(note NoteInput) NoteInput {
+	note.Tags = append([]string{}, note.Tags...)
+	return note
 }

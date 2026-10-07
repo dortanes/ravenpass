@@ -67,6 +67,16 @@ func Autofill(request []byte) []byte {
 	return c.autofill.Call(request)
 }
 
+// ReceiveCodeSetup holds an otpauth link Android opened in Ravenpass until the owner adds it to a credential.
+func ReceiveCodeSetup(link string) {
+	c, err := Get()
+	if err != nil {
+		slog.Warn("the app could not start for a code setup link", "err", err)
+		return
+	}
+	c.controls.ReceiveCodeSetup(link)
+}
+
 // noteEarly counts a screen notice while no core exists, reporting whether it did.
 func noteEarly(shown bool) bool {
 	early.Lock()

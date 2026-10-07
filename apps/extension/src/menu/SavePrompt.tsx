@@ -141,6 +141,7 @@ function SaveForm({ prompt, view }: { prompt: OfferPrompt; view: AskingView }) {
       id: destination,
       key: destination || "new",
       title: destinationTitle(offer, destination, t),
+      tags: option?.tags,
       detail: option
         ? option.account || t("credential.login.empty")
         : offer.site,
@@ -163,6 +164,7 @@ function SaveForm({ prompt, view }: { prompt: OfferPrompt; view: AskingView }) {
               active={false}
               avatar={<DestinationAvatar offer={offer} target={target} />}
               title={target.label || t("credential.untitled")}
+              tags={target.tags}
               detail={{ text: target.account || t("credential.login.empty") }}
               look="menu"
             />

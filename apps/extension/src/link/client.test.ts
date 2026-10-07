@@ -486,6 +486,7 @@ test("suggest asks for the credentials matching the origin", async () => {
             account: "alex",
             site: "github.com",
             exact: true,
+            tags: ["Work"],
           },
           {
             id: "b2",
@@ -506,8 +507,17 @@ test("suggest asks for the credentials matching the origin", async () => {
       account: "alex",
       site: "github.com",
       exact: true,
+      tags: ["Work"],
     },
-    { id: "b2", label: "", account: "", site: "github.com", exact: false },
+    // An older Ravenpass sends no tags.
+    {
+      id: "b2",
+      label: "",
+      account: "",
+      site: "github.com",
+      exact: false,
+      tags: [],
+    },
   ]);
   assert.deepEqual(desktop.urls, [`ws://127.0.0.1:${port}/v1/session`]);
   assert.deepEqual(desktop.sent[0], frame(session, 0));
@@ -530,6 +540,7 @@ test("suggest asks for the credentials with a one-time code for a code field", a
       account: "alex",
       site: "github.com",
       exact: true,
+      tags: [],
       digits: 6,
       period: 30,
     },
@@ -961,12 +972,14 @@ const readyOffer = {
       label: "GitHub",
       account: "alex",
       action: "update",
+      tags: ["Work"],
     },
     {
       credential: "b2",
       label: "GitLab",
       account: "alex@example.com",
       action: "add-site",
+      tags: [],
     },
   ],
   suggested: "a1",
@@ -1038,6 +1051,18 @@ test("review asks what Ravenpass offers now for a pending capture", async () => 
 
   assert.deepEqual(await client.review("p1"), readyOffer);
   assert.equal(await sent(), '{"id":1,"type":"review","pending":"p1"}');
+});
+
+test("an offer from an older Ravenpass reads its targets as untagged", async () => {
+  const targets = readyOffer.targets.map(({ tags: _, ...target }) => target);
+  const { client } = await serving(
+    JSON.stringify({ id: 1, result: { ...readyOffer, targets } }),
+  );
+
+  assert.deepEqual(await client.review("p1"), {
+    ...readyOffer,
+    targets: targets.map((target) => ({ ...target, tags: [] })),
+  });
 });
 
 test("save sends where the person chose, with the account and name of a new credential", async () => {
@@ -1202,7 +1227,11 @@ test("passkeys asks for the passkeys a sign-in at the origin can use", async () 
 });
 
 test("passkeyTargets asks where a new passkey for the page's account can go", async () => {
-  const targets = [{ credential: "c1", label: "Example", account: "alex" }];
+  const targets = [
+    { credential: "c1", label: "Example", account: "alex", tags: ["Work"] },
+    // An older Ravenpass sends no tags.
+    { credential: "c2", label: "Example", account: "sam" },
+  ];
   const { client, sent } = await serving(
     JSON.stringify({
       id: 1,
@@ -1211,7 +1240,7 @@ test("passkeyTargets asks where a new passkey for the page's account can go", as
   );
 
   assert.deepEqual(await client.passkeyTargets(origin, createOptions), {
-    targets,
+    targets: [targets[0], { ...targets[1], tags: [] }],
     excluded: true,
   });
   assert.equal(

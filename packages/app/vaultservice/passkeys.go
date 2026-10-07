@@ -30,6 +30,7 @@ type PasskeyTarget struct {
 	ID      vault.ID
 	Label   string
 	Account string
+	Tags    []string
 }
 
 // PasskeyTargets lists credentials a new passkey for RPID can join and whether the site excluded one held.
@@ -275,7 +276,7 @@ func (s *Service) PasskeyTargets(origin, rpID, account string, exclude [][]byte)
 			continue
 		}
 		found = append(found, passkeyCandidate{
-			target:   PasskeyTarget{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry)},
+			target:   PasskeyTarget{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry), Tags: entry.Tags},
 			holder:   holdsAccount(entry, account),
 			lastUsed: lastUsed[entry.ID],
 		})
@@ -409,7 +410,7 @@ func (s *Service) preparePasskey(request newPasskey, passkey vault.Passkey, grou
 	if strings.TrimSpace(label) == "" {
 		label = siteLabel(passkey.RPID)
 	}
-	input := vault.CredentialInput{Label: label, Websites: []string{request.website}, Passkeys: []vault.Passkey{passkey}}
+	input := vault.CredentialInput{Label: label, Websites: []string{vault.WebsiteOf(request.website)}, Passkeys: []vault.Passkey{passkey}}
 	signInAs(&input, request.user.Name)
 	groups, err := s.newItemGroups(group)
 	if err != nil {

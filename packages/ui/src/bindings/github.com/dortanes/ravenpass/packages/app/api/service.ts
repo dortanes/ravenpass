@@ -226,6 +226,15 @@ export function ConfirmRecoveryPhraseChange(phrase: string): $CancellablePromise
 }
 
 /**
+ * ConfirmReveal confirms the owner before the interface shows or copies the secret of the item labelled item: by
+ * device authentication where the vault opens with it, else by pin, the vault's PIN, which counts a wrong PIN as the
+ * locked screen does. A vault that opens with neither has nothing to confirm with and passes.
+ */
+export function ConfirmReveal(item: string, pin: string): $CancellablePromise<void> {
+    return $Call.ByID(1611490407, item, pin);
+}
+
+/**
  * ConfirmWithPIN answers the verify or unlock request id with pin; a wrong PIN leaves the request waiting.
  */
 export function ConfirmWithPIN(id: string, pin: string): $CancellablePromise<void> {
@@ -604,6 +613,13 @@ export function GetSystemAutofill(): $CancellablePromise<$models.SystemAutofillS
 }
 
 /**
+ * GetTagLimits reports the vault core's tag bounds.
+ */
+export function GetTagLimits(): $CancellablePromise<$models.TagLimits> {
+    return $Call.ByID(308411842);
+}
+
+/**
  * GetUnlockMethods reports the ways into the bound vault.
  */
 export function GetUnlockMethods(): $CancellablePromise<$models.UnlockMethods> {
@@ -688,6 +704,14 @@ export function LookupBank(site: string): $CancellablePromise<$models.BankLookup
 }
 
 /**
+ * LookupSite names a credential's website: the name the site declares where website icons load and it answers, else
+ * its readable domain; an address naming no web site is empty, never an error.
+ */
+export function LookupSite(website: string): $CancellablePromise<$models.SiteLookup> {
+    return $Call.ByID(2379475239, website);
+}
+
+/**
  * MoveStorageLocation moves an open vault to the location ChooseStorageMove holds.
  */
 export function MoveStorageLocation(): $CancellablePromise<$models.StorageChange> {
@@ -729,6 +753,14 @@ export function PromptsUnlock(): $CancellablePromise<boolean> {
  */
 export function ReadCard(id: string): $CancellablePromise<$models.Card> {
     return $Call.ByID(19115000, id);
+}
+
+/**
+ * ReadCodeSetup returns the one-time code setup a QR code holds in a picture the owner chooses, for source "file", or
+ * in the clipboard's picture, for "clipboard"; empty when the owner cancels the file choice.
+ */
+export function ReadCodeSetup(source: string): $CancellablePromise<string> {
+    return $Call.ByID(1515448784, source);
 }
 
 /**

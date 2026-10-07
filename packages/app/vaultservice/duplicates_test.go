@@ -103,7 +103,7 @@ func TestEveryKindOfItemIsCopied(t *testing.T) {
 				t.Fatal(err)
 			}
 			got := read(t, service, copied, service.ReadSelectedNote).NoteInput
-			return got == vault.NoteInput{Label: "Note copy", Body: "code 0000", Hidden: true}
+			return reflect.DeepEqual(got, vault.NoteInput{Label: "Note copy", Body: "code 0000", Hidden: true})
 		},
 		"seed": func() bool {
 			copied, err := service.Duplicate(seed, "Seed copy")

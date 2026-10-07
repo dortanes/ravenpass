@@ -68,6 +68,17 @@ func Java_com_dortanes_ravenpass_Bridge_interfaceDestroyed(env *C.JNIEnv, bridge
 	}
 }
 
+// Java_com_dortanes_ravenpass_Bridge_codeSetup implements Bridge.codeSetup(byte[]), a UTF-8 otpauth link.
+//
+//export Java_com_dortanes_ravenpass_Bridge_codeSetup
+func Java_com_dortanes_ravenpass_Bridge_codeSetup(env *C.JNIEnv, _ C.jclass, link C.jbyteArray) {
+	var copied payload
+	copied.data = C.ravenpass_bridge_copy(env, link, &copied.length)
+	received := copied.take()
+	defer clear(received)
+	codeSetupOpened(received)
+}
+
 // FilesDirectory is the app's private files directory, empty until the application attaches.
 func FilesDirectory() string {
 	if path := filesDirectory.Load(); path != nil {

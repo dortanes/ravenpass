@@ -236,6 +236,7 @@ function resultsOf(answer: Answer): AutofillResults {
         account: text(found.account),
         site: text(found.site),
         matches: found.matches === true,
+        tags: list(found.tags).map(text).filter(Boolean),
       };
     }),
   };
@@ -257,6 +258,7 @@ function offerOf(offer: Record<string, unknown>): SaveReviewOffer {
           label: text(target.label),
           account: text(target.account),
           action,
+          tags: list(target.tags).map(text).filter(Boolean),
         },
       ];
     }),

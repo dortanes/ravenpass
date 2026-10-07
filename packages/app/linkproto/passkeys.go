@@ -207,9 +207,10 @@ type PasskeyTargets struct {
 
 // PasskeyTarget is a credential a new passkey can join. Account is its login, else its email.
 type PasskeyTarget struct {
-	Credential string `json:"credential"`
-	Label      string `json:"label"`
-	Account    string `json:"account"`
+	Credential string   `json:"credential"`
+	Label      string   `json:"label"`
+	Account    string   `json:"account"`
+	Tags       []string `json:"tags,omitempty"`
 }
 
 // CreatedPasskey is the passkey-create result; PublicKey is SubjectPublicKeyInfo DER, its algorithm COSE.

@@ -265,6 +265,7 @@ function ListRows<Item extends ListedItem>({
                       />
                     }
                     title={entry.label || words.untitled}
+                    tags={entry.tags}
                     detail={words.detail(entry)}
                     trailing={
                       <RowEnd

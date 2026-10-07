@@ -5,10 +5,10 @@ import { emptyAddress } from "../identities/identity.ts";
 import type { Card } from "../vault-api.ts";
 import { emptyCard } from "./card.test-support.ts";
 import {
-  bankAndLastFour,
   billingChoiceOf,
   billingOf,
   cardColor,
+  cardLine,
   cardNetworks,
   concealedDigits,
   detectNetwork,
@@ -114,9 +114,14 @@ test("only the last four digits are shown of a masked number", () => {
     "••••••",
     "•0005",
   ]);
-  assert.equal(bankAndLastFour("Monzo", "1234"), "Monzo •• 1234");
-  assert.equal(bankAndLastFour("", "1234"), "•• 1234");
-  assert.equal(bankAndLastFour("Monzo", ""), "Monzo");
+  assert.equal(cardLine("Monzo", "", "1234"), "Monzo •• 1234");
+  assert.equal(
+    cardLine("Example Bank", "visa", "4321"),
+    "Example Bank · Visa •• 4321",
+  );
+  assert.equal(cardLine("", "mastercard", "2038"), "Mastercard •• 2038");
+  assert.equal(cardLine("", "", "1234"), "•• 1234");
+  assert.equal(cardLine("Monzo", "", ""), "Monzo");
 });
 
 test("digits are kept from typed or pasted text", () => {

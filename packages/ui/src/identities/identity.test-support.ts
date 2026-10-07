@@ -10,4 +10,5 @@ export const emptyIdentity: IdentityInput = {
   documents: [],
   notes: "",
   photo: "",
+  tags: [],
 };

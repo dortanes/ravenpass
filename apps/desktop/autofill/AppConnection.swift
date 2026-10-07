@@ -62,6 +62,8 @@ struct Suggestion: Codable {
     let account: String
     let site: String
     let matches: Bool
+    /// Absent for a credential without tags and from an app that predates them.
+    let tags: [String]?
 }
 
 /// site is the site of the most specific service.

@@ -49,17 +49,19 @@ type requesterWire struct {
 }
 
 type suggestionWire struct {
-	ID      string `json:"id"`
-	Label   string `json:"label"`
-	Account string `json:"account"`
-	Site    string `json:"site"`
+	ID      string   `json:"id"`
+	Label   string   `json:"label"`
+	Account string   `json:"account"`
+	Site    string   `json:"site"`
+	Tags    []string `json:"tags,omitempty"`
 }
 
 type targetWire struct {
-	ID      string `json:"id"`
-	Label   string `json:"label"`
-	Account string `json:"account"`
-	Action  string `json:"action"`
+	ID      string   `json:"id"`
+	Label   string   `json:"label"`
+	Account string   `json:"account"`
+	Action  string   `json:"action"`
+	Tags    []string `json:"tags,omitempty"`
 }
 
 // offerWire's Site is empty for an app that no site verified.
@@ -131,14 +133,14 @@ func suggestionsOf(found []autofill.Suggestion) []suggestionWire {
 }
 
 func suggestionOf(s autofill.Suggestion) suggestionWire {
-	return suggestionWire{ID: s.ID, Label: s.Label, Account: s.Account, Site: s.Site}
+	return suggestionWire{ID: s.ID, Label: s.Label, Account: s.Account, Site: s.Site, Tags: s.Tags}
 }
 
 func offerOf(offer autofill.Offer, captured autofill.Capture) offerWire {
 	wire := offerWire{Token: offer.Token, Name: offer.Name, Site: siteOf(captured.Requester), Account: captured.Account,
 		Suggested: offer.Suggested, Targets: make([]targetWire, len(offer.Targets))}
 	for i, t := range offer.Targets {
-		wire.Targets[i] = targetWire{ID: t.ID, Label: t.Label, Account: t.Account, Action: string(t.Action)}
+		wire.Targets[i] = targetWire{ID: t.ID, Label: t.Label, Account: t.Account, Action: string(t.Action), Tags: t.Tags}
 	}
 	return wire
 }

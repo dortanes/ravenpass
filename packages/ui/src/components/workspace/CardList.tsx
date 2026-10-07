@@ -1,5 +1,5 @@
 import { CreditCard } from "lucide-react";
-import { bankAndLastFour } from "../../cards/card.ts";
+import { cardLine } from "../../cards/card.ts";
 import { useTranslator } from "../../i18n/translator.tsx";
 import { Validity } from "../../identities/dates.ts";
 import type { CardSummary } from "../../vault-api.ts";
@@ -19,7 +19,7 @@ export function CardList(props: ListProps<CardSummary>) {
       shape="tile"
       icon={CreditCard}
       detail={(entry) => ({
-        text: bankAndLastFour(entry.bankName, entry.lastFour),
+        text: cardLine(entry.bankName, entry.network, entry.lastFour),
         tone: validityTone(Validity.of(entry.expiresOn), today),
       })}
       site={(entry) => entry.site}

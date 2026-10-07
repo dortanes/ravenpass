@@ -209,6 +209,7 @@ async function listCredentials(): Promise<CredentialSummary[]> {
   return listed(credentials).map((credential) => ({
     ...credential,
     groups: listed(credential.groups),
+    tags: listed(credential.tags),
     sites: listed(credential.sites),
   }));
 }
@@ -218,6 +219,7 @@ async function readCredential(id: string): Promise<Credential> {
   return {
     ...credential,
     groups: listed(credential.groups),
+    tags: listed(credential.tags),
     websites: listed(credential.websites),
     passkeys: listed(credential.passkeys),
     apps: listed(credential.apps),
@@ -237,6 +239,7 @@ async function listIdentities(): Promise<IdentitySummary[]> {
   return listed(identities).map((identity) => ({
     ...identity,
     groups: listed(identity.groups),
+    tags: listed(identity.tags),
   }));
 }
 
@@ -262,6 +265,7 @@ async function readIdentity(id: string): Promise<Identity> {
   return {
     ...identity,
     groups: listed(identity.groups),
+    tags: listed(identity.tags),
     emails: listed(identity.emails),
     phones: listed(identity.phones),
     addresses: listed(identity.addresses),
@@ -285,6 +289,7 @@ async function listCards(): Promise<CardSummary[]> {
     ...card,
     network: knownNetwork(card.network),
     groups: listed(card.groups),
+    tags: listed(card.tags),
   }));
 }
 
@@ -294,6 +299,7 @@ async function readCard(id: string): Promise<Card> {
     ...card,
     network: knownNetwork(card.network),
     groups: listed(card.groups),
+    tags: listed(card.tags),
   };
 }
 
@@ -311,12 +317,13 @@ async function listNotes(): Promise<NoteSummary[]> {
   return listed(notes).map((note) => ({
     ...note,
     groups: listed(note.groups),
+    tags: listed(note.tags),
   }));
 }
 
 async function readNote(id: string): Promise<Note> {
   const note: models.Note = await service.ReadNote(id);
-  return { ...note, groups: listed(note.groups) };
+  return { ...note, groups: listed(note.groups), tags: listed(note.tags) };
 }
 
 function knownFormat(value: string): SeedFormat {
@@ -343,6 +350,7 @@ async function listSeeds(): Promise<SeedSummary[]> {
     ...seed,
     format: knownFormat(seed.format),
     groups: listed(seed.groups),
+    tags: listed(seed.tags),
   }));
 }
 
@@ -353,6 +361,7 @@ async function readSeed(id: string): Promise<Seed> {
     format: knownFormat(seed.format),
     checksum: knownChecksum(seed.checksum),
     groups: listed(seed.groups),
+    tags: listed(seed.tags),
     words: listed(seed.words),
     codes: listed(seed.codes),
     addresses: listed(seed.addresses),
@@ -686,6 +695,10 @@ export const hostApi: VaultApi = {
   bankDetails: service.GetBankDetails,
   setBankDetails: service.SetBankDetails,
   lookupBank: service.LookupBank,
+  lookupSite: service.LookupSite,
+  readCodeSetup: service.ReadCodeSetup,
+  tagLimits: service.GetTagLimits,
+  confirmReveal: service.ConfirmReveal,
   listNotes,
   noteLimits: service.GetNoteLimits,
   readNote,

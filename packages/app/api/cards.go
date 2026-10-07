@@ -31,6 +31,8 @@ type CardInput struct {
 	// BillingLink names an identity's address.
 	BillingLink *AddressLink `json:"billingLink"`
 	Notes       string       `json:"notes"`
+	// Tags tell the item apart from others like it.
+	Tags []string `json:"tags"`
 }
 
 // CardSummary is a card as the list shows it; empty strings mean none.
@@ -46,6 +48,7 @@ type CardSummary struct {
 	Pinned     bool     `json:"pinned"`
 	LastUsedAt int64    `json:"lastUsedAt"`
 	Groups     []string `json:"groups"`
+	Tags       []string `json:"tags"`
 	// ExpiresOn is the last day of the expiry month as YYYY-MM-DD.
 	ExpiresOn string `json:"expiresOn"`
 }
@@ -122,6 +125,7 @@ func (s *Service) ListCards() ([]CardSummary, error) {
 			Pinned:     entry.Pinned,
 			LastUsedAt: usage[entry.ID],
 			Groups:     idStrings(entry.Groups),
+			Tags:       append([]string{}, entry.Tags...),
 			ExpiresOn:  entry.ExpiresOn,
 		}
 	}
@@ -301,7 +305,7 @@ func (input CardInput) toVault() (vault.CardInput, error) {
 	card := vault.CardInput{
 		Label: input.Label, Holder: input.Holder, Number: input.Number, Expiry: input.Expiry,
 		SecurityCode: input.SecurityCode, PIN: input.PIN, Network: network,
-		BankName: input.BankName, BankSite: input.BankSite, Color: input.Color, Notes: input.Notes,
+		BankName: input.BankName, BankSite: input.BankSite, Color: input.Color, Notes: input.Notes, Tags: input.Tags,
 	}
 	if input.Billing != nil {
 		billing, err := input.Billing.toVault()
@@ -326,6 +330,7 @@ func fromVaultCard(card vault.CardInput) CardInput {
 		Label: card.Label, Holder: card.Holder, Number: card.Number, Expiry: card.Expiry,
 		SecurityCode: card.SecurityCode, PIN: card.PIN, Network: cardNetworkNames[card.Network],
 		BankName: card.BankName, BankSite: card.BankSite, Color: card.Color, Notes: card.Notes,
+		Tags: append([]string{}, card.Tags...),
 	}
 	if card.Billing != nil {
 		billing := fromVaultAddress(*card.Billing)

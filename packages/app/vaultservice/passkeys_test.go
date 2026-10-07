@@ -9,6 +9,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -170,7 +171,7 @@ func TestPasskeyTargetsMatchTheOriginHoldersFirstAndReportExclusions(t *testing.
 	service, _, _ := captureVault(t)
 	older := createTestCredential(t, service, vault.CredentialInput{Label: "Older", Websites: []string{passkeyOrigin}, Login: "sam"})
 	recent := createTestCredential(t, service, vault.CredentialInput{Label: "Recent", Websites: []string{"https://example.com"}, Login: "kim"})
-	holder := createTestCredential(t, service, vault.CredentialInput{Label: "Zulu", Websites: []string{passkeyOrigin}, Email: "Alex@Example.com"})
+	holder := createTestCredential(t, service, vault.CredentialInput{Label: "Zulu", Websites: []string{passkeyOrigin}, Email: "Alex@Example.com", Tags: []string{"Work"}})
 	createTestCredential(t, service, vault.CredentialInput{Label: "Elsewhere", Websites: []string{"https://example.org"}, Login: "alex@example.com"})
 	full := make([]vault.Passkey, vault.MaxCredentialPasskeys)
 	for i := range full {
@@ -186,7 +187,7 @@ func TestPasskeyTargetsMatchTheOriginHoldersFirstAndReportExclusions(t *testing.
 	if targets.RPID != passkeyRPID || targets.Excluded || !slices.Equal(passkeyTargetIDs(targets), []vault.ID{holder, recent, older}) {
 		t.Fatalf("targets = %+v", targets)
 	}
-	if targets.Targets[0] != (PasskeyTarget{ID: holder, Label: "Zulu", Account: "Alex@Example.com"}) {
+	if !reflect.DeepEqual(targets.Targets[0], PasskeyTarget{ID: holder, Label: "Zulu", Account: "Alex@Example.com", Tags: []string{"Work"}}) {
 		t.Fatalf("holder target = %+v", targets.Targets[0])
 	}
 
@@ -243,7 +244,7 @@ func TestANewPasskeyIsSavedInANewCredentialBeforeTheSiteReceivesIt(t *testing.T)
 		t.Fatalf("its passkeys = %+v", entry.Passkeys)
 	}
 	credential := readTestCredential(t, service, created.Credential)
-	if credential.Email != "alex@example.com" || credential.Login != "" || !slices.Equal(credential.Websites, []string{passkeyOrigin}) {
+	if credential.Email != "alex@example.com" || credential.Login != "" || !slices.Equal(credential.Websites, []string{"login.example.com"}) {
 		t.Fatalf("credential = %+v", credential.CredentialInput)
 	}
 	passkey := credential.Passkeys[0]
@@ -618,7 +619,7 @@ func TestAPlatformCreationIsSavedInANewCredentialForTheRelyingParty(t *testing.T
 	if face := entry.Passkeys[0]; !bytes.Equal(face.CredentialID, created.CredentialID) || face.RPID != passkeyRPID || !bytes.Equal(face.UserHandle, []byte{1, 2, 3, 4}) || face.UserDisplayName != "Alex" {
 		t.Fatalf("its passkey = %+v", face)
 	}
-	if credential := readTestCredential(t, service, created.Credential); credential.Email != "alex@example.com" || !slices.Equal(credential.Websites, []string{"https://" + passkeyRPID}) {
+	if credential := readTestCredential(t, service, created.Credential); credential.Email != "alex@example.com" || !slices.Equal(credential.Websites, []string{passkeyRPID}) {
 		t.Fatalf("credential = %+v", credential.CredentialInput)
 	}
 
@@ -704,7 +705,7 @@ func TestARetriedPlatformCreationJoinsTheCredentialHoldingTheAccount(t *testing.
 		}
 	}
 	holder := readTestCredential(t, service, first.Credential)
-	if len(holder.Passkeys) != 3 || holder.Label != "Example" || !slices.Equal(holder.Websites, []string{"https://" + passkeyRPID}) {
+	if len(holder.Passkeys) != 3 || holder.Label != "Example" || !slices.Equal(holder.Websites, []string{passkeyRPID}) {
 		t.Fatalf("the holder after two retries = %+v", holder.CredentialInput)
 	}
 
@@ -845,7 +846,7 @@ func TestClientDataRavenpassBuildsForAPlatformCarriesTheGivenOriginAndChallenge(
 		}
 	}
 	wantClientData(created.ClientData, "webauthn.create", creation.Client.Challenge)
-	if credential := readTestCredential(t, service, created.Credential); !slices.Equal(credential.Websites, []string{"https://" + passkeyRPID}) {
+	if credential := readTestCredential(t, service, created.Credential); !slices.Equal(credential.Websites, []string{passkeyRPID}) {
 		t.Fatalf("a passkey an app created saved the websites %q", credential.Websites)
 	}
 

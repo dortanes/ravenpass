@@ -16,8 +16,20 @@ import {
 
 const offer: SaveDestinations = {
   targets: [
-    { credential: "a1", label: "GitHub", account: "alex", action: "update" },
-    { credential: "b2", label: "", account: "alex", action: "add-site" },
+    {
+      credential: "a1",
+      label: "GitHub",
+      account: "alex",
+      action: "update",
+      tags: [],
+    },
+    {
+      credential: "b2",
+      label: "",
+      account: "alex",
+      action: "add-site",
+      tags: [],
+    },
   ],
   suggested: "a1",
 };

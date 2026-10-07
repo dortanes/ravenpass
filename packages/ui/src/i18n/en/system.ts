@@ -9,6 +9,7 @@ export const system = {
   "system.dialog.save-recovery-key": "Save your recovery key",
   "system.dialog.choose-photo": "Choose a photo",
   "system.dialog.choose-scan": "Choose a scan of the document",
+  "system.dialog.choose-qr-code": "Choose a picture of the QR code",
   "system.dialog.save-scan": "Save an unencrypted copy of the scan",
   "system.dialog.select-import": "Select the exported file",
   "system.dialog.choose-backup-folder": "Choose a folder for automatic backups",
@@ -29,6 +30,7 @@ export const system = {
   "system.reason.create-vault": "create a new vault",
   "system.reason.open-vault": "open another vault file",
   "system.reason.delete-vault": "delete the vault “{vault}”",
+  "system.reason.reveal-item": "show “{item}”",
   "system.reason.unlock-vault": "unlock your vault",
   "system.prompt.share-file.title": "Share a file",
   "system.prompt.share-file":
@@ -49,6 +51,8 @@ export const system = {
   "system.prompt.create-vault": "Confirm it's you to create a new vault.",
   "system.prompt.open-vault.title": "Open a vault file",
   "system.prompt.open-vault": "Confirm it's you to open another vault file.",
+  "system.prompt.reveal-item.title": "Show a secret",
+  "system.prompt.reveal-item": "Confirm it's you to show “{item}”.",
   "system.prompt.delete-vault.title": "Delete a vault",
   "system.prompt.delete-vault":
     "Confirm it's you to delete the vault “{vault}”.",

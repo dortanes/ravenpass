@@ -1,5 +1,12 @@
 import { cn } from "cn";
-import { Globe } from "lucide-react";
+import {
+  ClipboardPaste,
+  FolderOpen,
+  Globe,
+  LoaderCircle,
+  QrCode,
+} from "lucide-react";
+import { useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { appKey } from "../credentials/apps.ts";
 import {
@@ -7,66 +14,105 @@ import {
   emptyCredential,
   readyToSave,
 } from "../credentials/credential.ts";
+import { SiteNaming } from "../credentials/site-naming.ts";
+import { useCapabilities } from "../host/capabilities.tsx";
+import type { MessageKey } from "../i18n/messages.ts";
 import { useTranslator } from "../i18n/translator.tsx";
+import { typeIn } from "../motion/type-in.ts";
 import type {
   Credential,
   CredentialInput,
   CredentialLimits,
   Group,
   LinkedApp,
+  VaultApi,
 } from "../vault-api.ts";
+import { hintSeen, markHintSeen } from "../workspace/hints.ts";
 import {
   bareField,
   EditorHeader,
+  EditorHint,
   EditorRow,
   GroupField,
   NotesField,
   RemoveButton,
   roomFor,
+  TagField,
+  type Tagging,
   toggled,
   useRemaining,
   useRows,
 } from "./editor/EditorFields.tsx";
 import { Button } from "./ui/button.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu.tsx";
 import { Input } from "./ui/input.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
-import { RevealButton } from "./workspace/Fields.tsx";
+import { RevealButton, rowButtonClass } from "./workspace/Fields.tsx";
 import { LinkedApps } from "./workspace/LinkedApps.tsx";
 import { Passkeys } from "./workspace/Passkeys.tsx";
 
 const formID = "credential-editor";
 
+/** What the editor asks of the host besides saving. */
+export type CredentialEditorHost = Pick<
+  VaultApi,
+  "lookupSite" | "readCodeSetup"
+>;
+
 export function CredentialEditor({
   initial,
   initialGroups,
+  tagging,
   groups,
   limits,
   busy,
+  host,
   onSave,
   onCancel,
+  onFailure,
 }: {
   initial?: Credential;
   /** The groups the credential starts in, which for a new one is the chosen default. */
   initialGroups: string[];
+  tagging: Tagging;
   groups: Group[];
   limits: CredentialLimits | null;
   busy: boolean;
+  host: CredentialEditorHost;
   onSave: (draft: CredentialDraft, groups: string[]) => void;
   onCancel: () => void;
+  onFailure: (cause: unknown, message: MessageKey) => void;
 }) {
   const { t } = useTranslator();
+  const { qrCodes } = useCapabilities();
   const counter = useRemaining();
   const [input, setInput] = useState<CredentialInput>(
     initial ?? emptyCredential,
   );
   const websites = useRows(initial?.websites.length ? initial.websites : [""]);
   const [membership, setMembership] = useState<string[]>(initialGroups);
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const [showPassword, setShowPassword] = useState(false);
+  const [showTotp, setShowTotp] = useState(false);
   const [removedPasskeys, setRemovedPasskeys] = useState<string[]>([]);
   const passkeys = (initial?.passkeys ?? []).filter(
     (passkey) => !removedPasskeys.includes(passkey.id),
   );
   const [apps, setApps] = useState<LinkedApp[]>(initial?.apps ?? []);
+  const [siteNaming] = useState(
+    () => new SiteNaming(initial?.websites[0] ?? ""),
+  );
+  const [lookingUp, setLookingUp] = useState(false);
+  const reduceMotion = useReducedMotion() ?? false;
+  // Shown once, on the first new password.
+  const [hintOpen, setHintOpen] = useState(
+    () => !initial && !hintSeen("credential-site"),
+  );
 
   function update(
     field: Exclude<keyof CredentialInput, "websites" | "apps">,
@@ -75,11 +121,51 @@ export function CredentialEditor({
     setInput((current) => ({ ...current, [field]: value }));
   }
 
+  function dismissHint() {
+    if (!hintOpen) return;
+    setHintOpen(false);
+    markHintSeen("credential-site");
+  }
+
+  /** Cuts a typed or pasted first website to its domain and names the password after the site. */
+  async function lookUpSite(key: number, website: string) {
+    const site = siteNaming.begin(website);
+    if (!site) return;
+    dismissHint();
+    const naming = siteNaming.names(input.label);
+    setLookingUp(true);
+    try {
+      const found = await host.lookupSite(site);
+      if (found.website && found.website !== site) {
+        siteNaming.cut(found.website);
+        websites.update(key, (current) =>
+          current.trim() === site ? found.website : current,
+        );
+      }
+      if (!naming || !found.name) return;
+      siteNaming.filled(found.name);
+      await typeIn(found.name, (shown) => update("label", shown), reduceMotion);
+    } catch (cause) {
+      onFailure(cause, "credential.error.lookup");
+    } finally {
+      setLookingUp(false);
+    }
+  }
+
+  async function readCodeSetup(source: "file" | "clipboard") {
+    try {
+      const setup = await host.readCodeSetup(source);
+      if (setup) update("totp", setup);
+    } catch (cause) {
+      onFailure(cause, "credential.error.qr");
+    }
+  }
+
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSave(
       {
-        input: readyToSave({ ...input, websites: websites.values, apps }),
+        input: readyToSave({ ...input, websites: websites.values, apps, tags }),
         removedPasskeys,
       },
       membership,
@@ -128,39 +214,72 @@ export function CredentialEditor({
                 onChange={(event) => update("label", event.target.value)}
                 placeholder="GitHub"
                 maxLength={limits?.label}
-                disabled={busy}
+                disabled={busy || lookingUp}
                 required
               />
             </EditorRow>
-            {websites.rows.map((row, index) => (
-              <EditorRow
-                key={row.key}
-                label={t("credential.field.website")}
-                htmlFor={`credential-website-${row.key}`}
-                counter={counter(row.value, limits?.website, 20)}
-              >
-                <Input
-                  id={`credential-website-${row.key}`}
-                  className={bareField}
-                  value={row.value}
-                  onChange={(event) =>
-                    websites.change(row.key, event.target.value)
-                  }
-                  placeholder={index === 0 ? "github.com" : undefined}
-                  maxLength={limits?.website}
-                  autoCapitalize="none"
-                  spellCheck={false}
-                  disabled={busy}
-                />
-                {websites.rows.length > 1 && (
-                  <RemoveButton
-                    label={t("credential.remove.website")}
-                    busy={busy}
-                    onRemove={() => websites.remove(row.key)}
+            {websites.rows.map((row, index) => {
+              const field = (
+                <EditorRow
+                  key={row.key}
+                  label={t("credential.field.website")}
+                  htmlFor={`credential-website-${row.key}`}
+                  counter={counter(row.value, limits?.website, 20)}
+                >
+                  <Input
+                    id={`credential-website-${row.key}`}
+                    className={bareField}
+                    value={row.value}
+                    onChange={(event) => {
+                      websites.change(row.key, event.target.value);
+                      if (index === 0) dismissHint();
+                    }}
+                    onBlur={
+                      index === 0
+                        ? (event) =>
+                            void lookUpSite(row.key, event.target.value)
+                        : undefined
+                    }
+                    placeholder={index === 0 ? "github.com" : undefined}
+                    maxLength={limits?.website}
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    disabled={busy}
                   />
-                )}
-              </EditorRow>
-            ))}
+                  {index === 0 && lookingUp && (
+                    <span
+                      className="flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground"
+                      role="status"
+                    >
+                      <LoaderCircle
+                        className="size-3.5 animate-spin motion-reduce:animate-none"
+                        aria-hidden="true"
+                      />
+                      {t("credential.site.looking-up")}
+                    </span>
+                  )}
+                  {websites.rows.length > 1 && (
+                    <RemoveButton
+                      label={t("credential.remove.website")}
+                      busy={busy}
+                      onRemove={() => websites.remove(row.key)}
+                    />
+                  )}
+                </EditorRow>
+              );
+              return index === 0 ? (
+                <EditorHint
+                  key={row.key}
+                  open={hintOpen}
+                  text={t("credential.hint.site")}
+                  onDismiss={dismissHint}
+                >
+                  <div className="border-b">{field}</div>
+                </EditorHint>
+              ) : (
+                field
+              );
+            })}
             <EditorRow
               label={t("credential.field.login")}
               htmlFor="credential-username"
@@ -218,6 +337,12 @@ export function CredentialEditor({
                 onToggle={() => setShowPassword((visible) => !visible)}
               />
             </EditorRow>
+            <TagField
+              tags={tags}
+              tagging={tagging}
+              busy={busy}
+              onChange={setTags}
+            />
             {groups.length > 0 && (
               <GroupField
                 groups={groups}
@@ -235,6 +360,7 @@ export function CredentialEditor({
               <Input
                 id="credential-totp"
                 className={cn(bareField, "font-mono text-xs")}
+                type={showTotp ? "text" : "password"}
                 value={input.totp}
                 onChange={(event) => update("totp", event.target.value)}
                 placeholder={t("credential.totp.placeholder")}
@@ -244,6 +370,44 @@ export function CredentialEditor({
                 spellCheck={false}
                 disabled={busy}
               />
+              <RevealButton
+                shown={showTotp}
+                revealLabel={t("credential.totp.reveal")}
+                concealLabel={t("credential.totp.conceal")}
+                busy={busy}
+                onToggle={() => setShowTotp((visible) => !visible)}
+              />
+              {qrCodes && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className={rowButtonClass}
+                      aria-label={t("credential.totp.qr")}
+                      title={t("credential.totp.qr")}
+                      disabled={busy}
+                    >
+                      <QrCode className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onSelect={() => void readCodeSetup("file")}
+                    >
+                      <FolderOpen />
+                      {t("credential.totp.qr.file")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => void readCodeSetup("clipboard")}
+                    >
+                      <ClipboardPaste />
+                      {t("credential.totp.qr.clipboard")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </EditorRow>
           </div>
 

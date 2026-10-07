@@ -369,6 +369,7 @@ func TestEveryOfferedLanguageHasDialogs(t *testing.T) {
 				catalog.SignInReason("example.com", "alex@example.com"):    {"example.com", "alex@example.com"},
 				catalog.FillReason("example.com", "alex@example.com"):      {"example.com", "alex@example.com"},
 				catalog.DeleteVaultReason("Personal"):                      {"Personal"},
+				catalog.RevealReason("Wallet"):                             {"Wallet"},
 			} {
 				for _, fact := range facts {
 					if !strings.Contains(reason, fact) || strings.Contains(reason, "{") {
@@ -388,6 +389,7 @@ func TestTitledPromptsGiveATitleAndASentence(t *testing.T) {
 			catalog.SignInReason("example.com", "alex"), catalog.FillReason("example.com", "alex"),
 			catalog.ChangeUnlockReason(), catalog.CreateVaultReason(),
 			catalog.OpenVaultReason(), catalog.DeleteVaultReason("Personal"), catalog.UnlockVault,
+			catalog.RevealReason("Wallet"),
 		} {
 			title, sentence, found := strings.Cut(prompt, "\n")
 			if !found || title == "" || strings.ContainsRune(sentence, '\n') || !strings.HasSuffix(sentence, ".") {

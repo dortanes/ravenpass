@@ -44,6 +44,8 @@ import {
   NotesField,
   RemoveButton,
   roomFor,
+  TagField,
+  type Tagging,
   toggled,
   useRemaining,
   useRows,
@@ -96,6 +98,7 @@ function characters(value: string): number {
 export function SeedEditor({
   initial,
   initialGroups,
+  tagging,
   groups,
   limits,
   busy,
@@ -106,6 +109,7 @@ export function SeedEditor({
   initial?: Seed;
   /** The groups the seed starts in, which for a new one is the chosen default. */
   initialGroups: string[];
+  tagging: Tagging;
   groups: Group[];
   limits: SeedLimits | null;
   busy: boolean;
@@ -140,6 +144,7 @@ export function SeedEditor({
   const addresses = useRows<SeedAddress>(initial?.addresses ?? []);
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [membership, setMembership] = useState<string[]>(initialGroups);
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const [check, setCheck] = useState<{
     phrase: string;
     result: PhraseCheck;
@@ -237,6 +242,7 @@ export function SeedEditor({
         wallet,
         addresses: keptAddresses,
         notes,
+        tags,
       },
       membership,
     );
@@ -314,6 +320,12 @@ export function SeedEditor({
                 disabled={busy}
               />
             </EditorRow>
+            <TagField
+              tags={tags}
+              tagging={tagging}
+              busy={busy}
+              onChange={setTags}
+            />
             {groups.length > 0 && (
               <GroupField
                 groups={groups}

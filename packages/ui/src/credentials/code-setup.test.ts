@@ -17,6 +17,7 @@ function credential(
     pinned: false,
     lastUsedAt: 0,
     groups: [],
+    tags: [],
     site: "",
     sites: [],
     oneTimeCode: false,

@@ -34,8 +34,9 @@ test("the search screen opens on the host's results and passkeys, read defensive
         account: "alex",
         site: "example.com",
         matches: true,
+        tags: ["Work", 4, ""],
       },
-      { id: "b2", label: 7, matches: "yes" },
+      { id: "b2", label: 7, matches: "yes", tags: "Work" },
     ],
     passkeys: [
       { key: "a2V5", label: "Mail", account: "alex", site: "example.com" },
@@ -55,8 +56,16 @@ test("the search screen opens on the host's results and passkeys, read defensive
         account: "alex",
         site: "example.com",
         matches: true,
+        tags: ["Work"],
       },
-      { id: "b2", label: "", account: "", site: "", matches: false },
+      {
+        id: "b2",
+        label: "",
+        account: "",
+        site: "",
+        matches: false,
+        tags: [],
+      },
     ],
     passkeys: [
       { key: "a2V5", label: "Mail", account: "alex", site: "example.com" },
@@ -117,7 +126,13 @@ test("the save review opens on the offer, leaving out targets it cannot name", a
       account: "alex",
       suggested: "a1",
       targets: [
-        { id: "a1", label: "Example", account: "alex", action: "update" },
+        {
+          id: "a1",
+          label: "Example",
+          account: "alex",
+          action: "update",
+          tags: ["Work", 4, ""],
+        },
         { id: "b2", label: "Other", account: "alex", action: "delete" },
       ],
     },
@@ -135,6 +150,7 @@ test("the save review opens on the offer, leaving out targets it cannot name", a
           label: "Example",
           account: "alex",
           action: "update",
+          tags: ["Work"],
         },
       ],
     },
@@ -160,6 +176,7 @@ test("fills, unlocks and saves read how they ended", async () => {
     account: "",
     site: "",
     matches: false,
+    tags: [],
   };
   assert.equal(await api.fill(credential, true), "not-added");
   assert.equal(await api.fill(credential, false), "failed");
@@ -225,6 +242,7 @@ test("a fill reads a credential gone from the vault, a host that did not answer 
     account: "alex",
     site: "example.com",
     matches: true,
+    tags: [],
   };
   assert.equal(await api.fill(credential, false), "not-found");
   assert.equal(await api.fill(credential, false), "unreachable");

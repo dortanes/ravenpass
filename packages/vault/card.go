@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"slices"
 	"strings"
 	"time"
 )
@@ -76,6 +77,7 @@ type CardInput struct {
 	Billing      *Address
 	BillingLink  *AddressLink
 	Notes        string
+	Tags         []string
 }
 
 // Card is a card as read; Linked is the address BillingLink names, and a link whose identity or address is gone reads as none.
@@ -97,6 +99,11 @@ func acceptCard(input CardInput) (CardInput, error) {
 	if !fits(input.Label, MaxLabelLength) || strings.TrimSpace(input.Label) == "" {
 		return CardInput{}, ErrInvalidInput
 	}
+	tags, err := AcceptTags(input.Tags)
+	if err != nil {
+		return CardInput{}, err
+	}
+	input.Tags = tags
 	if !fits(input.Holder, MaxCardHolderLength) || !fits(input.BankName, MaxBankNameLength) || !fits(input.BankSite, MaxOriginLength) || !fits(input.Notes, MaxNotesLength) {
 		return CardInput{}, ErrInvalidInput
 	}
@@ -186,7 +193,7 @@ func validCardFace(face CardFace) bool {
 
 // cardEntry is what the index shows of an accepted card.
 func cardEntry(input CardInput, groups []ID) entryMeta {
-	return entryMeta{kind: KindCard, label: input.Label, detail: input.BankName, expiresOn: expiryEnd(input.Expiry), site: SiteOf(input.BankSite), card: cardFace(input), groups: groups}
+	return entryMeta{kind: KindCard, label: input.Label, detail: input.BankName, expiresOn: expiryEnd(input.Expiry), site: SiteOf(input.BankSite), card: cardFace(input), groups: groups, tags: input.Tags}
 }
 
 // A card record holds everything but the label, which lives in the index; at most one of billing
@@ -290,6 +297,7 @@ func (s *Session) ReadSelectedCard(ticket Selection) (Card, error) {
 		return Card{}, err
 	}
 	input.Label = entry.label
+	input.Tags = slices.Clone(entry.tags)
 	card := Card{ID: entry.id, CardInput: input}
 	if input.BillingLink == nil {
 		return card, nil

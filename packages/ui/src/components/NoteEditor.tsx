@@ -8,6 +8,8 @@ import {
   EditorRow,
   fieldSection,
   GroupField,
+  TagField,
+  type Tagging,
   toggled,
   useRemaining,
 } from "./editor/EditorFields.tsx";
@@ -22,6 +24,7 @@ const block = "min-w-0 shrink-0 overflow-hidden rounded-row bg-field";
 export function NoteEditor({
   initial,
   initialGroups,
+  tagging,
   groups,
   limits,
   busy,
@@ -31,6 +34,7 @@ export function NoteEditor({
   initial?: Note;
   /** The groups the note starts in, which for a new one is the chosen default. */
   initialGroups: string[];
+  tagging: Tagging;
   groups: Group[];
   limits: NoteLimits | null;
   busy: boolean;
@@ -43,12 +47,13 @@ export function NoteEditor({
   const [body, setBody] = useState(initial?.body ?? "");
   const [hidden, setHidden] = useState(initial?.hidden ?? false);
   const [membership, setMembership] = useState<string[]>(initialGroups);
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
   const name = label.trim();
   const remaining = counter(body, limits?.body, 500);
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSave({ label: name, body, hidden }, membership);
+    onSave({ label: name, body, hidden, tags }, membership);
   }
 
   return (
@@ -93,6 +98,12 @@ export function NoteEditor({
               disabled={busy}
             />
           </EditorRow>
+          <TagField
+            tags={tags}
+            tagging={tagging}
+            busy={busy}
+            onChange={setTags}
+          />
           {groups.length > 0 && (
             <GroupField
               groups={groups}

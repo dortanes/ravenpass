@@ -259,6 +259,7 @@ function SaveForm({
         option && { label: option.label, action: "add-passkey" },
         t,
       ),
+      tags: option?.tags,
       detail: option ? option.account || t("credential.login.empty") : site,
       avatar: <SiteAvatar site={site} label={option?.label ?? site} />,
     };
@@ -283,6 +284,7 @@ function SaveForm({
             active={false}
             avatar={<SiteAvatar site={site} label={target?.label ?? site} />}
             title={target ? target.label || t("credential.untitled") : site}
+            tags={target?.tags}
             detail={{
               text:
                 (target ? target.account : listing.account) ||

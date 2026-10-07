@@ -8,6 +8,8 @@ export interface SaveTarget {
   /** The credential's own account. */
   readonly account: string;
   readonly action: "update" | "add-site";
+  /** What tells two accounts on one site apart. */
+  readonly tags: readonly string[];
 }
 
 /** An empty `target` is a new credential, which takes `account` and `name`. */

@@ -9,7 +9,13 @@ const offer: SaveReviewOffer = {
   account: "alex",
   name: "example.com",
   targets: [
-    { credential: "a1", label: "Example", account: "alex", action: "update" },
+    {
+      credential: "a1",
+      label: "Example",
+      account: "alex",
+      action: "update",
+      tags: [],
+    },
   ],
   suggested: "",
 };

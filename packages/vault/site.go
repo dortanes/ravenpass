@@ -31,6 +31,34 @@ func SiteOf(origin string) string {
 	return siteOfURL(parsed)
 }
 
+// WebsiteOf returns a website cut to what the vault matches it by: the readable SiteOf of an https or scheme-less
+// address, and the scheme, host and any port but 80 of an http one, which a platform autofill over plain http checks.
+// Paths, queries, fragments and user info go; an address SiteOf cannot read comes back trimmed and otherwise unchanged.
+func WebsiteOf(address string) string {
+	address = strings.TrimSpace(address)
+	implied := !strings.Contains(address, "://")
+	target := address
+	if implied {
+		target = "https://" + address
+	}
+	parsed, err := url.Parse(target)
+	if err != nil || implied && parsed.User != nil {
+		return address
+	}
+	site := siteOfURL(parsed)
+	if site == "" {
+		return address
+	}
+	if parsed.Scheme == "https" {
+		return SiteName(site)
+	}
+	host, _ := HostASCII(parsed.Hostname())
+	if port := parsed.Port(); port != "" && port != "80" {
+		host = net.JoinHostPort(host, port)
+	}
+	return "http://" + host
+}
+
 // OriginOf returns an http or https address's origin as scheme and host, or false for any other address or one with user info.
 func OriginOf(address string) (string, bool) {
 	parsed, err := url.Parse(address)

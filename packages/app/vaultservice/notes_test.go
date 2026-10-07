@@ -3,6 +3,7 @@ package vaultservice
 import (
 	"bytes"
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/dortanes/ravenpass/packages/vault"
@@ -33,7 +34,7 @@ func TestNoteWritesRoundTripAcrossLock(t *testing.T) {
 	if bytes.Contains(files.data, []byte("front 4821")) {
 		t.Fatal("the note body appeared in the vault file")
 	}
-	if note := readTestNote(t, service, id); note.NoteInput != input {
+	if note := readTestNote(t, service, id); !reflect.DeepEqual(note.NoteInput, input) {
 		t.Fatalf("note = %+v", note.NoteInput)
 	}
 	replacement := vault.NoteInput{Label: "Door", Body: "front 1111"}
@@ -44,7 +45,7 @@ func TestNoteWritesRoundTripAcrossLock(t *testing.T) {
 	if _, err := service.Unlock(testReason); err != nil {
 		t.Fatal(err)
 	}
-	if note := readTestNote(t, service, id); note.NoteInput != replacement {
+	if note := readTestNote(t, service, id); !reflect.DeepEqual(note.NoteInput, replacement) {
 		t.Fatalf("note after a lock = %+v", note.NoteInput)
 	}
 }

@@ -126,11 +126,12 @@ type answer struct {
 
 // suggestion is a listed credential; Matches is false until the owner adds the most specific service to it.
 type suggestion struct {
-	ID      string `json:"id"`
-	Label   string `json:"label"`
-	Account string `json:"account"`
-	Site    string `json:"site"`
-	Matches bool   `json:"matches"`
+	ID      string   `json:"id"`
+	Label   string   `json:"label"`
+	Account string   `json:"account"`
+	Site    string   `json:"site"`
+	Matches bool     `json:"matches"`
+	Tags    []string `json:"tags,omitempty"`
 }
 
 type passkeyChoice struct {

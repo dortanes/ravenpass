@@ -43,6 +43,7 @@ func (wording) CreateVaultReason() string { return "create a vault" }
 func (wording) OpenVaultReason() string { return "open a vault file" }
 
 func (wording) DeleteVaultReason(vault string) string { return "delete " + vault }
+func (wording) RevealReason(item string) string       { return "show " + item }
 
 type fakeMethods struct {
 	methods vaultservice.Methods

@@ -74,6 +74,21 @@
                 android:resource="@xml/credential_provider" />
         </service>
 
+        <!-- The system camera, a browser or another app opens a one-time code setup link here. -->
+        <activity
+            android:name="com.dortanes.ravenpass.CodeSetupActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="otpauth" />
+            </intent-filter>
+        </activity>
         <activity
             android:name="com.dortanes.ravenpass.autofill.UnlockActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"

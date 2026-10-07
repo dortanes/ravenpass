@@ -27,8 +27,8 @@ const save: PasskeyCardContent = {
     state: "save",
     account: "alex",
     targets: [
-      { credential: "c0", label: "Old", account: "alexander" },
-      { credential: "c1", label: "GitHub", account: "alex" },
+      { credential: "c0", label: "Old", account: "alexander", tags: [] },
+      { credential: "c1", label: "GitHub", account: "alex", tags: [] },
     ],
   },
 };

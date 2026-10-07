@@ -77,6 +77,7 @@ type SeedInput struct {
 	Wallet     string
 	Addresses  []SeedAddress
 	Notes      string
+	Tags       []string
 }
 
 // SeedChecksum is what BIP-39 makes of a phrase.
@@ -130,6 +131,11 @@ func acceptSeed(input SeedInput) (SeedInput, error) {
 	if !fits(input.Label, MaxLabelLength) || strings.TrimSpace(input.Label) == "" {
 		return SeedInput{}, ErrInvalidInput
 	}
+	tags, err := AcceptTags(input.Tags)
+	if err != nil {
+		return SeedInput{}, err
+	}
+	input.Tags = tags
 	if !fits(input.Wallet, MaxWalletNameLength) || !fits(input.Notes, MaxNotesLength) || len(input.Addresses) > MaxSeedAddresses {
 		return SeedInput{}, ErrInvalidInput
 	}
@@ -197,7 +203,7 @@ func seedFace(input SeedInput) SeedFace {
 
 // seedEntry is what the index shows of an accepted seed.
 func seedEntry(input SeedInput, groups []ID) entryMeta {
-	return entryMeta{kind: KindSeed, label: input.Label, detail: input.Wallet, seed: seedFace(input), groups: groups}
+	return entryMeta{kind: KindSeed, label: input.Label, detail: input.Wallet, seed: seedFace(input), groups: groups, tags: input.Tags}
 }
 
 // A seed record holds everything but the label, which lives in the index; checkedOn is empty or
@@ -313,6 +319,7 @@ func (s *Session) decryptSeed(index int) (SeedInput, string, error) {
 	defer clear(plaintext)
 	input, checkedOn, err := decodeSeedRecord(plaintext)
 	input.Label = s.entries[index].label
+	input.Tags = slices.Clone(s.entries[index].tags)
 	return input, checkedOn, err
 }
 
@@ -328,6 +335,7 @@ func (s *Session) ReadSelectedSeed(ticket Selection) (Seed, error) {
 		return Seed{}, err
 	}
 	input.Label = entry.label
+	input.Tags = slices.Clone(entry.tags)
 	seed := Seed{ID: entry.id, CheckedOn: checkedOn, SeedInput: input}
 	if input.Format == SeedPhrase {
 		seed.Checksum, _ = CheckSeedPhrase(input.Words)

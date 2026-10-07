@@ -72,7 +72,7 @@ var (
 func TestACaptureOfferNamesItsTargetsAndSuggestion(t *testing.T) {
 	credentials := &capturingCredentials{fakeCredentials: &fakeCredentials{}, offer: vaultservice.CaptureOffer{
 		Targets: []vaultservice.Target{
-			{ID: updateID, Label: "Example", Account: "alex", Action: vaultservice.TargetUpdate},
+			{ID: updateID, Label: "Example", Account: "alex", Action: vaultservice.TargetUpdate, Tags: []string{"Personal"}},
 			{ID: addSiteID, Label: "Mail", Account: "alex@example.test", Action: vaultservice.TargetAddSite},
 		},
 		Suggested: updateID,
@@ -85,7 +85,7 @@ func TestACaptureOfferNamesItsTargetsAndSuggestion(t *testing.T) {
 	want := linkproto.CaptureOffer{
 		State: linkproto.CaptureReady, Site: "login.example.com", Account: "alex", Name: "login.example.com",
 		Targets: []linkproto.SaveTarget{
-			{Credential: updateID.String(), Label: "Example", Account: "alex", Action: linkproto.SaveUpdate},
+			{Credential: updateID.String(), Label: "Example", Account: "alex", Action: linkproto.SaveUpdate, Tags: []string{"Personal"}},
 			{Credential: addSiteID.String(), Label: "Mail", Account: "alex@example.test", Action: linkproto.SaveAddSite},
 		},
 		Suggested: updateID.String(),

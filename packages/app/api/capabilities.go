@@ -34,6 +34,8 @@ type Capabilities struct {
 	AutoBackups bool `json:"autoBackups"`
 	// Print reports that the host prints through the system print dialog; Host.Printer sets it.
 	Print bool `json:"print"`
+	// QRCodes reports that the editor reads a one-time code setup from a QR code picture; Host.QRCodes sets it.
+	QRCodes bool `json:"qrCodes"`
 }
 
 // Capabilities reports the features this host offers.

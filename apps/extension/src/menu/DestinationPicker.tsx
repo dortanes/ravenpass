@@ -15,6 +15,7 @@ export interface DestinationOption {
   readonly id: string;
   readonly key: string;
   readonly title: string;
+  readonly tags?: readonly string[];
   readonly detail: string;
   readonly avatar: ReactNode;
 }
@@ -123,6 +124,7 @@ function Destinations({
               active={highlight.highlighted === option.key}
               avatar={option.avatar}
               title={option.title}
+              tags={option.tags}
               detail={{ text: option.detail }}
               trailing={
                 option.id === chosen ? (

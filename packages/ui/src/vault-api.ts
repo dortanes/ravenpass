@@ -156,6 +156,8 @@ export interface CredentialInput {
   totp: string;
   /** Only autofill links apps, so a save can only remove them. */
   apps: LinkedApp[];
+  /** Short words that tell the item apart from others like it, such as two accounts on one site. */
+  tags: string[];
 }
 
 /**
@@ -182,6 +184,7 @@ export interface CredentialSummary {
   email: string;
   oneTimeCode: boolean;
   passkeys: number;
+  tags: string[];
 }
 
 export interface Group {
@@ -287,6 +290,8 @@ export interface IdentityInput {
   notes: string;
   /** Base64; on save empty removes the photo and a PNG from `cropIdentityPhoto` replaces it. */
   photo: string;
+  /** Short words that tell the item apart from others like it, such as two accounts on one site. */
+  tags: string[];
 }
 
 /** `expiresOn` is the earliest document expiry, or empty. */
@@ -300,6 +305,7 @@ export interface IdentitySummary {
   expiresOn: string;
   /** A base64 JPEG, empty without a photo. */
   thumbnail: string;
+  tags: string[];
 }
 
 /** `chosen` is false when the dialog closed without a choice. */
@@ -394,6 +400,8 @@ export interface CardInput {
   billing: Address | null;
   billingLink: AddressLink | null;
   notes: string;
+  /** Short words that tell the item apart from others like it, such as two accounts on one site. */
+  tags: string[];
 }
 
 export interface AddressLink {
@@ -427,6 +435,7 @@ export interface CardSummary {
   lastUsedAt: number;
   groups: string[];
   expiresOn: string;
+  tags: string[];
 }
 
 export interface Card extends CardInput {
@@ -481,10 +490,25 @@ export interface BankLookup {
   color: string;
 }
 
+/** What a credential's website suggests; both are empty for an address that names no web site. */
+export interface SiteLookup {
+  name: string;
+  /** The address cut to its domain, as imports keep it; an http address keeps its scheme and port. */
+  website: string;
+}
+
+/** `tag` is characters per tag; `tags` is the most tags an item carries. */
+export interface TagLimits {
+  tag: number;
+  tags: number;
+}
+
 export interface NoteInput {
   label: string;
   body: string;
   hidden: boolean;
+  /** Short words that tell the item apart from others like it, such as two accounts on one site. */
+  tags: string[];
 }
 
 /** `preview` is the first line holding text, empty for a hidden note. */
@@ -496,6 +520,7 @@ export interface NoteSummary {
   pinned: boolean;
   lastUsedAt: number;
   groups: string[];
+  tags: string[];
 }
 
 export interface Note extends NoteInput {
@@ -534,6 +559,8 @@ export interface SeedInput {
   wallet: string;
   addresses: SeedAddress[];
   notes: string;
+  /** Short words that tell the item apart from others like it, such as two accounts on one site. */
+  tags: string[];
 }
 
 /** `total` is a phrase's word count, a code set's code count, or 0 for a key. */
@@ -547,6 +574,7 @@ export interface SeedSummary {
   pinned: boolean;
   lastUsedAt: number;
   groups: string[];
+  tags: string[];
 }
 
 /** A BIP-39 checksum result: `unknown` for a phrase outside BIP-39, empty for another format. */
@@ -806,6 +834,8 @@ export interface Capabilities {
   autoBackups: boolean;
   /** The host prints through the system print dialog. */
   print: boolean;
+  /** The editor reads a one-time code setup from a QR code in a picture file or on the clipboard. */
+  qrCodes: boolean;
 }
 
 export interface VaultApi {
@@ -959,6 +989,19 @@ export interface VaultApi {
   setBankDetails(enabled: boolean): Promise<void>;
   /** Both values are empty while `BankDetails.enabled` is off. */
   lookupBank(site: string): Promise<BankLookup>;
+  /** The site's declared name where website icons load, else its readable domain. */
+  lookupSite(website: string): Promise<SiteLookup>;
+  /**
+   * The setup a QR code holds in a picture the owner chooses or on the clipboard; empty when the owner cancels the
+   * file choice. Fails with `qr-code-missing`, `qr-code-not-setup` or `qr-code-ambiguous`.
+   */
+  readCodeSetup(source: "file" | "clipboard"): Promise<string>;
+  tagLimits(): Promise<TagLimits>;
+  /**
+   * Confirms the owner before a hidden note or a seed's secret shows: by device authentication where the vault opens
+   * with it, else by `pin`, failing with `pin-wrong` or `owner-unverified`. Passes where the vault offers neither.
+   */
+  confirmReveal(item: string, pin: string): Promise<void>;
   listNotes(): Promise<NoteSummary[]>;
   noteLimits(): Promise<NoteLimits>;
   readNote(id: string): Promise<Note>;

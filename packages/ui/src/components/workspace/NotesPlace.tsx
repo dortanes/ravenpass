@@ -56,7 +56,7 @@ export function NotesPlace({
   opening: OpeningPane;
   ref?: Ref<PlaceHandle>;
 }) {
-  const { api, groups, busy } = shell;
+  const { api, groups, busy, report } = shell;
   const { data: limits = null } = useQuery({
     queryKey: queryKeys.limits("notes"),
     queryFn: () => api.noteLimits(),
@@ -86,6 +86,8 @@ export function NotesPlace({
         <NoteDetail
           note={note}
           controls={controls}
+          host={api}
+          onFailure={report}
           onCopy={() => copy(() => api.copyNote(note.id), "note.copied")}
         />
       )}

@@ -19,7 +19,7 @@ func TestCSVExportMapsLoginsAndNotes(t *testing.T) {
 		{
 			Content: vault.NewItem{Pinned: true, Credential: &vault.CredentialInput{
 				Label:    "Example",
-				Websites: []string{"https://example.test/login", "https://second.example.test"},
+				Websites: []string{"example.test", "second.example.test"},
 				Email:    "alex@example.test",
 				Password: "secret",
 				TOTP:     "JBSWY3DPEHPK3PXP",
@@ -35,7 +35,7 @@ func TestCSVExportMapsLoginsAndNotes(t *testing.T) {
 		{
 			Content: vault.NewItem{Credential: &vault.CredentialInput{
 				Label:    "fallback.example",
-				Websites: []string{"https://www.fallback.example"},
+				Websites: []string{"fallback.example"},
 				Login:    "alex",
 				Password: "pw",
 				Notes:    "One-time code setup: steam://ABCDEF",
@@ -67,10 +67,10 @@ func TestCSVReadsTheURIsOfALoginAsOneRecord(t *testing.T) {
 			"\"\"\"https://a.example/?q=1,2\"\", https://b.example,androidapp://com.example\",Quoted,login\n"+
 			"\"https://c.example/\"\"odd\",Stray quote,login\n"))
 	first := export.Items[0].Content.Credential
-	if want := []string{"https://a.example/?q=1,2", "https://b.example", "androidapp://com.example"}; !reflect.DeepEqual(first.Websites, want) || first.Notes != "" {
+	if want := []string{"a.example", "b.example", "androidapp://com.example"}; !reflect.DeepEqual(first.Websites, want) || first.Notes != "" {
 		t.Fatalf("read %+v", first)
 	}
-	if second := export.Items[1].Content.Credential; !reflect.DeepEqual(second.Websites, []string{`https://c.example/"odd`}) {
+	if second := export.Items[1].Content.Credential; !reflect.DeepEqual(second.Websites, []string{"c.example"}) {
 		t.Fatalf("read %+v", second)
 	}
 }

@@ -7,7 +7,7 @@ import {
   Tags,
 } from "lucide-react";
 import { type ComponentType, type ReactNode, useState } from "react";
-import { bankAndLastFour } from "../../cards/card.ts";
+import { cardLine } from "../../cards/card.ts";
 import { accountOf } from "../../credentials/credential.ts";
 import { useCapabilities } from "../../host/capabilities.tsx";
 import type { MessageKey } from "../../i18n/messages.ts";
@@ -54,6 +54,7 @@ import { GroupBadge } from "./GroupBadge.tsx";
 import { type ItemPlaceName, itemPlaces } from "./places.ts";
 import { seedFace, useSeedLine } from "./SeedList.tsx";
 import { useSiteIcons } from "./SiteIcons.tsx";
+import { TagBadge } from "./TagBadge.tsx";
 
 /** What the person chose in the command palette. */
 export type PaletteChoice =
@@ -219,6 +220,7 @@ function PaletteSearch({
                 }
                 label={credential.label || t("credential.untitled")}
                 groups={groupsOf(credential)}
+                tags={credential.tags}
                 detail={accountOf(credential)}
                 onSelect={() =>
                   choose({
@@ -249,6 +251,7 @@ function PaletteSearch({
                 }
                 label={identity.label || t("identity.untitled")}
                 groups={groupsOf(identity)}
+                tags={identity.tags}
                 detail={identity.email}
                 onSelect={() =>
                   choose({
@@ -277,7 +280,8 @@ function PaletteSearch({
                 }
                 label={card.label || t("card.untitled")}
                 groups={groupsOf(card)}
-                detail={bankAndLastFour(card.bankName, card.lastFour)}
+                tags={card.tags}
+                detail={cardLine(card.bankName, card.network, card.lastFour)}
                 onSelect={() =>
                   choose({ kind: "item", place: "cards", id: card.id })
                 }
@@ -302,6 +306,7 @@ function PaletteSearch({
                 }
                 label={note.label || t("note.untitled")}
                 groups={groupsOf(note)}
+                tags={note.tags}
                 detail={note.hidden ? t("note.preview.hidden") : note.preview}
                 onSelect={() =>
                   choose({ kind: "item", place: "notes", id: note.id })
@@ -327,6 +332,7 @@ function PaletteSearch({
                 }
                 label={seed.label || t("seed.untitled")}
                 groups={groupsOf(seed)}
+                tags={seed.tags}
                 detail={seedLine(seed).text}
                 onSelect={() =>
                   choose({ kind: "item", place: "seeds", id: seed.id })
@@ -401,6 +407,7 @@ function ItemRow({
   face,
   label,
   groups = [],
+  tags = [],
   detail,
   disabled,
   onSelect,
@@ -410,6 +417,7 @@ function ItemRow({
   label: string;
   /** The groups the item belongs to, named. */
   groups?: readonly Group[];
+  tags?: readonly string[];
   detail?: string;
   disabled?: boolean;
   onSelect: () => void;
@@ -422,6 +430,13 @@ function ItemRow({
         <span className="flex min-w-0 shrink-[2] gap-1 overflow-hidden">
           {groups.map((group) => (
             <GroupBadge key={group.id} name={group.name} />
+          ))}
+        </span>
+      )}
+      {tags.length > 0 && (
+        <span className="flex min-w-0 shrink-[2] gap-1 overflow-hidden">
+          {tags.map((tag) => (
+            <TagBadge key={tag} tag={tag} />
           ))}
         </span>
       )}

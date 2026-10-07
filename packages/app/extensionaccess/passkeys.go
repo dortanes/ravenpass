@@ -33,7 +33,7 @@ func (a *Access) PasskeyTargets(query linkproto.PasskeyQuery) (linkproto.Passkey
 	}
 	answer := linkproto.PasskeyTargets{RPID: targets.RPID, Targets: make([]linkproto.PasskeyTarget, len(targets.Targets)), Excluded: targets.Excluded}
 	for i, target := range targets.Targets {
-		answer.Targets[i] = linkproto.PasskeyTarget{Credential: target.ID.String(), Label: target.Label, Account: target.Account}
+		answer.Targets[i] = linkproto.PasskeyTarget{Credential: target.ID.String(), Label: target.Label, Account: target.Account, Tags: target.Tags}
 	}
 	return answer, nil
 }

@@ -151,7 +151,7 @@ func (s *Service) Hold(c Capture) (Offer, error) {
 	targets := make([]Target, len(offer.Targets))
 	offered := make([]string, len(offer.Targets))
 	for i, target := range offer.Targets {
-		targets[i] = Target{ID: target.ID.String(), Label: target.Label, Account: target.Account, Action: saveActions[target.Action]}
+		targets[i] = Target{ID: target.ID.String(), Label: target.Label, Account: target.Account, Action: saveActions[target.Action], Tags: target.Tags}
 		offered[i] = targets[i].ID
 	}
 	token, err := s.held.Keep(system, capture, offered)
@@ -293,7 +293,7 @@ func requester(r Requester) vaultservice.Requester {
 func suggestionsOf(suggestions []vaultservice.Suggestion) []Suggestion {
 	result := make([]Suggestion, len(suggestions))
 	for i, suggestion := range suggestions {
-		result[i] = Suggestion{ID: suggestion.ID.String(), Label: suggestion.Label, Account: suggestion.Account, Site: suggestion.Site, Exact: suggestion.Exact}
+		result[i] = Suggestion{ID: suggestion.ID.String(), Label: suggestion.Label, Account: suggestion.Account, Site: suggestion.Site, Exact: suggestion.Exact, Tags: suggestion.Tags}
 	}
 	return result
 }

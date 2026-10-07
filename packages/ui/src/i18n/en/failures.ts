@@ -62,6 +62,12 @@ export const failures = {
     "This password has no one-time code set up. Add one to the item, then try again.",
   "failure.code-setup-expired":
     "This one-time code setup expired. Open its link or scan its QR code again.",
+  "failure.qr-code-missing":
+    "No QR code was found. Choose or copy a picture that shows the whole code.",
+  "failure.qr-code-not-setup":
+    "This QR code does not set up one-time codes. Use the QR code the site shows for an authenticator app.",
+  "failure.qr-code-ambiguous":
+    "The picture shows more than one setup code. Use a picture with only one.",
   "failure.resource-limit":
     "This item or vault exceeds the size limit. Shorten the item and try again.",
   "failure.permission-denied":

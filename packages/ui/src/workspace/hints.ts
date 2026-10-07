@@ -1,7 +1,7 @@
 import { browserStorage } from "./browser-storage.ts";
 
 /** A hint shown once on the device. */
-export type Hint = "card-bank-site";
+export type Hint = "card-bank-site" | "credential-site";
 
 const prefix = "ravenpass.hint.";
 

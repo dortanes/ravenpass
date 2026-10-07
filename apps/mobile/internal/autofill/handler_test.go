@@ -413,11 +413,11 @@ func TestScreensShownBeforeTheHandlerHoldTheLockUntilHidden(t *testing.T) {
 }
 
 func TestATrustedBrowserAsksForThePagesOrigin(t *testing.T) {
-	service := &fakeService{open: true, suggestions: []autofill.Suggestion{{ID: "a", Label: "Example", Account: "alex", Site: "example.com", Exact: true}}}
+	service := &fakeService{open: true, suggestions: []autofill.Suggestion{{ID: "a", Label: "Example", Account: "alex", Site: "example.com", Exact: true, Tags: []string{"Work"}}}}
 	h := newHarness(service, nil)
 	var answer suggestAnswer
 	h.call(t, asking(chrome(t), pageSignIn("example.com")...), &answer)
-	want := []suggestionWire{{ID: "a", Label: "Example", Account: "alex", Site: "example.com"}}
+	want := []suggestionWire{{ID: "a", Label: "Example", Account: "alex", Site: "example.com", Tags: []string{"Work"}}}
 	if answer.Status != statusOK || !answer.Search || !reflect.DeepEqual(answer.Suggestions, want) {
 		t.Fatalf("answer %+v", answer)
 	}
@@ -926,7 +926,7 @@ func TestACaptureIsHeldAndSavedWhereTheOwnerChooses(t *testing.T) {
 	app := signedApp("com.example.app", "example key")
 	service := &fakeService{open: true, created: true, offer: autofill.Offer{
 		Token: "t", Name: "Example",
-		Targets:   []autofill.Target{{ID: "a", Label: "Example", Account: "alex", Action: autofill.SaveUpdate}},
+		Targets:   []autofill.Target{{ID: "a", Label: "Example", Account: "alex", Action: autofill.SaveUpdate, Tags: []string{"Work"}}},
 		Suggested: "a",
 	}}
 	h := newHarness(service, nil)
@@ -941,7 +941,7 @@ func TestACaptureIsHeldAndSavedWhereTheOwnerChooses(t *testing.T) {
 	var offered captureAnswer
 	h.call(t, map[string]any{"op": "offer", "capture": held.Capture}, &offered)
 	want := &offerWire{Token: "t", Name: "Example", Account: "alex", Suggested: "a",
-		Targets: []targetWire{{ID: "a", Label: "Example", Account: "alex", Action: "update"}}}
+		Targets: []targetWire{{ID: "a", Label: "Example", Account: "alex", Action: "update", Tags: []string{"Work"}}}}
 	if offered.Status != statusOK || !reflect.DeepEqual(offered.Offer, want) || len(service.held) != 1 {
 		t.Fatalf("the save screen was offered %+v, held %d", offered, len(service.held))
 	}

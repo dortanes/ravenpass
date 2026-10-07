@@ -472,6 +472,7 @@ func (s *Session) decryptCredential(index int) (CredentialInput, error) {
 	defer clear(plaintext)
 	input, err := decodeCredentialRecord(plaintext)
 	input.Label = s.entries[index].label
+	input.Tags = slices.Clone(s.entries[index].tags)
 	return input, err
 }
 
@@ -569,6 +570,9 @@ func acceptInput(input CredentialInput) (CredentialInput, error) {
 	}
 	apps, err := acceptApps(input.Apps)
 	if err != nil {
+		return CredentialInput{}, err
+	}
+	if input.Tags, err = AcceptTags(input.Tags); err != nil {
 		return CredentialInput{}, err
 	}
 	input.TOTP = setup

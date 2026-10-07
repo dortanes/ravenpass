@@ -17,6 +17,7 @@ const content: MenuContent = {
       account: "alex",
       site: "github.com",
       exact: true,
+      tags: [],
       strength: "strong",
     },
   ],

@@ -34,6 +34,7 @@ type entryMeta struct {
 	card  CardFace
 	note  NoteFace
 	seed  SeedFace
+	tags  []string
 }
 
 // An index is [revision, previous, [entry…], [group…], [earlier…]]:
@@ -42,7 +43,8 @@ type entryMeta struct {
 //	earlier   hashes of the revisions before previous, latest first
 //	group     [id, name]
 //	entry     [id, revision, label, detail, pinned, digest, [groupID…], kind, expiresOn, thumbnail,
-//	           site, owner, email, card, summary, [site…], digits, period, [face…], [app…]]
+//	           site, owner, email, card, summary, [site…], digits, period, [face…], [app…], [tag…]?]
+//	tag       written only for an entry with tags, so a vault without any reads as before tags
 //	card      [network, lastFour, color] for a card, [] otherwise
 //	summary   [hidden] for a note, [format, total, used] for a seed, [] otherwise
 //	face      [credentialID, rpID, userName, discoverable, userHandle, userDisplayName]
@@ -56,8 +58,53 @@ type wireIndex struct {
 	Earlier  [][32]byte
 }
 
+// wireEntry is an entry with its tags, written as a twenty-first element only when there are any.
 type wireEntry struct {
-	_         struct{} `cbor:",toarray"`
+	wireFields
+	Tags []string
+}
+
+type untaggedEntry struct {
+	_ struct{} `cbor:",toarray"`
+	wireFields
+}
+
+type taggedEntry struct {
+	_ struct{} `cbor:",toarray"`
+	wireFields
+	Tags []string
+}
+
+// untaggedHead is the CBOR head of an entry without tags: an array of twenty elements.
+const untaggedHead = 0x80 | 20
+
+// MarshalCBOR writes the entry without its tags element when it has none.
+func (w wireEntry) MarshalCBOR() ([]byte, error) {
+	if len(w.Tags) == 0 {
+		return encoding.Marshal(untaggedEntry{wireFields: w.wireFields})
+	}
+	return encoding.Marshal(taggedEntry{wireFields: w.wireFields, Tags: w.Tags})
+}
+
+// UnmarshalCBOR reads an entry of either length; an empty tags element is not canonical and fails the re-encoding check.
+func (w *wireEntry) UnmarshalCBOR(data []byte) error {
+	if len(data) > 0 && data[0] == untaggedHead {
+		var entry untaggedEntry
+		if err := decoding.Unmarshal(data, &entry); err != nil {
+			return err
+		}
+		*w = wireEntry{wireFields: entry.wireFields}
+		return nil
+	}
+	var entry taggedEntry
+	if err := decoding.Unmarshal(data, &entry); err != nil {
+		return err
+	}
+	*w = wireEntry{wireFields: entry.wireFields, Tags: entry.Tags}
+	return nil
+}
+
+type wireFields struct {
 	ID        ID
 	Revision  uint64
 	Label     string
@@ -241,6 +288,9 @@ func (w wireEntry) meta(record sealedBox) (entryMeta, error) {
 	if entry.apps, err = parseApps(w.Apps); err != nil {
 		return entryMeta{}, err
 	}
+	if entry.tags, err = parseTags(w.Tags, entry.kind); err != nil {
+		return entryMeta{}, err
+	}
 	if entry.kind == KindAttachment && !validScanEntry(entry) {
 		return entryMeta{}, ErrMalformed
 	}
@@ -365,12 +415,12 @@ func parseGroups(wires []wireGroup) ([]Group, error) {
 
 // wire is the entry as the index writes it.
 func (e entryMeta) wire() wireEntry {
-	wire := wireEntry{
+	wire := wireEntry{Tags: e.tags, wireFields: wireFields{
 		ID: e.id, Revision: e.revision, Label: e.label, Detail: e.detail, Pinned: flag(e.pinned), Digest: e.digest,
 		Groups: e.groups, Kind: uint64(e.kind), ExpiresOn: e.expiresOn, Thumbnail: e.thumbnail, Site: e.site,
 		Email: e.email, Sites: e.sites, Digits: uint64(e.code.Digits), Period: uint64(e.code.Period),
 		Passkeys: wirePasskeyFaces(e.passkeys), Apps: wireApps(e.apps),
-	}
+	}}
 	switch e.kind {
 	case KindAttachment:
 		wire.Owner = e.owner[:]
@@ -393,7 +443,7 @@ func encodeIndex(revision uint64, ancestors ancestry, entries []entryMeta, group
 	}
 	index := wireIndex{Revision: revision, Previous: ancestors.previous(), Earlier: ancestors.earlier(), Entries: make([]wireEntry, len(entries)), Groups: make([]wireGroup, len(groups))}
 	for i, entry := range entries {
-		if len(entry.groups) > MaxCredentialGroups || len(entry.sites) > MaxCredentialWebsites || len(entry.passkeys) > MaxCredentialPasskeys || len(entry.apps) > MaxCredentialApps {
+		if len(entry.groups) > MaxCredentialGroups || len(entry.sites) > MaxCredentialWebsites || len(entry.passkeys) > MaxCredentialPasskeys || len(entry.apps) > MaxCredentialApps || len(entry.tags) > MaxItemTags {
 			return nil, ErrResourceLimit
 		}
 		index.Entries[i] = entry.wire()

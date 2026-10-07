@@ -13,6 +13,7 @@ import {
   credentialSearchValues,
   everyGroup,
   identitySearchValues,
+  knownTags,
   matchesQuery,
   noteSearchValues,
   paletteEntries,
@@ -20,6 +21,7 @@ import {
   recentLimit,
   seedSearchValues,
   selectEntries,
+  tagSearch,
 } from "./sections.ts";
 
 function entry(
@@ -38,6 +40,7 @@ function entry(
     pinned,
     lastUsedAt,
     groups,
+    tags: [],
     site: "",
     sites: [],
     email,
@@ -59,6 +62,7 @@ function identity(
     pinned: false,
     lastUsedAt: 0,
     groups,
+    tags: [],
     expiresOn: "",
     thumbnail: "",
   };
@@ -183,6 +187,7 @@ test("cards are found by name, bank, last four digits and network", () => {
     pinned: false,
     lastUsedAt: 0,
     groups: [],
+    tags: [],
     expiresOn: "",
   });
   const cards = [
@@ -212,6 +217,7 @@ test("notes are found by name and first line, never by hidden text", () => {
     pinned: false,
     lastUsedAt: 0,
     groups: [],
+    tags: [],
   });
   const notes = [
     note("n1", "Wi-Fi", "Network: Attic 5G"),
@@ -237,6 +243,7 @@ test("seeds are found by name and wallet, ordered by wallet between equal names"
     pinned: false,
     lastUsedAt: 0,
     groups: [],
+    tags: [],
   });
   const seeds = [
     seed("s1", "Savings", "Trezor"),
@@ -330,4 +337,50 @@ test("a group counts the items of each kind it holds", () => {
   assert.equal(countInGroup(identities, "work"), 1);
   assert.equal(countInGroup([...entries, ...identities], "work"), 3);
   assert.equal(countInGroup(identities, "mail"), 0);
+});
+
+test("tags find an item, and a tag search finds it by its tags alone", () => {
+  const personal = {
+    ...entry("1", "Example", "alex@example.com"),
+    tags: ["Personal"],
+  };
+  const work = { ...entry("2", "Example", "sam@example.com"), tags: ["Work"] };
+  const personnel = entry("3", "Personnel");
+  const found = (query: string) =>
+    selectEntries(
+      [personal, work, personnel],
+      credentialSearchValues,
+      "all",
+      query,
+    ).map((item) => item.id);
+  assert.deepEqual(found("work"), ["2"]);
+  assert.deepEqual(found("person"), ["1", "3"]);
+  assert.deepEqual(found(tagSearch("Personal")), ["1"]);
+  assert.deepEqual(found(" #wo "), ["2"]);
+  assert.deepEqual(found("#"), ["1", "2"]);
+});
+
+test("a tag search naming a whole tag lists that tag alone", () => {
+  const work = { ...entry("1", "Example", "alex@example.com"), tags: ["Work"] };
+  const workout = {
+    ...entry("2", "Gym", "sam@example.com"),
+    tags: ["Workout"],
+  };
+  const found = (query: string) =>
+    selectEntries([work, workout], credentialSearchValues, "all", query).map(
+      (item) => item.id,
+    );
+  assert.deepEqual(found(tagSearch("Work")), ["1"]);
+  assert.deepEqual(found("#wor"), ["1", "2"]);
+});
+
+test("known tags are listed once ignoring case, in alphabetical order", () => {
+  assert.deepEqual(
+    knownTags([
+      { tags: ["work", "Shared"] },
+      { tags: ["Work", "дом"] },
+      { tags: [] },
+    ]),
+    ["Shared", "work", "дом"],
+  );
 });

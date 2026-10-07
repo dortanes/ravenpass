@@ -69,6 +69,14 @@ export const workspace = {
   "workspace.editor.groups.none": "No group",
   "workspace.editor.groups.search": "Find a group",
   "workspace.editor.groups.empty": "No group matches that.",
+  "workspace.editor.hint.dismiss": "Got it",
+  "workspace.editor.tags": "Tags",
+  "workspace.editor.tags.placeholder": "Personal, Work, Shared",
+  "workspace.editor.tags.remove": "Remove the tag {tag}",
+  "workspace.editor.tags.add": "Add the tag {tag}",
+  "workspace.tags.show": "Show everything tagged {tag}",
+  "workspace.reveal.pin": "Confirm it's you to show “{item}”.",
+  "workspace.reveal.error": "Ravenpass could not confirm it's you. Try again.",
   "workspace.editor.remaining":
     "{used} of {limit, plural, one {# character} other {# characters}}",
   "workspace.editor.cancel": "Cancel",
@@ -195,6 +203,11 @@ export const workspace = {
   "credential.copy.website": "Copy {address}",
   "credential.password.reveal": "Show password",
   "credential.password.conceal": "Hide password",
+  "credential.totp.reveal": "Show one-time code setup",
+  "credential.totp.conceal": "Hide one-time code setup",
+  "credential.totp.qr": "Read a QR code",
+  "credential.totp.qr.file": "From a picture file",
+  "credential.totp.qr.clipboard": "From the clipboard",
 
   "credential.delete.title": "Delete this password?",
 
@@ -210,6 +223,12 @@ export const workspace = {
   "credential.editor.requirement.passkeys": "Name is required",
   "credential.editor.create": "Add password",
   "credential.editor.add": "Add to this password",
+  "credential.site.looking-up": "Looking up the site…",
+  "credential.hint.site":
+    "Enter the website, or paste its address, to fill in the name automatically.",
+  "credential.error.lookup":
+    "Ravenpass could not get the site's name. Enter the name manually.",
+  "credential.error.qr": "Ravenpass could not read the QR code. Try again.",
   "credential.remove.website": "Remove website",
   "credential.remove.passkey": "Remove passkey",
   "credential.remove.app": "Remove app",

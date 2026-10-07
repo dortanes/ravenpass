@@ -18,6 +18,7 @@ const accounts: CredentialMenuContent = {
       account: "alex",
       site: "github.com",
       exact: true,
+      tags: [],
       strength: "strong",
     },
   ],

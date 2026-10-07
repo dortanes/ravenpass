@@ -156,6 +156,9 @@ final class Bridge {
 
     private static native void interfaceDestroyed();
 
+    /** Holds an otpauth link until the owner adds it to a credential; it may build the core, so never on the main thread. */
+    static native void codeSetup(byte[] linkUtf8);
+
     /**
      * Returns the X.509 SubjectPublicKeyInfo of a new key under the alias: a P-256 key agreement key, or for
      * presence an RSA decryption key that decrypt uses only within an owner verification made for that decryption.

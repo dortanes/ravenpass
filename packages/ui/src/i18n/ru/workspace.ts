@@ -73,6 +73,15 @@ export const workspace: typeof english = {
   "workspace.editor.groups.none": "Без группы",
   "workspace.editor.groups.search": "Найти группу",
   "workspace.editor.groups.empty": "Подходящей группы нет.",
+  "workspace.editor.hint.dismiss": "Понятно",
+  "workspace.editor.tags": "Теги",
+  "workspace.editor.tags.placeholder": "Личный, рабочий, общий",
+  "workspace.editor.tags.remove": "Убрать тег {tag}",
+  "workspace.editor.tags.add": "Добавить тег {tag}",
+  "workspace.tags.show": "Показать всё с тегом {tag}",
+  "workspace.reveal.pin": "Подтвердите, что это вы, чтобы показать «{item}».",
+  "workspace.reveal.error":
+    "Не удалось подтвердить, что это вы. Повторите попытку.",
   "workspace.editor.remaining":
     "{used} из {limit, plural, one {# символа} few {# символов} many {# символов} other {# символа}}",
   "workspace.editor.cancel": "Отмена",
@@ -200,6 +209,11 @@ export const workspace: typeof english = {
   "credential.copy.website": "Скопировать {address}",
   "credential.password.reveal": "Показать пароль",
   "credential.password.conceal": "Скрыть пароль",
+  "credential.totp.reveal": "Показать настройку одноразового кода",
+  "credential.totp.conceal": "Скрыть настройку одноразового кода",
+  "credential.totp.qr": "Прочитать QR-код",
+  "credential.totp.qr.file": "Из файла с изображением",
+  "credential.totp.qr.clipboard": "Из буфера обмена",
 
   "credential.delete.title": "Удалить этот пароль?",
 
@@ -215,6 +229,12 @@ export const workspace: typeof english = {
   "credential.editor.requirement.passkeys": "Укажите название",
   "credential.editor.create": "Добавить пароль",
   "credential.editor.add": "Добавить в пароль",
+  "credential.site.looking-up": "Ищем сайт…",
+  "credential.hint.site":
+    "Введите или вставьте адрес сайта, чтобы автоматически заполнить название.",
+  "credential.error.lookup":
+    "Не удалось получить название сайта. Введите название вручную.",
+  "credential.error.qr": "Не удалось прочитать QR-код. Повторите попытку.",
   "credential.remove.website": "Удалить сайт",
   "credential.remove.passkey": "Удалить ключ доступа",
   "credential.remove.app": "Удалить приложение",

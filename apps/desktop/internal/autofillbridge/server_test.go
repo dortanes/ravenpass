@@ -396,7 +396,7 @@ func TestStatusReportsWhetherTheVaultIsOpen(t *testing.T) {
 }
 
 func TestAnEmptySearchListsWhatMatchesEachServiceIdentifierMostSpecificFirst(t *testing.T) {
-	login := autofill.Suggestion{ID: "a", Label: "Mail", Account: "alex", Site: "mail.example.com", Exact: true}
+	login := autofill.Suggestion{ID: "a", Label: "Mail", Account: "alex", Site: "mail.example.com", Exact: true, Tags: []string{"Work"}}
 	other := autofill.Suggestion{ID: "b", Label: "Example", Account: "sam", Site: "example.com"}
 	vault := &fakeVault{open: true, offers: map[string][]autofill.Suggestion{
 		"https://mail.example.com": {login, other},
@@ -410,7 +410,7 @@ func TestAnEmptySearchListsWhatMatchesEachServiceIdentifierMostSpecificFirst(t *
 		{Kind: "app", Value: "com.example.mail"},
 	}})
 	want := answer{Site: "mail.example.com", Scope: autofill.ScopeMatches, Suggestions: []suggestion{
-		{ID: "a", Label: "Mail", Account: "alex", Site: "mail.example.com", Matches: true},
+		{ID: "a", Label: "Mail", Account: "alex", Site: "mail.example.com", Matches: true, Tags: []string{"Work"}},
 		{ID: "b", Label: "Example", Account: "sam", Site: "example.com", Matches: true},
 	}}
 	if !reflect.DeepEqual(reply, want) {

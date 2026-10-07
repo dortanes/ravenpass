@@ -124,11 +124,11 @@ func (r Requester) linked(apps []vault.App) []vault.App {
 	return linked
 }
 
-// credential is a new credential for r with its origin as website or its app linked.
+// credential is a new credential for r with its origin as website, cut by vault.WebsiteOf, or its app linked.
 func (r Requester) credential(label, password string) vault.CredentialInput {
 	input := vault.CredentialInput{Label: label, Password: password, Apps: r.linked(nil)}
 	if r.app == "" {
-		input.Websites = []string{r.origin}
+		input.Websites = []string{vault.WebsiteOf(r.origin)}
 	}
 	return input
 }
@@ -136,7 +136,7 @@ func (r Requester) credential(label, password string) vault.CredentialInput {
 // addition is the patch adding r to credential and whether credential has room for it.
 func (r Requester) addition(credential vault.CredentialInput) (vault.CredentialPatch, bool) {
 	if r.app == "" {
-		websites := append(slices.Clone(credential.Websites), r.origin)
+		websites := append(slices.Clone(credential.Websites), vault.WebsiteOf(r.origin))
 		return vault.CredentialPatch{Websites: &websites}, len(websites) <= vault.MaxCredentialWebsites
 	}
 	apps := r.linked(credential.Apps)

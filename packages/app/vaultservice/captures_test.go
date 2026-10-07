@@ -58,12 +58,12 @@ func listedEntry(t *testing.T, service *Service, id vault.ID) vault.Entry {
 
 func TestANewAccountSuggestsANewCredentialBesideTheSitesCredentials(t *testing.T) {
 	service, _, _ := captureVault(t)
-	alex := createTestCredential(t, service, vault.CredentialInput{Label: "Example", Websites: []string{captureOrigin}, Login: "alex", Password: "alex-secret"})
+	alex := createTestCredential(t, service, vault.CredentialInput{Label: "Example", Websites: []string{captureOrigin}, Login: "alex", Password: "alex-secret", Tags: []string{"Personal"}})
 	work := createTestCredential(t, service, vault.CredentialInput{Label: "Work", Websites: []string{"https://login.example.com"}, Email: "alex@work.test", Password: "work-secret"})
 	createTestCredential(t, service, vault.CredentialInput{Label: "Other", Websites: []string{"https://example.org"}, Login: "sam", Password: "typed"})
 	offer := offerFor(t, service, Capture{Requester: OriginRequester(captureOrigin), Account: "sam@example.test", Password: "typed"})
 	want := CaptureOffer{Targets: []Target{
-		{ID: alex, Label: "Example", Account: "alex", Action: TargetUpdate},
+		{ID: alex, Label: "Example", Account: "alex", Action: TargetUpdate, Tags: []string{"Personal"}},
 		{ID: work, Label: "Work", Account: "alex@work.test", Action: TargetUpdate},
 	}}
 	if !reflect.DeepEqual(offer, want) {
@@ -252,7 +252,7 @@ func TestSavingANewCredentialUsesTheEditedNameAndAccount(t *testing.T) {
 		t.Fatalf("entries = %+v, error = %v", entries, err)
 	}
 	credential := readTestCredential(t, service, entries[0].ID)
-	want := vault.CredentialInput{Label: "My example", Websites: []string{captureOrigin}, Email: "alex@example.test", Password: "typed"}
+	want := vault.CredentialInput{Label: "My example", Websites: []string{"example.com"}, Email: "alex@example.test", Password: "typed"}
 	if !reflect.DeepEqual(credential.CredentialInput, want) || !slices.Equal(entries[0].Groups, []vault.ID{work}) {
 		t.Fatalf("created %+v in %v, want %+v in Work", credential.CredentialInput, entries[0].Groups, want)
 	}
@@ -304,7 +304,7 @@ func TestSavingToAnAddSiteTargetOnlyAddsTheOrigin(t *testing.T) {
 		t.Fatalf("save = %v, error = %v", created, err)
 	}
 	want := before
-	want.Websites = []string{"https://mail.example.org", captureOrigin}
+	want.Websites = []string{"https://mail.example.org", "example.com"}
 	if after := readTestCredential(t, service, id); !reflect.DeepEqual(after, want) {
 		t.Fatalf("after adding the site = %+v, want %+v", after, want)
 	}

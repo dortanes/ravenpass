@@ -7,6 +7,7 @@ import { SiteAvatar } from "./SiteAvatar.tsx";
 export function ChoiceRow({
   site,
   title,
+  tags,
   detail,
   busy,
   working,
@@ -14,6 +15,7 @@ export function ChoiceRow({
 }: {
   site: string;
   title: string;
+  tags?: readonly string[];
   detail: string;
   busy: boolean;
   working: boolean;
@@ -31,6 +33,7 @@ export function ChoiceRow({
         active={false}
         avatar={<SiteAvatar site={site} label={title} />}
         title={title}
+        tags={tags}
         detail={{ text: detail }}
         trailing={
           working ? (

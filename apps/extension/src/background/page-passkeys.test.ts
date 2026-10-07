@@ -276,8 +276,13 @@ test("while unlocked, a sign-in without a matching passkey goes to Chrome, and a
 
   ravenpass.targets = {
     targets: [
-      { credential: "c0", label: "Old GitHub", account: "alexander" },
-      { credential: "c1", label: "GitHub", account: "alex@example.com" },
+      { credential: "c0", label: "Old GitHub", account: "alexander", tags: [] },
+      {
+        credential: "c1",
+        label: "GitHub",
+        account: "alex@example.com",
+        tags: [],
+      },
     ],
     excluded: false,
   };
@@ -345,7 +350,7 @@ test("a card signs only with a passkey it lists", async () => {
 test("saving answers the page with the new passkey kept where the person chose", async () => {
   const { ravenpass, request, menu, bindCard, relayed } = worker();
   ravenpass.targets = {
-    targets: [{ credential: "c1", label: "GitHub", account: "alex" }],
+    targets: [{ credential: "c1", label: "GitHub", account: "alex", tags: [] }],
     excluded: false,
   };
   await request(creation, 5);
@@ -411,7 +416,9 @@ test("a declined or unverifiable sign-in, and a full target, keep the card open 
     const { sessions, ravenpass, request, menu, bindCard, answers } = worker();
     ravenpass.listed = [passkey];
     ravenpass.targets = {
-      targets: [{ credential: "c1", label: "GitHub", account: "alex" }],
+      targets: [
+        { credential: "c1", label: "GitHub", account: "alex", tags: [] },
+      ],
       excluded: false,
     };
     await request(reason === "full" ? creation : signIn);

@@ -193,7 +193,7 @@ func TestSuggestAnswersTheVaultsSuggestions(t *testing.T) {
 		{ID: "0102030405060708090a0b0c0d0e0f10", Label: "Mail", Account: "alex", Site: "example.com", Exact: true},
 		{ID: "ff000000000000000000000000000000", Label: "Shop", Account: "alex@example.test", Site: "shop.example.com"},
 	}
-	if !slices.Equal(got, want) || !slices.Equal(credentials.calls, []string{"suggest"}) {
+	if !reflect.DeepEqual(got, want) || !slices.Equal(credentials.calls, []string{"suggest"}) {
 		t.Fatalf("suggestions = %+v after %q", got, credentials.calls)
 	}
 	wantPages(t, credentials, "https://example.com")
@@ -202,7 +202,7 @@ func TestSuggestAnswersTheVaultsSuggestions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []linkproto.Suggestion{{ID: "0102030405060708090a0b0c0d0e0f10", Label: "Mail", Account: "alex", Site: "example.com", Exact: true, Digits: 8, Period: 60}}; !slices.Equal(coded, want) {
+	if want := []linkproto.Suggestion{{ID: "0102030405060708090a0b0c0d0e0f10", Label: "Mail", Account: "alex", Site: "example.com", Exact: true, Digits: 8, Period: 60}}; !reflect.DeepEqual(coded, want) {
 		t.Fatalf("code suggestions = %+v", coded)
 	}
 	credentials.suggestions = nil

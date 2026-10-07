@@ -16,6 +16,7 @@ const testPhrase = "abandon abandon abandon abandon abandon abandon abandon aban
 func testPhraseInput() SeedInput {
 	return SeedInput{
 		Label:      "Cold wallet",
+		Tags:       []string{"Cold storage"},
 		Format:     "phrase",
 		Words:      strings.Fields(testPhrase),
 		Passphrase: "extra words",
@@ -30,6 +31,7 @@ func testPhraseInput() SeedInput {
 func testCodesInput() SeedInput {
 	return SeedInput{
 		Label:     "Mail codes",
+		Tags:      []string{},
 		Format:    "codes",
 		Words:     []string{},
 		Codes:     []BackupCode{{Value: "1111-2222"}, {Value: "3333-4444", Used: true}, {Value: "5555-6666"}},
@@ -38,7 +40,7 @@ func testCodesInput() SeedInput {
 }
 
 func testKeyInput() SeedInput {
-	return SeedInput{Label: "Hot key", Format: "key", Words: []string{}, Key: "L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ", Codes: []BackupCode{}, Addresses: []SeedAddress{}}
+	return SeedInput{Label: "Hot key", Format: "key", Words: []string{}, Key: "L1aW4aubDFB7yfras2S1mN3bqg9nwySY8nkoLmJebSLD5BWv3ENZ", Codes: []BackupCode{}, Addresses: []SeedAddress{}, Tags: []string{}}
 }
 
 func mustCreateSeed(t *testing.T, service *Service, input SeedInput, groups []string) string {
@@ -73,9 +75,9 @@ func TestSeedsListFromTheIndexAndReadAsWritten(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []SeedSummary{
-		{ID: phrase, Label: "Cold wallet", Format: "phrase", Wallet: "Ledger", Total: 12, Groups: []string{family}},
-		{ID: codes, Label: "Mail codes", Format: "codes", Total: 3, Used: 1, Groups: []string{}},
-		{ID: key, Label: "Hot key", Format: "key", Groups: []string{}},
+		{ID: phrase, Label: "Cold wallet", Format: "phrase", Wallet: "Ledger", Total: 12, Groups: []string{family}, Tags: []string{"Cold storage"}},
+		{ID: codes, Label: "Mail codes", Format: "codes", Total: 3, Used: 1, Groups: []string{}, Tags: []string{}},
+		{ID: key, Label: "Hot key", Format: "key", Groups: []string{}, Tags: []string{}},
 	}
 	if !reflect.DeepEqual(seeds, want) {
 		t.Fatalf("seeds = %+v", seeds)

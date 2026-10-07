@@ -32,6 +32,8 @@ type IdentityInput struct {
 	Notes     string             `json:"notes"`
 	// Photo is base64, empty for none: the stored photo as read or the PNG CropIdentityPhoto returned.
 	Photo string `json:"photo"`
+	// Tags tell the item apart from others like it.
+	Tags []string `json:"tags"`
 }
 
 // IdentitySummary is an identity as the list shows it; empty strings mean none.
@@ -43,6 +45,7 @@ type IdentitySummary struct {
 	Pinned     bool     `json:"pinned"`
 	LastUsedAt int64    `json:"lastUsedAt"`
 	Groups     []string `json:"groups"`
+	Tags       []string `json:"tags"`
 	// ExpiresOn is the earliest document expiry as YYYY-MM-DD.
 	ExpiresOn string `json:"expiresOn"`
 	// Thumbnail is the photo as a base64 JPEG.
@@ -73,6 +76,7 @@ func (s *Service) ListIdentities() ([]IdentitySummary, error) {
 			Pinned:     entry.Pinned,
 			LastUsedAt: usage[entry.ID],
 			Groups:     idStrings(entry.Groups),
+			Tags:       append([]string{}, entry.Tags...),
 			ExpiresOn:  entry.ExpiresOn,
 			Thumbnail:  base64.StdEncoding.EncodeToString(entry.Thumbnail),
 		}
@@ -236,7 +240,7 @@ func (s *Service) identityToVault(input IdentityInput) (vault.IdentityInput, err
 	}
 	identity := vault.IdentityInput{
 		Label: input.Label, FullName: input.FullName, Birthday: input.Birthday,
-		Emails: input.Emails, Phones: input.Phones, Notes: input.Notes, Photo: photo,
+		Emails: input.Emails, Phones: input.Phones, Notes: input.Notes, Photo: photo, Tags: input.Tags,
 	}
 	for _, address := range input.Addresses {
 		converted, err := address.toVault()
@@ -274,6 +278,7 @@ func fromVaultIdentity(identity vault.IdentityInput) IdentityInput {
 		Documents: make([]IdentityDocument, len(identity.Documents)),
 		Notes:     identity.Notes,
 		Photo:     base64.StdEncoding.EncodeToString(identity.Photo),
+		Tags:      append([]string{}, identity.Tags...),
 	}
 	for i, address := range identity.Addresses {
 		input.Addresses[i] = fromVaultAddress(address)

@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { Import, LoaderCircle, Plus } from "lucide-react";
 import {
   type ComponentType,
@@ -17,6 +18,7 @@ import { formatDelay } from "../../i18n/language.ts";
 import type { MessageKey } from "../../i18n/messages.ts";
 import { useTranslator } from "../../i18n/translator.tsx";
 import { CrossFade } from "../../motion/CrossFade.tsx";
+import { queryKeys } from "../../query/keys.ts";
 import type {
   ClipboardClearing,
   Group,
@@ -33,6 +35,7 @@ import {
   type WorkspaceSection,
 } from "../../workspace/sections.ts";
 import type { SelectionQueue } from "../../workspace/selection.ts";
+import type { Tagging } from "../editor/EditorFields.tsx";
 import { Button } from "../ui/button.tsx";
 import {
   ResizableHandle,
@@ -72,6 +75,10 @@ export interface PlaceShell {
   group: string;
   onGroup: (group: string) => void;
   defaultGroup: string;
+  /** Every tag the vault's items carry, which editors suggest. */
+  tags: string[];
+  /** Lists the items of the open place carrying a tag. */
+  onTag: (tag: string) => void;
   section: WorkspaceSection;
   query: string;
   clipboard: ClipboardClearing | null;
@@ -146,6 +153,7 @@ export interface EditorProps<Item, Input> {
   initial?: Item;
   /** The groups the item starts in, which for a new one is the chosen default. */
   initialGroups: string[];
+  tagging: Tagging;
   onSave: (input: Input, groups: string[]) => void;
   onCancel: () => void;
 }
@@ -211,6 +219,12 @@ export function ItemPlace<
     onPaneShown,
   } = shell;
   const { messages } = kind;
+  const { data: tagLimits = null } = useQuery({
+    queryKey: queryKeys.limits("tags"),
+    queryFn: () => api.tagLimits(),
+    meta: { failure: "workspace.error.read" },
+  });
+  const tagging: Tagging = { known: shell.tags, limits: tagLimits };
   const [pane, setPane] = useState<Pane>(
     typeof opening === "string" ? opening : "empty",
   );
@@ -569,6 +583,8 @@ export function ItemPlace<
               groups: groups.filter((item) =>
                 selected.groups.includes(item.id),
               ),
+              tags: selectedSummary?.tags ?? [],
+              onTag: shell.onTag,
               pinned,
               busy,
               confirmDelete,
@@ -585,6 +601,7 @@ export function ItemPlace<
         {pane === "new" &&
           editor({
             initialGroups: groupsForNew,
+            tagging,
             onSave: save,
             onCancel: () => leaveDetail("empty"),
           })}
@@ -593,6 +610,7 @@ export function ItemPlace<
           editor({
             initial: selected,
             initialGroups: selected.groups,
+            tagging,
             onSave: save,
             onCancel: () => setPane("detail"),
           })}

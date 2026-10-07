@@ -80,7 +80,7 @@ func newPasskeyCredentials() *passkeyCredentials {
 	return &passkeyCredentials{
 		fakeCredentials: &fakeCredentials{},
 		choices:         []vaultservice.PasskeyChoice{{Credential: passkeyOwner, CredentialID: passkeyID, Account: "alex", Label: "Example"}},
-		targets:         vaultservice.PasskeyTargets{RPID: idnRPID, Targets: []vaultservice.PasskeyTarget{{ID: passkeyOwner, Label: "Example", Account: "alex"}}},
+		targets:         vaultservice.PasskeyTargets{RPID: idnRPID, Targets: []vaultservice.PasskeyTarget{{ID: passkeyOwner, Label: "Example", Account: "alex", Tags: []string{"Work"}}}},
 		created: vaultservice.CreatedPasskey{
 			Credential: passkeyOwner, CredentialID: passkeyID, ClientData: []byte("{}"),
 			Attestation: authenticator.Attestation{AttestationObject: []byte{0xa3}, AuthenticatorData: []byte{0x49}, PublicKey: []byte{0x30}, Algorithm: authenticator.AlgorithmES256},
@@ -123,7 +123,7 @@ func TestPasskeyListsCarryTheCheckedRelyingParty(t *testing.T) {
 	}
 	credentials.targets.Excluded = true
 	targets, err := access.PasskeyTargets(linkproto.PasskeyQuery{Origin: "https://login.example.com", Mode: linkproto.PasskeyCreate, Account: "alex"})
-	wantTargets := linkproto.PasskeyTargets{RPID: idnRPID, Targets: []linkproto.PasskeyTarget{{Credential: passkeyOwner.String(), Label: "Example", Account: "alex"}}, Excluded: true}
+	wantTargets := linkproto.PasskeyTargets{RPID: idnRPID, Targets: []linkproto.PasskeyTarget{{Credential: passkeyOwner.String(), Label: "Example", Account: "alex", Tags: []string{"Work"}}}, Excluded: true}
 	if err != nil || !reflect.DeepEqual(targets, wantTargets) {
 		t.Fatalf("targets = %+v, error = %v", targets, err)
 	}

@@ -22,12 +22,19 @@ const ready: SaveOffer = {
   account: "alex",
   name: "github.com",
   targets: [
-    { credential: "a1", label: "GitHub", account: "alex", action: "update" },
+    {
+      credential: "a1",
+      label: "GitHub",
+      account: "alex",
+      action: "update",
+      tags: [],
+    },
     {
       credential: "b2",
       label: "GitLab",
       account: "alex",
       action: "add-site",
+      tags: [],
     },
   ],
   suggested: "a1",

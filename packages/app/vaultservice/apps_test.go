@@ -38,7 +38,7 @@ func TestAnAppMatchesItsLinksExactlyAndItsVerifiedSitesAsAnOriginWould(t *testin
 	domain := createTestCredential(t, service, vault.CredentialInput{Label: "Example", Websites: []string{"https://example.org", "https://www.example.com"}, Email: "kim@example.test"})
 	createTestCredential(t, service, vault.CredentialInput{Label: "Other", Websites: []string{"https://example.net"}, Login: "otto"})
 
-	if got, want := suggestionsFor(t, service, mailApp(), PurposeSignIn), []Suggestion{{ID: linked, Label: "Mail app", Account: "alex", Exact: true}}; !slices.Equal(got, want) {
+	if got, want := suggestionsFor(t, service, mailApp(), PurposeSignIn), []Suggestion{{ID: linked, Label: "Mail app", Account: "alex", Exact: true}}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("suggestions without verified sites = %+v, want %+v", got, want)
 	}
 	want := []Suggestion{
@@ -46,7 +46,7 @@ func TestAnAppMatchesItsLinksExactlyAndItsVerifiedSitesAsAnOriginWould(t *testin
 		{ID: site, Label: "Mail site", Account: "sam", Site: "mail.example.com", Exact: true},
 		{ID: domain, Label: "Example", Account: "kim@example.test", Site: "example.com"},
 	}
-	if got := suggestionsFor(t, service, mailApp("mail.example.com"), PurposeSignIn); !slices.Equal(got, want) {
+	if got := suggestionsFor(t, service, mailApp("mail.example.com"), PurposeSignIn); !reflect.DeepEqual(got, want) {
 		t.Fatalf("suggestions with a verified site = %+v, want %+v", got, want)
 	}
 	if got := suggestionsFor(t, service, AppRequester(mailPackage, [][32]byte{strangeSigner, mailSigner}, nil), PurposeSignIn); len(got) != 1 || got[0].ID != linked {

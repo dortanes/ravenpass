@@ -23,6 +23,10 @@
     "en": "Choose a scan of the document",
     "ru": "Выберите скан документа"
   },
+  "system.dialog.choose-qr-code": {
+    "en": "Choose a picture of the QR code",
+    "ru": "Выберите изображение с QR-кодом"
+  },
   "system.dialog.save-scan": {
     "en": "Save an unencrypted copy of the scan",
     "ru": "Сохраните незашифрованную копию скана"
@@ -99,6 +103,10 @@
     "en": "delete the vault “{vault}”",
     "ru": "удалить хранилище «{vault}»"
   },
+  "system.reason.reveal-item": {
+    "en": "show “{item}”",
+    "ru": "показать «{item}»"
+  },
   "system.reason.unlock-vault": {
     "en": "unlock your vault",
     "ru": "разблокировать хранилище"
@@ -166,6 +174,14 @@
   "system.prompt.delete-vault": {
     "en": "Confirm it's you to delete the vault “{vault}”.",
     "ru": "Подтвердите, что это вы, чтобы удалить хранилище «{vault}»."
+  },
+  "system.prompt.reveal-item.title": {
+    "en": "Show a secret",
+    "ru": "Показ секрета"
+  },
+  "system.prompt.reveal-item": {
+    "en": "Confirm it's you to show “{item}”.",
+    "ru": "Подтвердите, что это вы, чтобы показать «{item}»."
   },
   "system.prompt.unlock-vault.title": {
     "en": "Unlock Ravenpass",

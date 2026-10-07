@@ -1,8 +1,16 @@
 import { cn } from "cn";
-import { Check, ChevronsUpDown, X } from "lucide-react";
-import { type ReactNode, useRef, useState } from "react";
+import { Check, ChevronsUpDown, Plus, Sparkles, X } from "lucide-react";
+import { Popover as PopoverPrimitive } from "radix-ui";
+import {
+  type KeyboardEvent,
+  type ReactNode,
+  useId,
+  useRef,
+  useState,
+} from "react";
 import { useTranslator } from "../../i18n/translator.tsx";
-import type { Group } from "../../vault-api.ts";
+import type { Group, TagLimits } from "../../vault-api.ts";
+import { suggestedTags, withTag } from "../../workspace/tags.ts";
 import { Button } from "../ui/button.tsx";
 import {
   Command,
@@ -12,7 +20,12 @@ import {
   CommandItem,
   CommandList,
 } from "../ui/command.tsx";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover.tsx";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverTrigger,
+} from "../ui/popover.tsx";
 import { Textarea } from "../ui/textarea.tsx";
 
 /** A field without a border; its row shows the focus. */
@@ -135,6 +148,116 @@ export function GroupField({
           </Command>
         </PopoverContent>
       </Popover>
+    </div>
+  );
+}
+
+/** What an editor's tag field offers: the tags the vault's items carry and the core's bounds. */
+export interface Tagging {
+  known: string[];
+  limits: TagLimits | null;
+}
+
+/** TagField holds an item's tags: Enter or a comma adds what is typed, and Backspace in an empty field takes the last. */
+export function TagField({
+  tags,
+  tagging,
+  busy,
+  onChange,
+}: {
+  tags: string[];
+  tagging: Tagging;
+  busy: boolean;
+  onChange: (tags: string[]) => void;
+}) {
+  const { t } = useTranslator();
+  const id = useId();
+  const [typed, setTyped] = useState("");
+  const [focused, setFocused] = useState(false);
+  const { limits } = tagging;
+  const full = limits !== null && tags.length >= limits.tags;
+  const suggestions =
+    focused && !full ? suggestedTags(tagging.known, tags, typed) : [];
+
+  function add(value: string) {
+    const next = withTag(tags, value, limits);
+    if (next.length !== tags.length) onChange(next);
+    setTyped("");
+  }
+
+  function keyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter" || event.key === ",") {
+      // Enter would save the whole item.
+      event.preventDefault();
+      add(typed);
+    } else if (event.key === "Backspace" && !typed && tags.length) {
+      onChange(tags.slice(0, -1));
+    }
+  }
+
+  return (
+    <div className={editorRow}>
+      <label className={labelColumn} htmlFor={full ? undefined : id}>
+        {t("workspace.editor.tags")}
+      </label>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+        {tags.map((tag) => (
+          <span
+            key={tag}
+            className="flex max-w-[160px] items-center gap-0.5 rounded-full bg-tile py-px pr-0.5 pl-2 text-[11px]"
+          >
+            <span className="truncate">{tag}</span>
+            <button
+              type="button"
+              className="flex size-4 shrink-0 items-center justify-center rounded-full text-muted-foreground outline-none hover:bg-control hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/40 disabled:opacity-50"
+              aria-label={t("workspace.editor.tags.remove", { tag })}
+              title={t("workspace.editor.tags.remove", { tag })}
+              disabled={busy}
+              onClick={() => onChange(tags.filter((held) => held !== tag))}
+            >
+              <X className="size-3" />
+            </button>
+          </span>
+        ))}
+        {!full && (
+          <input
+            id={id}
+            className="h-6 min-w-16 flex-1 border-0 bg-transparent p-0 text-[13px] outline-none placeholder:text-faint disabled:opacity-50"
+            value={typed}
+            onChange={(event) => setTyped(event.target.value)}
+            onKeyDown={keyDown}
+            onFocus={() => setFocused(true)}
+            // What is typed is kept when the editor saves without Enter.
+            onBlur={() => {
+              setFocused(false);
+              add(typed);
+            }}
+            placeholder={
+              tags.length ? undefined : t("workspace.editor.tags.placeholder")
+            }
+            maxLength={limits?.tag}
+            autoCapitalize="none"
+            autoComplete="off"
+            spellCheck={false}
+            disabled={busy}
+          />
+        )}
+        {suggestions.map((tag) => (
+          <button
+            key={tag}
+            type="button"
+            className="flex max-w-[160px] items-center gap-1 rounded-full border border-dashed border-foreground/16 px-2 py-px text-[11px] text-muted-foreground outline-none hover:border-foreground/30 hover:text-foreground"
+            aria-label={t("workspace.editor.tags.add", { tag })}
+            // Pressing would blur the field, adding the half-typed tag first.
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => add(tag)}
+            disabled={busy}
+          >
+            <Plus className="size-3 shrink-0" aria-hidden="true" />
+            <span className="truncate">{tag}</span>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -307,5 +430,55 @@ export function EditorHeader({
         </Button>
       </div>
     </header>
+  );
+}
+
+/**
+ * EditorHint points at one field with a tip shown once, beside it where there is room. `children` is the single
+ * element it points at; a row wrapped in it is no longer its block's last child, so the wrapper draws its border.
+ */
+export function EditorHint({
+  open,
+  text,
+  onDismiss,
+  children,
+}: {
+  open: boolean;
+  text: string;
+  onDismiss: () => void;
+  children: ReactNode;
+}) {
+  const { t } = useTranslator();
+  return (
+    <Popover open={open}>
+      <PopoverAnchor asChild>{children}</PopoverAnchor>
+      <PopoverContent
+        side="left"
+        align="center"
+        sideOffset={12}
+        className="action-fill w-64 border-0 px-3 py-2.5 text-[12px] leading-[1.45] text-(--action-foreground) shadow-[0_12px_32px_-8px_rgb(0_0_0/0.3)] dark:shadow-[0_12px_32px_-8px_rgb(0_0_0/0.7)]"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onEscapeKeyDown={onDismiss}
+      >
+        <PopoverPrimitive.Arrow
+          width={14}
+          height={7}
+          className="fill-(--action-midtone)"
+        />
+        <p className="flex gap-2">
+          <Sparkles className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          {text}
+        </p>
+        <div className="mt-2 flex justify-end">
+          <button
+            type="button"
+            className="h-6 rounded-full bg-(--action-foreground) px-3 text-[11px] text-(--action-midtone) outline-none hover:bg-(--action-foreground)/85 focus-visible:ring-[3px] focus-visible:ring-(--action-foreground)/30"
+            onClick={onDismiss}
+          >
+            {t("workspace.editor.hint.dismiss")}
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

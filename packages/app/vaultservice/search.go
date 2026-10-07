@@ -36,7 +36,7 @@ func (s *Service) SearchCredentials(query string, purpose Purpose) ([]Suggestion
 	found = found[:min(len(found), maxSuggestions)]
 	results := make([]Suggestion, len(found))
 	for i, entry := range found {
-		results[i] = Suggestion{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry), Site: entry.Site}
+		results[i] = Suggestion{ID: entry.ID, Label: entry.Label, Account: entryAccount(entry), Site: entry.Site, Tags: entry.Tags}
 		if purpose == PurposeCode {
 			results[i].Code = entry.Code
 		}

@@ -15,6 +15,7 @@ import (
 func testCardInput() CardInput {
 	return CardInput{
 		Label:        "Everyday",
+		Tags:         []string{"Personal"},
 		Holder:       "Alex Example",
 		Number:       "4111111111111111",
 		Expiry:       "2029-08",
@@ -49,8 +50,8 @@ func TestCardsListFromTheIndexAndReadWithTheirSite(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []CardSummary{
-		{ID: id, Label: "Everyday", BankName: "Jyske Bank", LastFour: "1111", Network: "visa", Color: "#00a0e1", Site: "jyskebank.dk", Groups: []string{family}, ExpiresOn: "2029-08-31"},
-		{ID: bare, Label: "Spare", LastFour: "0000", Groups: []string{}},
+		{ID: id, Label: "Everyday", BankName: "Jyske Bank", LastFour: "1111", Network: "visa", Color: "#00a0e1", Site: "jyskebank.dk", Groups: []string{family}, Tags: []string{"Personal"}, ExpiresOn: "2029-08-31"},
+		{ID: bare, Label: "Spare", LastFour: "0000", Groups: []string{}, Tags: []string{}},
 	}
 	if !reflect.DeepEqual(cards, want) {
 		t.Fatalf("cards = %+v", cards)
@@ -270,7 +271,7 @@ func TestUpdateCardReplacesItAsAWhole(t *testing.T) {
 	if err := service.SetPinned(id, true); err != nil {
 		t.Fatal(err)
 	}
-	replacement := CardInput{Label: "Travel", Number: "2200123412341234", Network: "mir"}
+	replacement := CardInput{Label: "Travel", Number: "2200123412341234", Network: "mir", Tags: []string{}}
 	if err := service.UpdateCard(id, replacement, nil); err != nil {
 		t.Fatal(err)
 	}

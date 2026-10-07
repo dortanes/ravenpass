@@ -96,6 +96,8 @@ type CredentialInput struct {
 	TOTP     string
 	Passkeys []Passkey
 	Apps     []App
+	// Tags tell the item apart from others like it; they live in the index beside the label.
+	Tags []string
 }
 
 // CredentialPatch changes the fields it sets and keeps the others.
@@ -109,6 +111,7 @@ type CredentialPatch struct {
 	TOTP     *string
 	Apps     *[]App
 	Groups   *[]ID
+	Tags     *[]string
 	// RemovePasskeys names passkeys to drop; one the credential does not hold is ErrNotFound.
 	RemovePasskeys [][]byte
 }
@@ -155,6 +158,7 @@ type Entry struct {
 	Seed     SeedFace
 	Pinned   bool
 	Groups   []ID
+	Tags     []string
 }
 
 // Group is a named set of items; it lives in the index.

@@ -27,6 +27,7 @@ type Suggestion struct {
 	// Site is empty for a match by linked app.
 	Site  string
 	Exact bool
+	Tags  []string
 }
 
 // Login is what a credential gives a sign-in form.
@@ -65,6 +66,7 @@ type Target struct {
 	Label   string
 	Account string
 	Action  SaveAction
+	Tags    []string
 }
 
 // Offer is where a held capture can be saved; Suggested is empty for a new credential.

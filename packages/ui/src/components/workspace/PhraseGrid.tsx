@@ -4,6 +4,7 @@ import { useTranslator } from "../../i18n/translator.tsx";
 import { phraseColumns } from "../../seeds/phrase.ts";
 import { RevealButton, TitledBlock } from "./Fields.tsx";
 import { ProgressRing } from "./ProgressRing.tsx";
+import type { RevealGate } from "./RevealGate.tsx";
 
 const revealSeconds = 30;
 
@@ -46,8 +47,14 @@ function holdKey(event: KeyboardEvent<HTMLButtonElement>): boolean {
   return event.key === " " || event.key === "Enter";
 }
 
-/** PhraseGrid masks every word; holding one shows it, the reveal button shows all for a while. */
-export function PhraseGrid({ words }: { words: readonly string[] }) {
+/** PhraseGrid masks every word; holding one shows it, the reveal button shows all for a while, each once the gate passes. */
+export function PhraseGrid({
+  words,
+  gate,
+}: {
+  words: readonly string[];
+  gate: RevealGate;
+}) {
   const { t } = useTranslator();
   const reveal = useTimedReveal(revealSeconds);
   const [held, setHeld] = useState<number | null>(null);
@@ -72,7 +79,9 @@ export function PhraseGrid({ words }: { words: readonly string[] }) {
             shown={reveal.shown}
             revealLabel={t("seed.phrase.reveal")}
             concealLabel={t("seed.phrase.conceal")}
-            onToggle={reveal.toggle}
+            onToggle={() =>
+              reveal.shown ? reveal.toggle() : gate.after(reveal.toggle)
+            }
           />
         </div>
         <ol
@@ -97,14 +106,18 @@ export function PhraseGrid({ words }: { words: readonly string[] }) {
                       ? undefined
                       : t("seed.phrase.hold", { number: position })
                   }
-                  onPointerDown={() => setHeld(position)}
+                  // A word held before the owner confirmed asks first; the next hold shows it.
+                  onPointerDown={() =>
+                    gate.confirmed ? setHeld(position) : gate.after(() => {})
+                  }
                   onPointerUp={() => setHeld(null)}
                   onPointerLeave={() => setHeld(null)}
                   onPointerCancel={() => setHeld(null)}
                   onKeyDown={(event) => {
                     if (!holdKey(event)) return;
                     event.preventDefault();
-                    setHeld(position);
+                    if (gate.confirmed) setHeld(position);
+                    else if (!event.repeat) gate.after(() => {});
                   }}
                   onKeyUp={(event) => {
                     if (holdKey(event)) setHeld(null);

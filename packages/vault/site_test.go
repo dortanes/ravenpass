@@ -372,3 +372,29 @@ func TestReadCredentialLeavesTheSelectionAlone(t *testing.T) {
 		t.Fatalf("read while locked: got %v, want ErrLocked", err)
 	}
 }
+
+func TestWebsiteOf(t *testing.T) {
+	tests := []struct {
+		address string
+		want    string
+	}{
+		{"https://app.example.org", "app.example.org"},
+		{"https://www.Example.com/mail?hl=en#inbox", "example.com"},
+		{"  example.com/login  ", "example.com"},
+		{"https://user:secret@example.com/", "example.com"},
+		{"https://example.com:8443/", "example.com"},
+		{"https://xn--bcher-kva.example/", "bücher.example"},
+		{"http://localhost:8080/", "http://localhost:8080"},
+		{"http://Router.Local/admin", "http://router.local"},
+		{"http://www.example.com:80/path", "http://www.example.com"},
+		{"androidapp://com.example.app", "androidapp://com.example.app"},
+		{"ssh host", "ssh host"},
+		{"name@example.com", "name@example.com"},
+		{"", ""},
+	}
+	for _, test := range tests {
+		if got := WebsiteOf(test.address); got != test.want {
+			t.Errorf("WebsiteOf(%q) = %q, want %q", test.address, got, test.want)
+		}
+	}
+}

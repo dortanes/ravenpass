@@ -9,7 +9,8 @@ export type LimitsKind =
   | "identities"
   | "cards"
   | "notes"
-  | "seeds";
+  | "seeds"
+  | "tags";
 
 export const queryKeys = {
   opening: [...hostScope, "opening"],

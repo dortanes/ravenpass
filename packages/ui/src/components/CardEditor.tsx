@@ -2,9 +2,8 @@ import { maskitoDate } from "@maskito/kit";
 import { useMaskito } from "@maskito/react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { LoaderCircle, Sparkles } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { useReducedMotion } from "motion/react";
-import { Popover as PopoverPrimitive } from "radix-ui";
 import { useMemo, useRef, useState } from "react";
 import {
   type BillingChoice,
@@ -44,16 +43,18 @@ import { AddressRows } from "./editor/AddressRows.tsx";
 import {
   bareField,
   EditorHeader,
+  EditorHint,
   EditorRow,
   editorRow,
   GroupField,
   labelColumn,
   NotesField,
+  TagField,
+  type Tagging,
   toggled,
   useRemaining,
 } from "./editor/EditorFields.tsx";
 import { Input } from "./ui/input.tsx";
-import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover.tsx";
 import { ScrollArea } from "./ui/scroll-area.tsx";
 import {
   Select,
@@ -93,6 +94,7 @@ function linkValue(link: AddressLink): string {
 export function CardEditor({
   initial,
   initialGroups,
+  tagging,
   groups,
   limits,
   busy,
@@ -105,6 +107,7 @@ export function CardEditor({
   initial?: Card;
   /** The groups the card starts in, which for a new one is the chosen default. */
   initialGroups: string[];
+  tagging: Tagging;
   groups: Group[];
   limits: CardLimits | null;
   busy: boolean;
@@ -160,6 +163,7 @@ export function CardEditor({
   );
   const [notes, setNotes] = useState(initial?.notes ?? "");
   const [membership, setMembership] = useState<string[]>(initialGroups);
+  const [tags, setTags] = useState<string[]>(initial?.tags ?? []);
 
   const network = detectNetwork(digits);
   const numberRef = useMaskito({
@@ -290,6 +294,7 @@ export function CardEditor({
         color: swatch ?? found,
         ...billingOf(billing),
         notes,
+        tags,
       },
       membership,
     );
@@ -448,76 +453,47 @@ export function CardEditor({
           </div>
 
           <div className={block}>
-            <Popover open={hintShown}>
-              {/* The wrapper draws the border the row drops as its last child. */}
-              <PopoverAnchor asChild>
-                <div className="border-b">
-                  <EditorRow
-                    label={t("card.field.bank-site")}
-                    htmlFor="card-bank-site"
-                    counter={counter(bankSite, limits?.bankSite, 20)}
-                  >
-                    <Input
-                      id="card-bank-site"
-                      className={bareField}
-                      value={bankSite}
-                      onChange={(event) => {
-                        setBankSite(event.target.value);
-                        dismissHint();
-                      }}
-                      onBlur={() => void lookUpBank()}
-                      placeholder={t("card.field.bank-site.placeholder")}
-                      maxLength={limits?.bankSite}
-                      autoCapitalize="none"
-                      spellCheck={false}
-                      disabled={busy || lookingUp}
-                    />
-                    {lookingUp && (
-                      <span
-                        className="flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground"
-                        role="status"
-                      >
-                        <LoaderCircle
-                          className="size-3.5 animate-spin motion-reduce:animate-none"
-                          aria-hidden="true"
-                        />
-                        {t("card.bank.looking-up")}
-                      </span>
-                    )}
-                  </EditorRow>
-                </div>
-              </PopoverAnchor>
-              <PopoverContent
-                side="left"
-                align="center"
-                sideOffset={12}
-                className="action-fill w-64 border-0 px-3 py-2.5 text-[12px] leading-[1.45] text-(--action-foreground) shadow-[0_12px_32px_-8px_rgb(0_0_0/0.3)] dark:shadow-[0_12px_32px_-8px_rgb(0_0_0/0.7)]"
-                onOpenAutoFocus={(event) => event.preventDefault()}
-                onEscapeKeyDown={dismissHint}
-              >
-                <PopoverPrimitive.Arrow
-                  width={14}
-                  height={7}
-                  className="fill-(--action-midtone)"
-                />
-                <p className="flex gap-2">
-                  <Sparkles
-                    className="mt-0.5 size-4 shrink-0"
-                    aria-hidden="true"
+            <EditorHint
+              open={hintShown}
+              text={t("card.hint.bank-site")}
+              onDismiss={dismissHint}
+            >
+              <div className="border-b">
+                <EditorRow
+                  label={t("card.field.bank-site")}
+                  htmlFor="card-bank-site"
+                  counter={counter(bankSite, limits?.bankSite, 20)}
+                >
+                  <Input
+                    id="card-bank-site"
+                    className={bareField}
+                    value={bankSite}
+                    onChange={(event) => {
+                      setBankSite(event.target.value);
+                      dismissHint();
+                    }}
+                    onBlur={() => void lookUpBank()}
+                    placeholder={t("card.field.bank-site.placeholder")}
+                    maxLength={limits?.bankSite}
+                    autoCapitalize="none"
+                    spellCheck={false}
+                    disabled={busy || lookingUp}
                   />
-                  {t("card.hint.bank-site")}
-                </p>
-                <div className="mt-2 flex justify-end">
-                  <button
-                    type="button"
-                    className="h-6 rounded-full bg-(--action-foreground) px-3 text-[11px] text-(--action-midtone) outline-none hover:bg-(--action-foreground)/85 focus-visible:ring-[3px] focus-visible:ring-(--action-foreground)/30"
-                    onClick={dismissHint}
-                  >
-                    {t("card.hint.dismiss")}
-                  </button>
-                </div>
-              </PopoverContent>
-            </Popover>
+                  {lookingUp && (
+                    <span
+                      className="flex shrink-0 items-center gap-1.5 text-[11px] text-muted-foreground"
+                      role="status"
+                    >
+                      <LoaderCircle
+                        className="size-3.5 animate-spin motion-reduce:animate-none"
+                        aria-hidden="true"
+                      />
+                      {t("card.bank.looking-up")}
+                    </span>
+                  )}
+                </EditorRow>
+              </div>
+            </EditorHint>
             <EditorRow
               label={t("card.field.bank-name")}
               htmlFor="card-bank-name"
@@ -604,8 +580,14 @@ export function CardEditor({
             )}
           </div>
 
-          {groups.length > 0 && (
-            <div className={block}>
+          <div className={block}>
+            <TagField
+              tags={tags}
+              tagging={tagging}
+              busy={busy}
+              onChange={setTags}
+            />
+            {groups.length > 0 && (
               <GroupField
                 groups={groups}
                 membership={membership}
@@ -614,8 +596,8 @@ export function CardEditor({
                   setMembership((current) => toggled(current, id))
                 }
               />
-            </div>
-          )}
+            )}
+          </div>
 
           <NotesField
             id="card-notes"

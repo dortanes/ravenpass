@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -71,7 +72,7 @@ func TestSuggestionsListMatchesExactFirstThenByRecentUseThenLabel(t *testing.T) 
 		{ID: epsilon, Label: "Epsilon", Account: "eve", Site: "shop.example.com"},
 		{ID: delta, Label: "Delta", Account: "dee", Site: "login.example.com"},
 	}
-	if got := suggestionsFor(t, service, OriginRequester("https://example.com"), PurposeSignIn); !slices.Equal(got, want) {
+	if got := suggestionsFor(t, service, OriginRequester("https://example.com"), PurposeSignIn); !reflect.DeepEqual(got, want) {
 		t.Fatalf("suggestions = %+v, want %+v", got, want)
 	}
 	if got := suggestionIDs(suggestionsFor(t, service, OriginRequester("https://login.example.com"), PurposeSignIn)); !slices.Equal(got, []vault.ID{gamma, delta, zeta, epsilon, alpha, beta}) {
@@ -179,7 +180,7 @@ func TestMatchingCredentialNamesAMatchWithoutRecordingAUse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if matched != (Suggestion{ID: mail, Label: "Mail", Account: "alex@example.test", Site: "example.com"}) {
+	if !reflect.DeepEqual(matched, Suggestion{ID: mail, Label: "Mail", Account: "alex@example.test", Site: "example.com"}) {
 		t.Fatalf("matched = %+v", matched)
 	}
 	if _, err := service.MatchingCredential(mail, OriginRequester("https://example.org")); !errors.Is(err, ErrNoMatch) {
@@ -224,7 +225,7 @@ func TestCodeSuggestionsListOnlyMatchingCredentialsWithASetup(t *testing.T) {
 		{ID: coded, Label: "Coded", Account: "alex", Site: "example.com", Exact: true, Code: ordinary},
 		{ID: recent, Label: "Recent", Account: "sam@example.test", Site: "login.example.com", Code: vault.CodeFace{Digits: 8, Period: 60}},
 	}
-	if got := suggestionsFor(t, service, OriginRequester("https://example.com"), PurposeCode); !slices.Equal(got, want) {
+	if got := suggestionsFor(t, service, OriginRequester("https://example.com"), PurposeCode); !reflect.DeepEqual(got, want) {
 		t.Fatalf("code suggestions = %+v, want %+v", got, want)
 	}
 	signIn := suggestionsFor(t, service, OriginRequester("https://example.com"), PurposeSignIn)
@@ -361,7 +362,7 @@ func TestAddWebsiteAddsThePagesOriginOnceAndThePageThenMatches(t *testing.T) {
 	if got := suggestionsFor(t, service, page, PurposeSignIn); len(got) != 1 || got[0].ID != id || !got[0].Exact {
 		t.Fatalf("suggestions after the site was added = %+v", got)
 	}
-	if websites := readTestCredential(t, service, id).Websites; !slices.Equal(websites, []string{"https://mail.example.org", "https://example.com"}) {
+	if websites := readTestCredential(t, service, id).Websites; !slices.Equal(websites, []string{"https://mail.example.org", "example.com"}) {
 		t.Fatalf("websites after the site was added = %q", websites)
 	}
 	if count, err := service.AwaitVaultChange(t.Context(), 0); err != nil || count != 1 {
@@ -497,5 +498,18 @@ func TestSiteReadsNeedAnOpenVault(t *testing.T) {
 	}
 	if _, err := service.NamesSite("example.com"); !errors.Is(err, ErrNotReady) {
 		t.Fatalf("named site while locked: got %v, want ErrNotReady", err)
+	}
+}
+
+func TestSuggestionsCarryTheTagsThatTellAccountsApart(t *testing.T) {
+	service, _ := readyVault(t)
+	personal := createTestCredential(t, service, vault.CredentialInput{Label: "Example", Websites: []string{"example.com"}, Login: "alex", Password: "a", Tags: []string{"Personal"}})
+	work := createTestCredential(t, service, vault.CredentialInput{Label: "Example", Websites: []string{"example.com"}, Login: "sam", Password: "b", Tags: []string{"Work"}})
+	tags := map[vault.ID][]string{}
+	for _, suggestion := range suggestionsFor(t, service, OriginRequester("https://login.example.com"), PurposeSignIn) {
+		tags[suggestion.ID] = suggestion.Tags
+	}
+	if !slices.Equal(tags[personal], []string{"Personal"}) || !slices.Equal(tags[work], []string{"Work"}) {
+		t.Fatalf("suggested tags = %v", tags)
 	}
 }

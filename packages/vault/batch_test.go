@@ -99,7 +99,7 @@ func TestPrepareAddItemsAddsEveryKindInOneSave(t *testing.T) {
 	if !reflect.DeepEqual(withoutAddressIDs(readIdentity.IdentityInput), withoutAddressIDs(identity)) {
 		t.Fatalf("identity read back as %+v", readIdentity.IdentityInput)
 	}
-	if read := selectNote(t, session, result.Items[3]); read.NoteInput != note {
+	if read := selectNote(t, session, result.Items[3]); !reflect.DeepEqual(read.NoteInput, note) {
 		t.Fatalf("note read back as %+v", read.NoteInput)
 	}
 	readSeed := selectSeed(t, session, result.Items[4])

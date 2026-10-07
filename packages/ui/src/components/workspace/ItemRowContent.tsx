@@ -5,6 +5,7 @@ import {
   aboveIndicator,
   SelectionIndicator,
 } from "../../motion/SelectionIndicator.tsx";
+import { RowTags } from "./TagBadge.tsx";
 import { type Tone, toneText } from "./tones.ts";
 
 /** The second line of a row, and whether it carries a warning. */
@@ -66,6 +67,7 @@ export function ItemRowContent({
   active,
   avatar,
   title,
+  tags = [],
   detail,
   trailing,
   wrap = false,
@@ -74,6 +76,8 @@ export function ItemRowContent({
   active: boolean;
   avatar: ReactNode;
   title: string;
+  /** The item's tags, shown beside its title. */
+  tags?: readonly string[];
   /** Unset for a row that names an action, which the title alone says. */
   detail?: RowDetail;
   trailing?: ReactNode;
@@ -91,7 +95,16 @@ export function ItemRowContent({
       {style.fades ? <AnimatePresence>{selection}</AnimatePresence> : selection}
       <span className={`${aboveIndicator} flex shrink-0`}>{avatar}</span>
       <span className={`${aboveIndicator} min-w-0 flex-1`}>
-        <span className={cn("block", style.title, line)}>{title}</span>
+        {tags.length > 0 ? (
+          <span
+            className={cn("flex min-w-0 items-center gap-1.5", style.title)}
+          >
+            <span className={cn("min-w-0 shrink-[2]", line)}>{title}</span>
+            <RowTags tags={tags} />
+          </span>
+        ) : (
+          <span className={cn("block", style.title, line)}>{title}</span>
+        )}
         {detail && (
           <span
             className={cn(

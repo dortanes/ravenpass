@@ -24,7 +24,13 @@ const capture: PendingCapture = {
   account: "alex",
   name: "github.com",
   targets: [
-    { credential: "a1", label: "GitHub", account: "alex", action: "update" },
+    {
+      credential: "a1",
+      label: "GitHub",
+      account: "alex",
+      action: "update",
+      tags: [],
+    },
   ],
   suggested: "a1",
 };

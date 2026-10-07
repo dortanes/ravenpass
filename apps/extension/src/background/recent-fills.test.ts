@@ -7,7 +7,14 @@ import { Clock, MemoryArea } from "./test-doubles.test-support.ts";
 const tabId = 7;
 
 function credential(id: string): Suggestion {
-  return { id, label: id, account: "alex", site: "github.com", exact: true };
+  return {
+    id,
+    label: id,
+    account: "alex",
+    site: "github.com",
+    exact: true,
+    tags: [],
+  };
 }
 
 const listed = [credential("a1"), credential("b2"), credential("c3")];

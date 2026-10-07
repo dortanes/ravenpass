@@ -60,6 +60,25 @@ final class Responses {
         }
     }
 
+    /** The account a suggestion names, then the tags that tell it apart from others on the site. */
+    private static String withTags(String account, JSONArray tags) {
+        if (tags == null) {
+            return account;
+        }
+        StringBuilder line = new StringBuilder(account);
+        for (int i = 0; i < tags.length(); i++) {
+            String tag = tags.optString(i);
+            if (tag.isEmpty()) {
+                continue;
+            }
+            if (line.length() > 0) {
+                line.append(" · ");
+            }
+            line.append(tag);
+        }
+        return line.toString();
+    }
+
     /** Tells nothing about the vault; the unlock answers with the open vault's entries. */
     private static FillResponse locked(Context context, Screen screen, JSONObject form, Presenting presenting) {
         AutofillId[] fields = fields(screen, form);
@@ -97,7 +116,7 @@ final class Responses {
             for (int i = 0; i < count; i++) {
                 JSONObject suggestion = suggestions.optJSONObject(i);
                 String label = suggestion.optString("label");
-                String account = suggestion.optString("account");
+                String account = withTags(suggestion.optString("account"), suggestion.optJSONArray("tags"));
                 Icon face = presenting.face(label, siteIcon(icons, suggestion.optString("site")));
                 Intent fill = destination.write(new Intent(context, FillActivity.class))
                         .putExtra(CREDENTIAL, suggestion.optString("id"))

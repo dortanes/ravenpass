@@ -40,7 +40,12 @@ import type {
   VaultState,
 } from "../vault-api.ts";
 import { ListPositions } from "../workspace/list-positions.ts";
-import { everyGroup, type WorkspaceSection } from "../workspace/sections.ts";
+import {
+  everyGroup,
+  knownTags,
+  tagSearch,
+  type WorkspaceSection,
+} from "../workspace/sections.ts";
 import { SelectionQueue } from "../workspace/selection.ts";
 import { SiteIconStore } from "../workspace/site-icons.ts";
 import { SettingsView } from "./SettingsView.tsx";
@@ -135,6 +140,11 @@ export function VaultView({
   const cards = cardsRead.data ?? noItems;
   const notes = notesRead.data ?? noItems;
   const seeds = seedsRead.data ?? noItems;
+  const vaultTags = useMemo(
+    () =>
+      knownTags([...credentials, ...identities, ...cards, ...notes, ...seeds]),
+    [credentials, identities, cards, notes, seeds],
+  );
   const groupsRead = useQuery(reads.groups.options());
   const groups = groupsRead.data?.groups ?? noItems;
   const defaultGroup = groupsRead.data?.defaultGroup ?? "";
@@ -363,6 +373,12 @@ export function VaultView({
 
   function refreshExportState() {
     return client.invalidateQueries({ queryKey: queryKeys.exportStatus });
+  }
+
+  /** Searches the open place for a tag; a compact screen leaves the item for the list. */
+  function showTag(tag: string) {
+    if (compact) openPlace.current?.close();
+    setQuery(tagSearch(tag));
   }
 
   /** The search belongs to the place it was typed in; the section and the group carry over. */
@@ -734,6 +750,8 @@ export function VaultView({
     group,
     onGroup: setGroup,
     defaultGroup,
+    tags: vaultTags,
+    onTag: showTag,
     section,
     query,
     clipboard,

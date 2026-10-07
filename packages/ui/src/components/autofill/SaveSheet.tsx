@@ -73,6 +73,7 @@ export function SaveSheet({
                         <DestinationAvatar offer={offer} target={shown} />
                       }
                       title={destinationTitle(offer, destination, t)}
+                      tags={shown?.tags}
                       detail={{
                         text: shown
                           ? shown.account || t("credential.login.empty")
