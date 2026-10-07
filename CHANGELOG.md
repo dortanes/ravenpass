@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.3.0](https://github.com/dortanes/ravenpass/compare/v0.2.0...v0.3.0) (2026-10-07)
+
+
+### Features
+
+* card autofill in the extension; storage screen for an unreadable vault ([#19](https://github.com/dortanes/ravenpass/issues/19)) ([7a62a86](https://github.com/dortanes/ravenpass/commit/7a62a86eb024fe8769b5d351d3695e58630c4482))
+* trash, password merge, generator, breach checks ([#16](https://github.com/dortanes/ravenpass/issues/16)) ([decfb38](https://github.com/dortanes/ravenpass/commit/decfb3856a88da45e4b1ea6b7f88dac7933531c8))
+* **ui:** ✨ add a Generator place with a full history of generated passwords ([#15](https://github.com/dortanes/ravenpass/issues/15)) ([d88b9c0](https://github.com/dortanes/ravenpass/commit/d88b9c095191ac6220e68a69102c3b1c1ef9765a))
+
+
+### Bug Fixes
+
+* keep setup on a failed way in; unsigned builds' keys ([#18](https://github.com/dortanes/ravenpass/issues/18)) ([c805582](https://github.com/dortanes/ravenpass/commit/c805582be69bff84f797c3ca590c420e1eabd9a5))
+
+
+### Dependencies
+
+* bump gradle-wrapper from 9.7.1 to 9.8.0 in /apps/mobile/build/android in the gradle group ([#8](https://github.com/dortanes/ravenpass/issues/8)) ([e9269a4](https://github.com/dortanes/ravenpass/commit/e9269a4f0764b043487de0d24e0e084f34ecdd7b))
+* bump the go group across 2 directories with 2 updates ([#2](https://github.com/dortanes/ravenpass/issues/2)) ([9717e3d](https://github.com/dortanes/ravenpass/commit/9717e3dc7f08de84356dd017b5a3d492b2855ed4))
+* bump the npm-production group across 1 directory with 12 updates ([#11](https://github.com/dortanes/ravenpass/issues/11)) ([ad5e5dc](https://github.com/dortanes/ravenpass/commit/ad5e5dce15b0fe6c007abdc5cd655f8bc62c9f45))
+
 ## [0.2.0](https://github.com/dortanes/ravenpass/compare/v0.1.1...v0.2.0) (2026-10-07)
 
 
