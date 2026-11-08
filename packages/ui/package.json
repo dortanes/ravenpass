@@ -64,14 +64,14 @@
     "vaul": "^1.1.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.15",
-    "@rsbuild/core": "^2.2.11",
+    "@biomejs/biome": "^2.6.5",
+    "@rsbuild/core": "^2.3.1",
     "@rsbuild/plugin-react": "^2.1.1",
     "@rsbuild/plugin-tailwindcss": "^2.0.3",
-    "@types/node": "^26.6.3",
+    "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "tailwindcss": "^4.3.3",
+    "tailwindcss": "^4.3.4",
     "typescript": "^7.0.2"
   }
 }
