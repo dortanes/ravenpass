@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1](https://github.com/dortanes/ravenpass/compare/v0.3.0...v0.3.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* support WebKit extension pairing and autofill ([0ae5588](https://github.com/dortanes/ravenpass/commit/0ae5588d7dcf803e5cbe66543a5f2edaadd7657f))
+
 ## [0.3.0](https://github.com/dortanes/ravenpass/compare/v0.2.0...v0.3.0) (2026-10-07)
 
 
