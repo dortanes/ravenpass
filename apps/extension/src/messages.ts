@@ -22,8 +22,18 @@ import type {
   Suggestion,
   SuggestPurpose,
 } from "./link/client.ts";
+import type { PairingDiagnostic } from "./link/diagnostics.ts";
 import { cardValues } from "./link/results.ts";
 import type { MatchStrength } from "./match-strength.ts";
+import {
+  needsMenuVisibility,
+  tracksMenuVisibility,
+} from "./menu-visibility.ts";
+import {
+  isRefusedReply,
+  RequestFailure,
+  type refusedReply,
+} from "./messaging/request-failure.ts";
 import type { PageAnswer } from "./passkeys/page-channel.ts";
 import type { PageRequest } from "./passkeys/requests.ts";
 import type { ColorScheme } from "./toolbar/icon.ts";
@@ -66,7 +76,7 @@ export type MenuField = FieldKind | "card";
  * person confirmed a fill of a suggestion that is not strong; `remember` once they also asked to remember the page for
  * an `other-site` suggestion.
  */
-export type MenuRequest =
+export type MenuRequest = (
   | {
       readonly kind: "menu-open";
       readonly field: MenuField;
@@ -121,7 +131,8 @@ export type MenuRequest =
   | { readonly kind: "menu-focus"; readonly token: string }
   | OptionMessage
   | SignInRequest
-  | PasskeyMenuRequest;
+  | PasskeyMenuRequest
+) & { readonly visibility?: "host" };
 
 /** `target` is a credential the passkey card offers, or "new". */
 export type PasskeyMenuRequest =
@@ -282,7 +293,9 @@ export type PasskeyFailure =
   | "excluded";
 
 export interface Answers {
-  link: { ok: true } | { ok: false; reason: LinkRefusal };
+  link:
+    | { ok: true }
+    | { ok: false; reason: LinkRefusal; diagnostic?: PairingDiagnostic };
   status: LinkStatus;
   unlink: { ok: true };
   "color-scheme": { ok: true };
@@ -439,6 +452,11 @@ export interface MenuMoved {
   readonly kind: "menu-moved";
 }
 
+export interface MenuVisibilityProbe {
+  readonly kind: "menu-visibility";
+  readonly token: string;
+}
+
 export const menuMoved: MenuMoved = { kind: "menu-moved" };
 
 export interface OfferShow {
@@ -591,16 +609,25 @@ export function isPlaced(answer: unknown): boolean {
   return v.is(placed, answer);
 }
 
-/** Asks the service worker; its `null` answer to a request it could not serve rejects. */
+/** Asks the background; failures carry only the fixed request kind and stage. */
 export async function ask<Kind extends Request["kind"]>(
   request: Extract<Request, { kind: Kind }>,
 ): Promise<Answers[Kind]> {
-  const answer: Answers[Kind] | null =
-    await chrome.runtime.sendMessage(request);
-  if (answer === null) {
-    throw new Error(
-      `The service worker could not serve the ${request.kind} request.`,
-    );
+  const answer: Answers[Kind] | null | typeof refusedReply =
+    await chrome.runtime
+      .sendMessage(
+        typeof document !== "undefined" &&
+          needsMenuVisibility(request.kind) &&
+          !tracksMenuVisibility()
+          ? { ...request, visibility: "host" }
+          : request,
+      )
+      .catch((cause: unknown) => {
+        throw new RequestFailure(request.kind, "transport", { cause });
+      });
+  if (isRefusedReply(answer)) {
+    throw new RequestFailure(request.kind, "refused");
   }
+  if (answer === null) throw new RequestFailure(request.kind, "failed");
   return answer;
 }

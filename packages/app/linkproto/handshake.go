@@ -51,6 +51,10 @@ func SessionResponder(static KeyPair, random io.Reader) (*Handshake, error) {
 func newHandshake(config noise.Config) (*Handshake, error) {
 	config.CipherSuite = suite
 	config.Prologue = prologue
+	if len(config.StaticKeypair.Public) == P256PublicKeySize {
+		config.CipherSuite = noise.NewCipherSuite(p256{}, noise.CipherAESGCM, noise.HashSHA256)
+		config.Prologue = []byte("ravenpass-link/2")
+	}
 	state, err := noise.NewHandshakeState(config)
 	if err != nil {
 		return nil, err

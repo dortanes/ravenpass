@@ -9,8 +9,10 @@ import { type FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ask, type LinkRefusal } from "../messages.ts";
 import { ClipboardKeys } from "./clipboard.ts";
+import { PopupPairing } from "./pairing.ts";
 
 const clipboard = new ClipboardKeys();
+const pairing = new PopupPairing((key) => ask({ kind: "link", key }));
 
 const refusals: Record<LinkRefusal, MessageKey> = {
   "not-key": "extension.link.error.not-key",
@@ -54,15 +56,25 @@ export function LinkScreen({ onLinked }: { onLinked: () => Promise<void> }) {
     if (empty) return;
     setBusy(true);
     try {
-      const answer = await ask({ kind: "link", key }).catch(
-        () => ({ ok: false, reason: "failed" }) as const,
-      );
+      const answer = await pairing.link(key);
       if (answer.ok) {
         void clipboard.release();
         await onLinked();
       } else {
-        toast.error(t(refusals[answer.reason]));
+        toast.error(t(refusals[answer.reason]), {
+          description: t("extension.link.error.reference", {
+            version: chrome.runtime.getManifest().version,
+            code: answer.diagnostic ?? "RP-14",
+          }),
+        });
       }
+    } catch {
+      toast.error(t("extension.link.error.failed"), {
+        description: t("extension.link.error.reference", {
+          version: chrome.runtime.getManifest().version,
+          code: "RP-13",
+        }),
+      });
     } finally {
       setBusy(false);
     }

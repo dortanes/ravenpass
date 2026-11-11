@@ -19,6 +19,7 @@ import {
   type MatchStrength,
   matchStrength,
 } from "../match-strength.ts";
+import { needsMenuVisibility } from "../menu-visibility.ts";
 import {
   type Answers,
   type CardFillFrame,
@@ -37,11 +38,12 @@ import {
   type MenuContent,
   type MenuFailure,
   type MenuRequest,
+  type MenuVisibilityProbe,
   type PasskeyAnswerMessage,
   type PasskeyMenuRequest,
-  type Request,
   type ShareFailure,
 } from "../messages.ts";
+import { RefusedRequest } from "../messaging/request-failure.ts";
 import type { CardFrames } from "./card-frames.ts";
 import type { PagePasskeys } from "./page-passkeys.ts";
 import type { PendingSignIns } from "./pending-sign-ins.ts";
@@ -74,7 +76,8 @@ export type TabMessenger = (
     | FormMessage
     | CardShow
     | CardFillFrame
-    | PasskeyAnswerMessage,
+    | PasskeyAnswerMessage
+    | MenuVisibilityProbe,
 ) => Promise<unknown>;
 
 export type MenuClient = Pick<
@@ -130,13 +133,7 @@ interface Chosen extends Listing {
   readonly remember: boolean;
 }
 
-/** A request from a sender that may not make it, or about a menu that has ended. */
-export class RefusedRequest extends Error {
-  constructor(kind: Request["kind"]) {
-    super(`The ${kind} request was refused.`);
-    this.name = "RefusedRequest";
-  }
-}
+export { RefusedRequest } from "../messaging/request-failure.ts";
 
 /** Refuses a sender that may not ask, an item its menu does not list, an unconfirmed non-strong fill, and files without a destination. */
 export class MenuRouter {
@@ -789,6 +786,20 @@ export class MenuRouter {
   ): Promise<MenuSession> {
     const session = await this.sessions.forMenu(request.token, sender);
     if (!session) throw new RefusedRequest(request.kind);
+    if (request.visibility === "host" && needsMenuVisibility(request.kind)) {
+      const proof = await this.relay(hostOf(session), {
+        kind: "menu-visibility",
+        token: session.token,
+      });
+      if (
+        !proof ||
+        typeof proof !== "object" ||
+        !("visible" in proof) ||
+        proof.visible !== true
+      ) {
+        throw new RefusedRequest(request.kind);
+      }
+    }
     return session;
   }
 

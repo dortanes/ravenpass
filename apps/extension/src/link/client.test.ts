@@ -30,6 +30,8 @@ import {
   handshakeVector,
   importKeyPair,
   linkProtocol,
+  p256LinkProtocol,
+  p256SessionProtocol,
   sessionProtocol,
 } from "./vectors.test-support.ts";
 
@@ -163,11 +165,11 @@ async function connectionKey(): Promise<ConnectionKey> {
   return ConnectionKey.parse(base64urlnopad.encode(raw));
 }
 
-async function linkingClient(connect: SocketFactory) {
+async function linkingClient(connect: SocketFactory, vector = link) {
   const store = new MemoryStore();
   const language = new MemoryLanguage();
   const signIn = new MemorySignInStyle();
-  const staticKeys = await importKeyPair(link.initiatorStatic);
+  const staticKeys = await importKeyPair(vector.initiatorStatic);
   const client = new LinkClient({
     store,
     language,
@@ -175,7 +177,7 @@ async function linkingClient(connect: SocketFactory) {
     connect,
     keys: new FixedKeys([
       staticKeys,
-      await importKeyPair(link.initiatorEphemeral),
+      await importKeyPair(vector.initiatorEphemeral),
     ]),
   });
   return {
@@ -189,11 +191,11 @@ async function linkingClient(connect: SocketFactory) {
 }
 
 // Starts with English and "field"; the session vector reports Russian and "card".
-async function linkedClient(connect: SocketFactory) {
+async function linkedClient(connect: SocketFactory, vector = session) {
   const store = new MemoryStore({
     port,
-    desktopPublicKey: bytes(session.responderStatic.public),
-    staticKeys: await importKeyPair(session.initiatorStatic),
+    desktopPublicKey: bytes(vector.responderStatic.public),
+    staticKeys: await importKeyPair(vector.initiatorStatic),
     linkedAt,
   });
   const language = new MemoryLanguage("en");
@@ -203,7 +205,7 @@ async function linkedClient(connect: SocketFactory) {
     language,
     signIn,
     connect,
-    keys: new FixedKeys([await importKeyPair(session.initiatorEphemeral)]),
+    keys: new FixedKeys([await importKeyPair(vector.initiatorEphemeral)]),
   });
   return { store, language, signIn, client };
 }
@@ -243,6 +245,90 @@ function refusedFor(reason: SessionFailure) {
   return (error: unknown) =>
     error instanceof SessionError && error.reason === reason;
 }
+
+test("new P-256 links use v2 and keep only non-extractable private keys", async () => {
+  const vector = handshakeVector(p256LinkProtocol);
+  const desktop = new ScriptedDesktop([frame(vector, 1), frame(vector, 3)]);
+  const { client, key, store } = await linkingClient(desktop.connect, vector);
+  await client.link(key, name);
+  assert.deepEqual(desktop.urls, [`ws://127.0.0.1:${port}/v2/link`]);
+  assert.deepEqual(desktop.sent, [frame(vector, 0), frame(vector, 2)]);
+  const record = structuredClone(store.record);
+  assert.ok(record);
+  assert.equal(record.staticKeys.privateKey.extractable, false);
+  assert.equal(record.desktopPublicKey.length, 65);
+  await assert.rejects(
+    crypto.subtle.exportKey("pkcs8", record.staticKeys.privateKey),
+  );
+});
+
+test("stored P-256 links select the v2 session endpoint", async () => {
+  const vector = handshakeVector(p256SessionProtocol);
+  const desktop = new ScriptedDesktop([frame(vector, 1), frame(vector, 3)]);
+  const { client } = await linkedClient(desktop.connect, vector);
+  assert.deepEqual(await client.status(), {
+    linked: true,
+    desktop: "unlocked",
+    linkedAt,
+  });
+  assert.deepEqual(desktop.urls, [`ws://127.0.0.1:${port}/v2/session`]);
+  assert.deepEqual(desktop.sent, [frame(vector, 0), frame(vector, 2)]);
+});
+
+test("an engine that cannot clone its private key spends no connection key", async (t) => {
+  const desktop = new ScriptedDesktop([]);
+  const { client, key, store } = await linkingClient(desktop.connect);
+  t.mock.method(globalThis, "structuredClone", () => {
+    throw new DOMException("Key cannot be persisted", "DataCloneError");
+  });
+  await assert.rejects(
+    client.link(key, name),
+    (error) => error instanceof LinkError && error.diagnostic === "RP-02",
+  );
+  assert.equal(store.record, undefined);
+  assert.deepEqual(desktop.urls, []);
+});
+
+test("browser key-generation failures have a bounded stage reference", async () => {
+  const client = new LinkClient({
+    store: new MemoryStore(),
+    language: new MemoryLanguage(),
+    signIn: new MemorySignInStyle(),
+    connect: async () => {
+      assert.fail("connection must not start");
+    },
+    keys: {
+      generate: async () => {
+        throw new Error("synthetic-private-key-data");
+      },
+    },
+  });
+  await assert.rejects(
+    client.link(await connectionKey(), name),
+    (error) => error instanceof LinkError && error.diagnostic === "RP-01",
+  );
+});
+
+test("link persistence and preference failures identify their distinct stages", async (t) => {
+  for (const stage of ["RP-09", "RP-10"] as const) {
+    const desktop = new ScriptedDesktop([frame(link, 1), frame(link, 3)]);
+    const { client, store, language, key } = await linkingClient(
+      desktop.connect,
+    );
+    if (stage === "RP-09")
+      t.mock.method(store, "save", async () => {
+        throw new Error("synthetic-private-key-data");
+      });
+    else
+      t.mock.method(language, "keepDesktopLanguage", async () => {
+        throw new Error("synthetic-private-key-data");
+      });
+    await assert.rejects(
+      client.link(key, name),
+      (error) => error instanceof LinkError && error.diagnostic === stage,
+    );
+  }
+});
 
 // Each reply is JSON text or raw bytes, sealed in turn, or a silence.
 async function serving(

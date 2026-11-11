@@ -2,16 +2,19 @@ package linkproto
 
 import (
 	"bytes"
+	"crypto/ecdh"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"flag"
+	"io"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/dortanes/ravenpass/packages/app/linkkey"
+	"github.com/flynn/noise"
 )
 
 var update = flag.Bool("update", false, "rewrite testdata/vectors.json")
@@ -88,6 +91,48 @@ func fixedKeyPair(t *testing.T, label string) KeyPair {
 		t.Fatal(err)
 	}
 	return key
+}
+
+func fixedP256KeyPair(t *testing.T, label string) KeyPair {
+	t.Helper()
+	private, err := ecdh.P256().NewPrivateKey(fixedBytes(label))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return KeyPair{Private: private.Bytes(), Public: private.PublicKey().Bytes()}
+}
+
+type fixedAgreement struct {
+	noise.DHFunc
+	key noise.DHKey
+}
+
+func (f fixedAgreement) GenerateKeypair(io.Reader) (noise.DHKey, error) { return f.key, nil }
+
+func vectorHandshake(static, ephemeral KeyPair, peer, secret []byte, initiator bool) (*Handshake, error) {
+	var agreement noise.DHFunc = noise.DH25519
+	prefix := prologue
+	if len(static.Public) == P256PublicKeySize {
+		agreement = p256{}
+		prefix = []byte("ravenpass-link/2")
+	}
+	config := noise.Config{
+		StaticKeypair: static.noise(), Initiator: initiator, Prologue: prefix,
+		CipherSuite: noise.NewCipherSuite(fixedAgreement{agreement, ephemeral.noise()}, noise.CipherAESGCM, noise.HashSHA256),
+	}
+	if secret != nil {
+		config.Pattern = noise.HandshakeXX
+		config.PresharedKey = secret
+		config.PresharedKeyPlacement = pskPlacement
+	} else {
+		config.Pattern = noise.HandshakeIK
+		config.PeerStatic = peer
+	}
+	state, err := noise.NewHandshakeState(config)
+	if err != nil {
+		return nil, err
+	}
+	return &Handshake{state: state, initiator: initiator}, nil
 }
 
 func keyPairHex(key KeyPair) keyPairVector {
@@ -197,16 +242,24 @@ func transcript(t *testing.T, sides map[string]*Handshake, handshakeMessages int
 	return messages, bytes.Clone(hash)
 }
 
-func buildLinkVector(t *testing.T) handshakeVector {
+func buildLinkVector(t *testing.T, p256 bool) handshakeVector {
 	t.Helper()
 	psk := fixedBytes("XXpsk3 psk")
-	initiatorStatic, initiatorEphemeral := fixedKeyPair(t, "XXpsk3 initiator static"), fixedKeyPair(t, "XXpsk3 initiator ephemeral")
-	responderStatic, responderEphemeral := fixedKeyPair(t, "XXpsk3 responder static"), fixedKeyPair(t, "XXpsk3 responder ephemeral")
-	extension, err := LinkInitiator(initiatorStatic, psk, bytes.NewReader(initiatorEphemeral.Private))
+	fixed := fixedKeyPair
+	protocol := "Noise_XXpsk3_25519_AESGCM_SHA256"
+	prefix := prologue
+	if p256 {
+		fixed = fixedP256KeyPair
+		protocol = "Noise_XXpsk3_P256_AESGCM_SHA256"
+		prefix = []byte("ravenpass-link/2")
+	}
+	initiatorStatic, initiatorEphemeral := fixed(t, "XXpsk3 initiator static"), fixed(t, "XXpsk3 initiator ephemeral")
+	responderStatic, responderEphemeral := fixed(t, "XXpsk3 responder static"), fixed(t, "XXpsk3 responder ephemeral")
+	extension, err := vectorHandshake(initiatorStatic, initiatorEphemeral, nil, psk, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	desktop, err := LinkResponder(responderStatic, psk, bytes.NewReader(responderEphemeral.Private))
+	desktop, err := vectorHandshake(responderStatic, responderEphemeral, nil, psk, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,8 +274,8 @@ func buildLinkVector(t *testing.T) handshakeVector {
 	})
 	pskHex := hex.EncodeToString(psk)
 	return handshakeVector{
-		Protocol:           "Noise_XXpsk3_25519_AESGCM_SHA256",
-		Prologue:           hex.EncodeToString(prologue),
+		Protocol:           protocol,
+		Prologue:           hex.EncodeToString(prefix),
 		PSK:                &pskHex,
 		InitiatorStatic:    keyPairHex(initiatorStatic),
 		InitiatorEphemeral: keyPairHex(initiatorEphemeral),
@@ -234,15 +287,23 @@ func buildLinkVector(t *testing.T) handshakeVector {
 	}
 }
 
-func buildSessionVector(t *testing.T) handshakeVector {
+func buildSessionVector(t *testing.T, p256 bool) handshakeVector {
 	t.Helper()
-	initiatorStatic, initiatorEphemeral := fixedKeyPair(t, "IK initiator static"), fixedKeyPair(t, "IK initiator ephemeral")
-	responderStatic, responderEphemeral := fixedKeyPair(t, "IK responder static"), fixedKeyPair(t, "IK responder ephemeral")
-	extension, err := SessionInitiator(initiatorStatic, responderStatic.Public, bytes.NewReader(initiatorEphemeral.Private))
+	fixed := fixedKeyPair
+	protocol := "Noise_IK_25519_AESGCM_SHA256"
+	prefix := prologue
+	if p256 {
+		fixed = fixedP256KeyPair
+		protocol = "Noise_IK_P256_AESGCM_SHA256"
+		prefix = []byte("ravenpass-link/2")
+	}
+	initiatorStatic, initiatorEphemeral := fixed(t, "IK initiator static"), fixed(t, "IK initiator ephemeral")
+	responderStatic, responderEphemeral := fixed(t, "IK responder static"), fixed(t, "IK responder ephemeral")
+	extension, err := vectorHandshake(initiatorStatic, initiatorEphemeral, responderStatic.Public, nil, true)
 	if err != nil {
 		t.Fatal(err)
 	}
-	desktop, err := SessionResponder(responderStatic, bytes.NewReader(responderEphemeral.Private))
+	desktop, err := vectorHandshake(responderStatic, responderEphemeral, nil, nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,8 +316,8 @@ func buildSessionVector(t *testing.T) handshakeVector {
 		{responder, `{"id":2,"result":{}}`},
 	})
 	return handshakeVector{
-		Protocol:           "Noise_IK_25519_AESGCM_SHA256",
-		Prologue:           hex.EncodeToString(prologue),
+		Protocol:           protocol,
+		Prologue:           hex.EncodeToString(prefix),
 		InitiatorStatic:    keyPairHex(initiatorStatic),
 		InitiatorEphemeral: keyPairHex(initiatorEphemeral),
 		ResponderStatic:    keyPairHex(responderStatic),
@@ -282,7 +343,7 @@ func encodeVectors(t *testing.T, vectors vectorFile) []byte {
 func TestVectorsAreCurrent(t *testing.T) {
 	vectors := vectorFile{
 		Keys:       buildKeyVectors(t),
-		Handshakes: []handshakeVector{buildLinkVector(t), buildSessionVector(t)},
+		Handshakes: []handshakeVector{buildLinkVector(t, false), buildSessionVector(t, false), buildLinkVector(t, true), buildSessionVector(t, true)},
 	}
 	encoded := encodeVectors(t, vectors)
 	if *update {

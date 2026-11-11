@@ -15,7 +15,14 @@
   },
   "background": {
     "service_worker": "background/index.ts",
-    "type": "module"
+    "type": "module",
+    "scripts": [
+      "background/index.ts"
+    ],
+    "persistent": false,
+    "preferred_environment": [
+      "document"
+    ]
   },
   "content_scripts": [
     {

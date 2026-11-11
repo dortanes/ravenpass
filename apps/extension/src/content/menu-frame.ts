@@ -9,6 +9,7 @@ import {
 } from "./backdrop.ts";
 import { Frost } from "./frost.ts";
 import { guardedAttributes, HostGuard } from "./host-guard.ts";
+import { HostVisibility } from "./host-visibility.ts";
 
 const gapPx = 4;
 const minWidthPx = 280;
@@ -200,6 +201,19 @@ function hostContainer(document: Document): Element {
 
 /** The closed shadow root keeps the page's styles and scripts from reaching the frame. */
 export class MenuFrame {
+  private static readonly frames = new Map<string, MenuFrame>();
+  private readonly token: string;
+
+  static visible(token: string): boolean {
+    const frame = MenuFrame.frames.get(token);
+    if (!frame || frame.removed || !frame.shown) return false;
+    frame.guard.review();
+    return (
+      !frame.removed &&
+      new HostVisibility(frame.host, [frame.surface, frame.frame]).visible()
+    );
+  }
+
   readonly host: HTMLElement;
   private readonly frame: HTMLIFrameElement;
   private readonly anchor: MenuAnchor;
@@ -224,6 +238,7 @@ export class MenuFrame {
   private focusWhenShown = false;
 
   constructor(anchor: MenuAnchor, url: string, onGone: () => void) {
+    this.token = new URL(url).hash.slice(1);
     this.anchor = anchor;
     this.onGone = onGone;
     const { document } = anchor;
@@ -254,6 +269,7 @@ export class MenuFrame {
     this.unwatch = anchor.watch({ moved: this.schedule, gone: onGone });
     this.schedule();
     this.measure();
+    MenuFrame.frames.set(this.token, this);
   }
 
   focus(): void {
@@ -271,6 +287,8 @@ export class MenuFrame {
   remove(): void {
     if (this.removed) return;
     this.removed = true;
+    if (MenuFrame.frames.get(this.token) === this)
+      MenuFrame.frames.delete(this.token);
     this.restyles.disconnect();
     removeEventListener("scroll", this.schedule, { capture: true });
     removeEventListener("resize", this.schedule);

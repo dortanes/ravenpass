@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test, { type TestContext } from "node:test";
+import { RequestFailure } from "./request-failure.ts";
 import {
   isClosedPortError,
   sendFailure,
@@ -63,4 +64,61 @@ test("a failure that is not an Error logs its type, never its value", async (t) 
     [[sendFailure, "string"]],
   );
   assert.equal(isClosedPortError(null), false);
+});
+
+test("only explicitly refused menu housekeeping stays quiet", async (t) => {
+  const errors = watchErrors(t);
+  for (const kind of ["menu-size", "menu-close", "menu-focus"] as const) {
+    assert.equal(
+      await sendIgnoringClosedPort(
+        Promise.reject(new RequestFailure(kind, "refused")),
+      ),
+      undefined,
+    );
+  }
+  assert.equal(errors.mock.callCount(), 0);
+  for (const [kind, reason] of [
+    ["menu-size", "failed"],
+    ["menu-close", "transport"],
+    ["menu-focus", "failed"],
+    ["menu-fill", "refused"],
+    ["menu", "refused"],
+  ] as const) {
+    await sendIgnoringClosedPort(
+      Promise.reject(new RequestFailure(kind, reason)),
+    );
+  }
+  assert.deepEqual(
+    errors.mock.calls.map((call) => call.arguments),
+    [
+      [sendFailure, "RequestFailure:menu-size:failed"],
+      [sendFailure, "RequestFailure:menu-close:transport"],
+      [sendFailure, "RequestFailure:menu-focus:failed"],
+      [sendFailure, "RequestFailure:menu-fill:refused"],
+      [sendFailure, "RequestFailure:menu:refused"],
+    ],
+  );
+});
+
+test("wrapped transport errors retain closed-port handling and hide other exception data", async (t) => {
+  const errors = watchErrors(t);
+  for (const message of [
+    "Receiving end does not exist.",
+    "The message port closed before a response was received.",
+  ]) {
+    const failure = new RequestFailure("menu-close", "transport", {
+      cause: new Error(message),
+    });
+    assert.equal(isClosedPortError(failure), true);
+    await sendIgnoringClosedPort(Promise.reject(failure));
+  }
+  assert.equal(errors.mock.callCount(), 0);
+  const failure = new RequestFailure("menu-close", "transport", {
+    cause: new Error("synthetic private payload https://example.com/secret"),
+  });
+  await sendIgnoringClosedPort(Promise.reject(failure));
+  assert.deepEqual(errors.mock.calls[0]?.arguments, [
+    sendFailure,
+    "RequestFailure:menu-close:transport",
+  ]);
 });

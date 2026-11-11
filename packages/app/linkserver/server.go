@@ -508,15 +508,16 @@ func (s *Server) stopIfIdle() {
 func (s *Server) handler(port int) http.Handler {
 	host := net.JoinHostPort(loopback, strconv.Itoa(port))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Host != host || !linkproto.AllowedOrigin(r.Header.Get("Origin")) {
+		origin := r.Header.Get("Origin")
+		if r.Host != host || len(r.Header.Values("Origin")) != 1 || !linkproto.AllowedOrigin(origin) {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
 		var exchange func(*connection) error
 		switch r.URL.Path {
-		case linkproto.LinkPath:
+		case linkproto.LinkPath, linkproto.P256LinkPath:
 			exchange = s.link
-		case linkproto.SessionPath:
+		case linkproto.SessionPath, linkproto.P256SessionPath:
 			exchange = s.session
 		default:
 			http.NotFound(w, r)
@@ -528,12 +529,15 @@ func (s *Server) handler(port int) http.Handler {
 			http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 			return
 		}
-		socket, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: linkproto.AllowedOrigins()})
+		// The gate above validates the complete origin before the library's matcher
+		// sees it; accepted origins contain no wildcard characters.
+		socket, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{origin}})
 		if err != nil {
 			<-s.slots
 			return
 		}
 		c := s.open(socket, s.slots)
+		c.p256 = r.URL.Path == linkproto.P256LinkPath || r.URL.Path == linkproto.P256SessionPath
 		defer c.leave()
 		c.end(exchange(c))
 	})

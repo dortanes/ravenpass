@@ -16,6 +16,7 @@ export const extension = {
     "Ravenpass isn't open on this computer. Open it and try again.",
   "extension.link.error.failed":
     "Ravenpass could not link this extension. Try again.",
+  "extension.link.error.reference": "Version {version} · Reference {code}",
   "extension.link.error.clipboard":
     "Ravenpass could not read the clipboard. Paste the key into the field.",
   "extension.linked.title": "Linked to Ravenpass",

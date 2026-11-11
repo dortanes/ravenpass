@@ -1,15 +1,13 @@
 import { ChromeAutofill } from "../chrome-autofill.ts";
 import { logRejection } from "../failures.ts";
 import { StoredLanguage } from "../language.ts";
-import { LinkClient, LinkError } from "../link/client.ts";
-import { ConnectionKey } from "../link/key.ts";
+import { LinkClient } from "../link/client.ts";
 import { WebCryptoKeys } from "../link/keys.ts";
 import { linkName } from "../link/name.ts";
 import { LinkSocket } from "../link/socket.ts";
 import { IndexedLinkStore } from "../link/store.ts";
 import {
   type Answer,
-  type Answers,
   type MenuRequest,
   type OfferRequest,
   type OfferShow,
@@ -17,14 +15,17 @@ import {
   type Request,
   vaultStatePort,
 } from "../messages.ts";
+import { requestFailureReply } from "../messaging/request-failure.ts";
 import { sendIgnoringClosedPort } from "../messaging/send.ts";
 import { StoredSignInStyle } from "../sign-in-style.ts";
 import { ColorSchemePage } from "../toolbar/color-scheme-page.ts";
 import { toolbarIcon } from "../toolbar/icon.ts";
 import { CardFrames } from "./card-frames.ts";
 import { ContextMenu } from "./context-menu.ts";
+import { ExtensionPages } from "./extension-pages.ts";
 import { MenuRouter, type TabMessenger } from "./menus.ts";
 import { PagePasskeys } from "./page-passkeys.ts";
+import { ExtensionPairing } from "./pairing.ts";
 import { PendingPasskeys } from "./pending-passkeys.ts";
 import { PendingSignIns } from "./pending-sign-ins.ts";
 import { RecentFills } from "./recent-fills.ts";
@@ -125,35 +126,24 @@ const vaultWatch = new VaultWatch({
   everyMs: vaultStatusEveryMs,
 });
 
-async function link(text: string): Promise<Answers["link"]> {
-  let key: ConnectionKey;
-  try {
-    key = await ConnectionKey.parse(text);
-  } catch {
-    return { ok: false, reason: "not-key" };
-  }
-  try {
-    await client.link(key, linkName(navigator.userAgentData));
-    return { ok: true };
-  } catch (error) {
-    return {
-      ok: false,
-      reason: error instanceof LinkError ? error.reason : "failed",
-    };
-  }
-}
+const extensionPages = new ExtensionPages(chrome.runtime);
 
-/** A tab's frames hold content scripts and menus, which may not ask about the link. */
+const pairing = new ExtensionPairing(
+  client,
+  () => linkName(navigator.userAgentData),
+  extensionPages,
+);
+
+/** Only authenticated extension pages may ask about the link or toolbar. */
 async function servePage(
   request: Exclude<Request, MenuRequest | OfferRequest | PasskeyPageRequest>,
   sender: chrome.runtime.MessageSender,
 ): Promise<Answer> {
-  if (sender.tab) {
-    throw new Error(`A tab's frame may not make the ${request.kind} request.`);
+  if (request.kind === "link") return pairing.link(request.key, sender);
+  if (!extensionPages.allows(sender)) {
+    throw new Error("Unauthorized extension page request.");
   }
   switch (request.kind) {
-    case "link":
-      return link(request.key);
     case "status":
       return client.status();
     case "unlink":
@@ -193,7 +183,9 @@ function serve(
 }
 
 chrome.runtime.onMessage.addListener((request: Request, sender, respond) => {
-  serve(request, sender).then(respond, () => respond(null));
+  serve(request, sender).then(respond, (error: unknown) =>
+    respond(requestFailureReply(error)),
+  );
   return true;
 });
 

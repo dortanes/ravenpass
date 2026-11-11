@@ -55,7 +55,7 @@ func (e Extension) clone() Extension {
 func (e Extension) valid() bool {
 	id, err := base64.RawURLEncoding.DecodeString(e.ID)
 	return err == nil && len(id) == idBytes && linkproto.ValidName(e.Name) &&
-		len(e.PublicKey) == linkproto.KeySize && !e.LinkedAt.IsZero()
+		linkproto.ValidPublicKey(e.PublicKey) && !e.LinkedAt.IsZero()
 }
 
 type keyRecord struct {
@@ -67,6 +67,7 @@ type record struct {
 	Version    int         `json:"version"`
 	Port       int         `json:"port,omitempty"`
 	DesktopKey *keyRecord  `json:"desktopKey,omitempty"`
+	P256Key    *keyRecord  `json:"p256Key,omitempty"`
 	Extensions []Extension `json:"extensions"`
 }
 
@@ -74,8 +75,13 @@ func (r record) valid() bool {
 	if r.Version != recordVersion || (r.Port != 0 && !validPort(r.Port)) {
 		return false
 	}
-	if r.DesktopKey != nil && !(linkproto.KeyPair{Private: r.DesktopKey.Private, Public: r.DesktopKey.Public}).Valid() {
-		return false
+	for _, keyed := range []struct {
+		key  *keyRecord
+		size int
+	}{{r.DesktopKey, linkproto.KeySize}, {r.P256Key, linkproto.P256PublicKeySize}} {
+		if keyed.key != nil && (len(keyed.key.Public) != keyed.size || !(linkproto.KeyPair{Private: keyed.key.Private, Public: keyed.key.Public}).Valid()) {
+			return false
+		}
 	}
 	ids := make(map[string]bool, len(r.Extensions))
 	keys := make(map[string]bool, len(r.Extensions))
@@ -136,26 +142,46 @@ func (s *Store) SetPort(port int) error {
 
 // DesktopKey returns the desktop app's static key pair, generating and keeping it on first use.
 func (s *Store) DesktopKey() (linkproto.KeyPair, error) {
+	return s.desktopKey(false)
+}
+
+// P256DesktopKey returns the separate v2 static key, preserving every v1 link.
+func (s *Store) P256DesktopKey() (linkproto.KeyPair, error) {
+	return s.desktopKey(true)
+}
+
+func (s *Store) desktopKey(p256 bool) (linkproto.KeyPair, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err := s.load(); err != nil {
 		return linkproto.KeyPair{}, err
 	}
-	if s.current.DesktopKey == nil {
-		generated, err := linkproto.GenerateKeyPair(rand.Reader)
+	kept := s.current.DesktopKey
+	generate := linkproto.GenerateKeyPair
+	if p256 {
+		kept = s.current.P256Key
+		generate = linkproto.GenerateP256KeyPair
+	}
+	if kept == nil {
+		generated, err := generate(rand.Reader)
 		if err != nil {
 			return linkproto.KeyPair{}, err
 		}
 		next := s.current
-		next.DesktopKey = &keyRecord{Private: generated.Private, Public: generated.Public}
+		kept = &keyRecord{Private: generated.Private, Public: generated.Public}
+		if p256 {
+			next.P256Key = kept
+		} else {
+			next.DesktopKey = kept
+		}
 		if err := s.save(next); err != nil {
 			return linkproto.KeyPair{}, err
 		}
 		s.current = next
 	}
 	return linkproto.KeyPair{
-		Private: bytes.Clone(s.current.DesktopKey.Private),
-		Public:  bytes.Clone(s.current.DesktopKey.Public),
+		Private: bytes.Clone(kept.Private),
+		Public:  bytes.Clone(kept.Public),
 	}, nil
 }
 

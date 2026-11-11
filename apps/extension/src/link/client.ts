@@ -15,8 +15,10 @@ import {
   type SignedPasskey,
 } from "../passkeys/responses.ts";
 import type { SignInStyleStore } from "../sign-in-style.ts";
+import type { PairingDiagnostic } from "./diagnostics.ts";
 import type { ConnectionKey } from "./key.ts";
 import type { KeySource } from "./keys.ts";
+import { linkCurve } from "./keys.ts";
 import { HandshakeState, type Transport } from "./noise.ts";
 import {
   captureOffer,
@@ -84,11 +86,17 @@ export type LinkFailure = "expired" | "not-open" | "failed";
 
 export class LinkError extends Error {
   readonly reason: LinkFailure;
+  readonly diagnostic: PairingDiagnostic;
 
-  constructor(reason: LinkFailure, options?: ErrorOptions) {
+  constructor(
+    reason: LinkFailure,
+    options?: ErrorOptions,
+    diagnostic: PairingDiagnostic = "RP-14",
+  ) {
     super(`The extension could not link to Ravenpass (${reason}).`, options);
     this.name = "LinkError";
     this.reason = reason;
+    this.diagnostic = diagnostic;
   }
 }
 
@@ -307,17 +315,29 @@ export class LinkClient {
   }
 
   async link(key: ConnectionKey, name: string): Promise<void> {
-    const staticKeys = await this.keys.generate();
-    let linked: { desktopPublicKey: Bytes; greeting: Greeting };
+    let diagnostic: PairingDiagnostic = "RP-01";
     try {
-      linked = await this.exchange(key.port, linkPath, async (socket) => {
+      const staticKeys = await this.keys.generate();
+      diagnostic = "RP-02";
+      // Reject unsupported CryptoKey cloning before spending the one-time key.
+      structuredClone(staticKeys);
+      const path =
+        linkCurve(staticKeys.privateKey) === "25519" ? linkPath : "/v2/link";
+      diagnostic = "RP-03";
+      const linked = await this.exchange(key.port, path, async (socket) => {
+        diagnostic = "RP-04";
         const handshake = await HandshakeState.link(
           { staticKeys, ephemeralKeys: this.keys },
           key.secret,
         );
         socket.send(await handshake.writeMessage(empty));
-        await handshake.readMessage(await socket.receive());
+        diagnostic = "RP-05";
+        const reply = await socket.receive();
+        diagnostic = "RP-06";
+        await handshake.readMessage(reply);
+        diagnostic = "RP-07";
         socket.send(await handshake.writeMessage(encodeJson({ name })));
+        diagnostic = "RP-08";
         const confirmation = v.safeParse(
           linkConfirmation,
           decodeJson(await handshake.transport().open(await socket.receive())),
@@ -330,16 +350,18 @@ export class LinkClient {
           greeting: confirmation.output,
         };
       });
+      diagnostic = "RP-09";
+      await this.store.save({
+        port: key.port,
+        desktopPublicKey: linked.desktopPublicKey,
+        staticKeys,
+        linkedAt: Date.now(),
+      });
+      diagnostic = "RP-10";
+      await this.keep(linked.greeting);
     } catch (error) {
-      throw new LinkError(linkFailure(error), { cause: error });
+      throw new LinkError(linkFailure(error), { cause: error }, diagnostic);
     }
-    await this.store.save({
-      port: key.port,
-      desktopPublicKey: linked.desktopPublicKey,
-      staticKeys,
-      linkedAt: Date.now(),
-    });
-    await this.keep(linked.greeting);
   }
 
   async status(): Promise<LinkStatus> {
@@ -620,7 +642,11 @@ export class LinkClient {
     request: SessionRequest,
     onProgress?: ProgressListener,
   ): Promise<Reply> {
-    return this.exchange(record.port, sessionPath, async (socket) => {
+    const path =
+      linkCurve(record.staticKeys.privateKey) === "25519"
+        ? sessionPath
+        : "/v2/session";
+    return this.exchange(record.port, path, async (socket) => {
       const transport = await this.session(record, socket);
       socket.send(
         await transport.seal(encodeJson({ id: requestId, ...request })),

@@ -17,6 +17,7 @@ export const extension: typeof english = {
     "Ravenpass не открыт на этом компьютере. Откройте его и повторите попытку.",
   "extension.link.error.failed":
     "Не удалось привязать расширение. Повторите попытку.",
+  "extension.link.error.reference": "Версия {version} · Код {code}",
   "extension.link.error.clipboard":
     "Не удалось прочитать буфер обмена. Вставьте ключ в поле вручную.",
   "extension.linked.title": "Привязано к Ravenpass",

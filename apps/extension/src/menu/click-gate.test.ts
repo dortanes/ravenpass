@@ -12,6 +12,7 @@ function clickGate() {
 function click() {
   const stopped = { defaultPrevented: false, propagation: true };
   const event: GatedEvent = {
+    isTrusted: true,
     preventDefault: () => {
       stopped.defaultPrevented = true;
     },
@@ -104,4 +105,59 @@ test("a click is refused within 500 ms of the menu moving", () => {
 
   clock.time += 1;
   assert.equal(gate.accepts(), true);
+});
+
+test("engines without isVisible accept full intersection after the still period", () => {
+  const clock = { time: 0 };
+  const gate = new ClickGate({
+    now: () => clock.time,
+    nativeVisibility: false,
+  });
+  gate.report({ isIntersecting: true, intersectionRatio: 1 });
+  clock.time += stillMs;
+  const { event, stopped } = click();
+  gate.screen(event);
+  assert.equal(gate.accepts(), true);
+  assert.equal(stopped.defaultPrevented, false);
+});
+
+test("native occlusion refusal is never replaced with geometric intersection", () => {
+  const clock = { time: 0 };
+  const gate = new ClickGate({ now: () => clock.time, nativeVisibility: true });
+  for (const isVisible of [undefined, false]) {
+    gate.report({ isVisible, isIntersecting: true, intersectionRatio: 1 });
+    clock.time += stillMs;
+    assert.equal(gate.accepts(), false);
+  }
+});
+
+test("fallback rejects partial, nonintersecting and inactive documents", () => {
+  let active = true;
+  let time = 1000;
+  const gate = new ClickGate({
+    now: () => time,
+    nativeVisibility: false,
+    active: () => active,
+  });
+  for (const entry of [
+    { isIntersecting: true, intersectionRatio: 0.99 },
+    { isIntersecting: false, intersectionRatio: 1 },
+  ]) {
+    gate.report(entry);
+    assert.equal(gate.accepts(), false);
+  }
+  gate.report({ isIntersecting: true, intersectionRatio: 1 });
+  time += stillMs;
+  assert.equal(gate.accepts(), true);
+  active = false;
+  assert.equal(gate.accepts(), false);
+});
+
+test("a synthetic click is refused even in a stable visible menu", () => {
+  const { clock, gate } = clickGate();
+  gate.visibility(true);
+  clock.time += stillMs;
+  const { event, stopped } = click();
+  gate.screen({ ...event, isTrusted: false });
+  assert.equal(stopped.defaultPrevented, true);
 });

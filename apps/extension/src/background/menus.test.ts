@@ -16,7 +16,12 @@ import {
 } from "../link/client.ts";
 import type { Answers, MenuRequest, Submission } from "../messages.ts";
 import { CardFrames } from "./card-frames.ts";
-import { type MenuClient, MenuRouter, type TabMessenger } from "./menus.ts";
+import {
+  type MenuClient,
+  MenuRouter,
+  RefusedRequest,
+  type TabMessenger,
+} from "./menus.ts";
 import { PagePasskeys } from "./page-passkeys.ts";
 import { PendingPasskeys } from "./pending-passkeys.ts";
 import { PendingSignIns } from "./pending-sign-ins.ts";
@@ -182,11 +187,12 @@ function router(style: SignInStyle = "card") {
   });
   const ravenpass = new ScriptedRavenpass();
   const relayed: Relayed[] = [];
-  const frames: { submission: Submission } = {
+  const frames: { submission: Submission; visible?: unknown } = {
     submission: { submitted: true, password: true },
   };
   const relay: TabMessenger = async (target, message) => {
     relayed.push([target, message]);
+    if (message.kind === "menu-visibility") return frames.visible;
     if (message.kind === "card-show") return { shown: true };
     if (message.kind === "form-sign-in") return frames.submission;
     return undefined;
@@ -1328,4 +1334,88 @@ test("a locked card menu lists the cards once Ravenpass is unlocked", async () =
   assert.deepEqual(await serve({ kind: "card-review", token }, menuSender()), {
     listing: { state: "list", cards: [travelCard] },
   });
+});
+
+for (const proof of [
+  undefined,
+  null,
+  false,
+  { visible: false },
+  { visible: "true" },
+]) {
+  test(`fallback activation refuses absent or invalid host visibility ${JSON.stringify(proof)} before reading a password`, async () => {
+    const { serve, ravenpass, frames, relayed } = router("field");
+    const { token } = (await serve(
+      { kind: "menu-open", field: "login", requested: false },
+      pageSender(),
+    )) as { token: string };
+    await serve({ kind: "menu", token }, menuSender());
+    frames.visible = proof;
+    await assert.rejects(
+      serve(
+        {
+          kind: "menu-fill",
+          token,
+          id: "a1",
+          confirmed: false,
+          visibility: "host",
+        },
+        menuSender(),
+      ),
+      RefusedRequest,
+    );
+    assert.deepEqual(ravenpass.fills, []);
+    assert.equal(relayed.at(-1)?.[1].kind, "menu-visibility");
+  });
+}
+
+test("a fresh visibility proof from the bound host precedes fallback password access", async () => {
+  const { serve, ravenpass, frames, relayed } = router("field");
+  const { token } = (await serve(
+    { kind: "menu-open", field: "login", requested: false },
+    pageSender(),
+  )) as { token: string };
+  await serve({ kind: "menu", token }, menuSender());
+  frames.visible = { visible: true };
+  assert.deepEqual(
+    await serve(
+      {
+        kind: "menu-fill",
+        token,
+        id: "a1",
+        confirmed: false,
+        visibility: "host",
+      },
+      menuSender(),
+    ),
+    { ok: true },
+  );
+  assert.deepEqual(ravenpass.fills, [["a1", origin]]);
+  const index = relayed.findIndex(
+    ([, message]) => message.kind === "menu-visibility",
+  );
+  assert.ok(index >= 0);
+  assert.deepEqual(relayed[index], [
+    { tabId, documentId: pageSender().documentId, origin },
+    { kind: "menu-visibility", token },
+  ]);
+  assert.equal(relayed[index + 1]?.[1].kind, "fill");
+});
+
+test("fallback code reveal requires host visibility before asking Ravenpass", async () => {
+  const { serve, ravenpass, frames } = router("field");
+  const { token } = (await serve(
+    { kind: "menu-open", field: "code", requested: false },
+    pageSender(),
+  )) as { token: string };
+  await serve({ kind: "menu", token }, menuSender());
+  frames.visible = { visible: false };
+  await assert.rejects(
+    serve(
+      { kind: "menu-code", token, id: "a1", visibility: "host" },
+      menuSender(),
+    ),
+    RefusedRequest,
+  );
+  assert.deepEqual(ravenpass.codes, []);
 });

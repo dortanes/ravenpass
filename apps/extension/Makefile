@@ -1,4 +1,4 @@
-# Ravenpass for Chrome. Run `make help` for the targets.
+# Ravenpass for Chromium and WebKit. Run `make help` for the targets.
 
 .DEFAULT_GOAL := help
 .PHONY: help deps dev check build notices package clean
@@ -18,7 +18,7 @@ help:
 	@echo "  make deps     install npm dependencies"
 	@echo "  make dev      run Chrome with the extension and live reload"
 	@echo "  make check    lint, type-check, test and build"
-	@echo "  make build    unpacked extension in dist/chrome"
+	@echo "  make build    one Chromium/WebKit extension in dist/chrome"
 	@echo "  make notices  third-party notices in $(NOTICES_FILE)"
 	@echo "  make package  zips for loading unpacked and for the Chrome Web Store"
 	@echo "  make clean    remove build output"

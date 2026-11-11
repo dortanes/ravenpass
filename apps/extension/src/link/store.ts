@@ -4,7 +4,7 @@ import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 export interface LinkRecord {
   /** The port the desktop app listens on. */
   readonly port: number;
-  /** The desktop app's static X25519 public key. */
+  /** The desktop app's static public key: v1 X25519 or v2 P-256. */
   readonly desktopPublicKey: Uint8Array<ArrayBuffer>;
   /** The extension's static key pair; its private key cannot be exported. */
   readonly staticKeys: CryptoKeyPair;

@@ -57,11 +57,44 @@ class BareMainWorldScript {
   }
 }
 
+// Chrome 121+ ignores document fields; WebKit needs the document for CryptoKey persistence.
+// Extension.js strips background.scripts in its Chrome target, so restore the compiled entry.
+class BackgroundEnvironments {
+  apply(compiler) {
+    compiler.hooks.afterEmit.tapPromise(
+      "ravenpass:background-environments",
+      async (compilation) => {
+        if (compilation.errors.length) return;
+        const manifestFile = join(
+          compilation.outputOptions.path,
+          "manifest.json",
+        );
+        const manifest = JSON.parse(await readFile(manifestFile, "utf8"));
+        const worker = manifest.background?.service_worker;
+        if (typeof worker !== "string" || !worker) {
+          throw new Error(
+            "The background service worker entry was not emitted.",
+          );
+        }
+        await readFile(join(compilation.outputOptions.path, worker));
+        manifest.background.scripts = [worker];
+        manifest.background.persistent = false;
+        manifest.background.preferred_environment = ["document"];
+        await writeFile(manifestFile, JSON.stringify(manifest, null, 2));
+      },
+    );
+  }
+}
+
 export default {
   // Extension.js resolves `index.ts` before a package's declared `index.js`; @scure/base ships both.
   transpilePackages: ["@ravenpass/ui", "@scure/base"],
   config: (config) => {
-    config.plugins = [...(config.plugins ?? []), new BareMainWorldScript()];
+    config.plugins = [
+      ...(config.plugins ?? []),
+      new BareMainWorldScript(),
+      new BackgroundEnvironments(),
+    ];
     return config;
   },
 };

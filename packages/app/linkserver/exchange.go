@@ -24,6 +24,7 @@ var (
 // goroutine moves or leaves its slot.
 type connection struct {
 	socket   *websocket.Conn
+	p256     bool
 	ctx      context.Context
 	deadline *time.Timer
 	// slot is the pool whose place the connection holds.
@@ -169,7 +170,11 @@ func (s *Server) link(c *connection) error {
 	if awaited == nil {
 		return errNoKey
 	}
-	desktop, err := s.store.DesktopKey()
+	desktopKey := s.store.DesktopKey
+	if c.p256 {
+		desktopKey = s.store.P256DesktopKey
+	}
+	desktop, err := desktopKey()
 	if err != nil {
 		return err
 	}
@@ -212,7 +217,11 @@ func (s *Server) greeting() linkproto.Greeting {
 
 // session runs Noise_IK for a linked static key and answers requests; a request after unlinking ends it unanswered.
 func (s *Server) session(c *connection) error {
-	desktop, err := s.store.DesktopKey()
+	desktopKey := s.store.DesktopKey
+	if c.p256 {
+		desktopKey = s.store.P256DesktopKey
+	}
+	desktop, err := desktopKey()
 	if err != nil {
 		return err
 	}

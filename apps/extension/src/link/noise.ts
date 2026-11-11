@@ -1,5 +1,5 @@
-// Noise rev 34 initiator for XXpsk3 and IK over 25519_AESGCM_SHA256, verified against the Go linkproto vectors.
-import type { KeySource } from "./keys.ts";
+// Noise XXpsk3/IK initiator: v1 X25519 and v2 P-256, with AESGCM/SHA256 and shared Go vectors.
+import { type KeySource, keyAlgorithm, linkCurve } from "./keys.ts";
 
 type Bytes = Uint8Array<ArrayBuffer>;
 type Token = "e" | "s" | "ee" | "es" | "se" | "ss" | "psk";
@@ -27,7 +27,7 @@ const sessionPattern: HandshakePattern = {
 };
 
 const hashLength = 32;
-const dhLength = 32;
+const sharedSecretLength = 32;
 const tagLength = 16;
 const nonceLength = 12;
 
@@ -92,20 +92,20 @@ async function publicBytes(key: CryptoKey): Promise<Bytes> {
   return new Uint8Array(await crypto.subtle.exportKey("raw", key));
 }
 
-/** X25519 through deriveBits, which rejects a public key of small order. */
+/** Native ECDH validates the peer point; X25519 also rejects small-order points. */
 async function dh(privateKey: CryptoKey, publicKey: Bytes): Promise<Bytes> {
   const peer = await crypto.subtle.importKey(
     "raw",
     publicKey,
-    { name: "X25519" },
+    keyAlgorithm(linkCurve(privateKey)),
     true,
     [],
   );
   return new Uint8Array(
     await crypto.subtle.deriveBits(
-      { name: "X25519", public: peer },
+      { name: privateKey.algorithm.name, public: peer },
       privateKey,
-      dhLength * 8,
+      sharedSecretLength * 8,
     ),
   );
 }
@@ -298,12 +298,12 @@ export class HandshakeState {
     this.psk = psk;
   }
 
-  /** Starts `Noise_XXpsk3_25519_AESGCM_SHA256` with a connection key's secret. */
+  /** Starts XXpsk3 with a connection key's secret and the static key's curve. */
   static link(keys: InitiatorKeys, psk: Bytes): Promise<HandshakeState> {
     return HandshakeState.start(linkPattern, keys, null, psk);
   }
 
-  /** Starts `Noise_IK_25519_AESGCM_SHA256` towards the desktop app's static public key. */
+  /** Starts IK towards the desktop app's static public key on the stored curve. */
   static session(
     keys: InitiatorKeys,
     responderStatic: Bytes,
@@ -317,11 +317,23 @@ export class HandshakeState {
     responderStatic: Bytes | null,
     psk: Bytes,
   ): Promise<HandshakeState> {
-    const symmetric = await SymmetricState.initialize(pattern.protocolName);
-    await symmetric.mixHash(prologue);
+    const curve = linkCurve(keys.staticKeys.privateKey);
+    const selected =
+      curve === "25519"
+        ? pattern
+        : {
+            ...pattern,
+            protocolName: pattern.protocolName.replace("_25519_", "_P256_"),
+          };
+    const symmetric = await SymmetricState.initialize(selected.protocolName);
+    await symmetric.mixHash(
+      curve === "25519"
+        ? prologue
+        : new TextEncoder().encode("ravenpass-link/2"),
+    );
     if (responderStatic) await symmetric.mixHash(responderStatic);
     return new HandshakeState(
-      pattern,
+      selected,
       symmetric,
       keys,
       await publicBytes(keys.staticKeys.publicKey),
@@ -334,7 +346,9 @@ export class HandshakeState {
     const parts: Bytes[] = [];
     for (const token of this.turn(true)) {
       if (token === "e") {
-        this.ephemeral = await this.keys.ephemeralKeys.generate();
+        this.ephemeral = await this.keys.ephemeralKeys.generate(
+          linkCurve(this.keys.staticKeys.privateKey),
+        );
         const ephemeralPublic = await publicBytes(this.ephemeral.publicKey);
         parts.push(ephemeralPublic);
         await this.mixEphemeral(ephemeralPublic);
@@ -370,12 +384,12 @@ export class HandshakeState {
     };
     for (const token of this.turn(false)) {
       if (token === "e") {
-        this.remoteEphemeral = take(dhLength);
+        this.remoteEphemeral = take(this.staticPublic.length);
         await this.mixEphemeral(this.remoteEphemeral);
       } else if (token === "s") {
         const length = this.symmetric.hasKey()
-          ? dhLength + tagLength
-          : dhLength;
+          ? this.staticPublic.length + tagLength
+          : this.staticPublic.length;
         this.remoteStatic = await this.symmetric.decryptAndHash(take(length));
       } else if (token === "psk") {
         await this.symmetric.mixKeyAndHash(this.psk);

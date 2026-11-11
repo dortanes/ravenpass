@@ -348,7 +348,11 @@ func (e *extension) link(conn *websocket.Conn, secret []byte, name string) (stri
 // linkWith links the extension with key and expects the desktop app to confirm and close.
 func (e *extension) linkWith(t *testing.T, key linkkey.Key) {
 	t.Helper()
-	conn := connect(t, int(key.Port), linkproto.LinkPath)
+	path := linkproto.LinkPath
+	if len(e.key.Public) == linkproto.P256PublicKeySize {
+		path = linkproto.P256LinkPath
+	}
+	conn := connect(t, int(key.Port), path)
 	message, err := e.link(conn, key.Secret[:], extensionName)
 	if err != nil {
 		t.Fatal(err)
@@ -428,7 +432,11 @@ func linked(t *testing.T) (*extension, *fakeVault, int) {
 // openSession connects to port and runs the session handshake.
 func (e *extension) openSession(t *testing.T, port int) (*websocket.Conn, *peerTransport) {
 	t.Helper()
-	conn := connect(t, port, linkproto.SessionPath)
+	path := linkproto.SessionPath
+	if len(e.key.Public) == linkproto.P256PublicKeySize {
+		path = linkproto.P256SessionPath
+	}
+	conn := connect(t, port, path)
 	transport, err := e.session(conn)
 	if err != nil {
 		t.Fatal(err)
@@ -506,9 +514,14 @@ func TestRequestsFromOtherOriginsOrHostsAreRefusedBeforeTheUpgrade(t *testing.T)
 		"a rebound name":    {HTTPHeader: http.Header{"Origin": {extensionOrigin}}, Host: "ravenpass.example:" + strconv.Itoa(port)},
 		"localhost":         {HTTPHeader: http.Header{"Origin": {extensionOrigin}}, Host: "localhost:" + strconv.Itoa(port)},
 		"another port":      {HTTPHeader: http.Header{"Origin": {extensionOrigin}}, Host: "127.0.0.1:1"},
+		"null origin":       {HTTPHeader: http.Header{"Origin": {"null"}}},
+		"two origins":       {HTTPHeader: http.Header{"Origin": {extensionOrigin, "https://example.com"}}},
+		"WebKit page":       {HTTPHeader: http.Header{"Origin": {"https://webkit-extension.example.com"}}},
+		"WebKit path":       {HTTPHeader: http.Header{"Origin": {"webkit-extension://12345678-1234-1234-1234-123456789abc/page"}}},
+		"WebKit port":       {HTTPHeader: http.Header{"Origin": {"webkit-extension://12345678-1234-1234-1234-123456789abc:80"}}},
 	}
 	for name, options := range refusals {
-		for _, path := range []string{linkproto.LinkPath, linkproto.SessionPath} {
+		for _, path := range []string{linkproto.LinkPath, linkproto.SessionPath, linkproto.P256LinkPath, linkproto.P256SessionPath} {
 			conn, response, err := dial(port, path, options)
 			if err == nil {
 				conn.CloseNow()

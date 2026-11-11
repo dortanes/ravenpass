@@ -42,6 +42,8 @@ interface Vectors {
 
 export const linkProtocol = "Noise_XXpsk3_25519_AESGCM_SHA256";
 export const sessionProtocol = "Noise_IK_25519_AESGCM_SHA256";
+export const p256LinkProtocol = "Noise_XXpsk3_P256_AESGCM_SHA256";
+export const p256SessionProtocol = "Noise_IK_P256_AESGCM_SHA256";
 
 const vectorsFile = new URL(
   "../../../../packages/app/linkproto/testdata/vectors.json",
@@ -65,22 +67,31 @@ export function bytes(text: string): Uint8Array<ArrayBuffer> {
 export async function importKeyPair(
   pair: KeyPairVector,
 ): Promise<CryptoKeyPair> {
+  const p256 = bytes(pair.public).length === 65;
+  const algorithm = p256
+    ? { name: "ECDH", namedCurve: "P-256" }
+    : { name: "X25519" };
   const privateKey = await crypto.subtle.importKey(
     "jwk",
     {
-      kty: "OKP",
-      crv: "X25519",
+      kty: p256 ? "EC" : "OKP",
+      crv: p256 ? "P-256" : "X25519",
       d: base64urlnopad.encode(bytes(pair.private)),
-      x: base64urlnopad.encode(bytes(pair.public)),
+      x: base64urlnopad.encode(
+        p256 ? bytes(pair.public).slice(1, 33) : bytes(pair.public),
+      ),
+      ...(p256
+        ? { y: base64urlnopad.encode(bytes(pair.public).slice(33)) }
+        : {}),
     },
-    { name: "X25519" },
+    algorithm,
     false,
     ["deriveBits"],
   );
   const publicKey = await crypto.subtle.importKey(
     "raw",
     bytes(pair.public),
-    { name: "X25519" },
+    algorithm,
     true,
     [],
   );

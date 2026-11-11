@@ -1,11 +1,34 @@
-/** Supplies the static X25519 pair made when linking and each handshake's ephemeral pair. */
-export interface KeySource {
-  generate(): Promise<CryptoKeyPair>;
+export type LinkCurve = "P256" | "25519";
+
+export function linkCurve(key: CryptoKey): LinkCurve {
+  if (key.algorithm.name === "X25519") return "25519";
+  if (
+    key.algorithm.name === "ECDH" &&
+    (key.algorithm as EcKeyAlgorithm).namedCurve === "P-256"
+  ) {
+    return "P256";
+  }
+  throw new Error("The link key uses an unsupported algorithm.");
 }
 
-/** The private key is non-extractable; the public key exports as 32 raw bytes. */
+export function keyAlgorithm(
+  curve: LinkCurve,
+): AlgorithmIdentifier | EcKeyImportParams {
+  return curve === "25519"
+    ? { name: "X25519" }
+    : { name: "ECDH", namedCurve: "P-256" };
+}
+
+/** Supplies a new static pair or a stored link's matching ephemeral pair. */
+export interface KeySource {
+  generate(curve?: LinkCurve): Promise<CryptoKeyPair>;
+}
+
+/** P-256 CryptoKeys survive WebKit's structured clone; X25519 keeps existing links working. */
 export class WebCryptoKeys implements KeySource {
-  generate(): Promise<CryptoKeyPair> {
-    return crypto.subtle.generateKey({ name: "X25519" }, false, ["deriveBits"]);
+  async generate(curve: LinkCurve = "P256"): Promise<CryptoKeyPair> {
+    return crypto.subtle.generateKey(keyAlgorithm(curve), false, [
+      "deriveBits",
+    ]) as Promise<CryptoKeyPair>;
   }
 }

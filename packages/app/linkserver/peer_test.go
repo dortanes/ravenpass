@@ -1,8 +1,10 @@
 package linkserver
 
 import (
+	"crypto/ecdh"
 	"crypto/rand"
 	"errors"
+	"io"
 
 	"github.com/dortanes/ravenpass/packages/app/linkproto"
 	"github.com/flynn/noise"
@@ -17,6 +19,10 @@ type peerHandshake struct {
 func newPeerHandshake(config noise.Config) (*peerHandshake, error) {
 	config.CipherSuite = noise.NewCipherSuite(noise.DH25519, noise.CipherAESGCM, noise.HashSHA256)
 	config.Prologue = []byte("ravenpass-link/1")
+	if len(config.StaticKeypair.Public) == 65 {
+		config.CipherSuite = noise.NewCipherSuite(peerP256{}, noise.CipherAESGCM, noise.HashSHA256)
+		config.Prologue = []byte("ravenpass-link/2")
+	}
 	config.Initiator = true
 	config.Random = rand.Reader
 	state, err := noise.NewHandshakeState(config)
@@ -36,7 +42,7 @@ func linkPeer(static linkproto.KeyPair, secret []byte) (*peerHandshake, error) {
 
 // sessionPeer starts Noise_IK towards the desktop app's static key.
 func sessionPeer(static linkproto.KeyPair, desktop []byte) (*peerHandshake, error) {
-	if len(desktop) != linkproto.KeySize {
+	if len(desktop) != len(static.Public) {
 		return nil, errors.New("the desktop key has the wrong size")
 	}
 	return newPeerHandshake(noise.Config{
@@ -44,6 +50,32 @@ func sessionPeer(static linkproto.KeyPair, desktop []byte) (*peerHandshake, erro
 		PeerStatic: desktop,
 	})
 }
+
+// peerP256 supplies the independently composed test initiator with native ECDH.
+type peerP256 struct{}
+
+func (peerP256) GenerateKeypair(random io.Reader) (noise.DHKey, error) {
+	key, err := ecdh.P256().GenerateKey(random)
+	if err != nil {
+		return noise.DHKey{}, err
+	}
+	return noise.DHKey{Private: key.Bytes(), Public: key.PublicKey().Bytes()}, nil
+}
+
+func (peerP256) DH(private, public []byte) ([]byte, error) {
+	key, err := ecdh.P256().NewPrivateKey(private)
+	if err != nil {
+		return nil, err
+	}
+	peer, err := ecdh.P256().NewPublicKey(public)
+	if err != nil {
+		return nil, err
+	}
+	return key.ECDH(peer)
+}
+
+func (peerP256) DHLen() int     { return 65 }
+func (peerP256) DHName() string { return "P256" }
 
 func (h *peerHandshake) Write(payload []byte) ([]byte, error) {
 	message, send, receive, err := h.state.WriteMessage(nil, payload)

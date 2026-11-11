@@ -3,7 +3,9 @@ package linkproto
 
 import (
 	"bytes"
+	"crypto/ecdh"
 	"io"
+	"regexp"
 	"slices"
 
 	"github.com/flynn/noise"
@@ -38,19 +40,26 @@ const (
 )
 
 // The extension ID derives from the public key in the extension's manifest.
-var allowedOrigins = []string{"chrome-extension://cceiadaelnccfbakmhcleifjfilkakag"}
+var allowedOrigins = []string{
+	"chrome-extension://cceiadaelnccfbakmhcleifjfilkakag",
+	"webkit-extension://cceiadaelnccfbakmhcleifjfilkakag",
+}
 
-// AllowedOrigins returns the extension origins the desktop app answers.
+// WebKit assigns extension origins per installation; they cannot identify the publisher.
+// The waiting secret and linked keys authenticate peers after this web-page exclusion gate.
+var webkitOrigin = regexp.MustCompile(`^(webkit-extension|safari-web-extension)://[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$`)
+
+// AllowedOrigins returns fixed publisher origins; AllowedOrigin also handles WebKit's assigned origins.
 func AllowedOrigins() []string {
 	return slices.Clone(allowedOrigins)
 }
 
 // AllowedOrigin reports whether origin is one the desktop app answers.
 func AllowedOrigin(origin string) bool {
-	return slices.Contains(allowedOrigins, origin)
+	return slices.Contains(allowedOrigins, origin) || webkitOrigin.MatchString(origin)
 }
 
-// KeyPair is an X25519 key pair.
+// KeyPair is a v1 X25519 or v2 P-256 key pair, distinguished by its public encoding.
 type KeyPair struct {
 	Private []byte
 	Public  []byte
@@ -65,8 +74,12 @@ func GenerateKeyPair(random io.Reader) (KeyPair, error) {
 	return KeyPair{Private: key.Private, Public: key.Public}, nil
 }
 
-// Valid reports whether both halves have KeySize and the public key derives from the private one.
+// Valid reports whether the public key derives from a valid private key.
 func (k KeyPair) Valid() bool {
+	if len(k.Public) == P256PublicKeySize {
+		private, err := ecdh.P256().NewPrivateKey(k.Private)
+		return err == nil && bytes.Equal(private.PublicKey().Bytes(), k.Public)
+	}
 	if len(k.Private) != KeySize || len(k.Public) != KeySize {
 		return false
 	}
