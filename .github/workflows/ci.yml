@@ -27,6 +27,7 @@ jobs:
           HOMEBREW_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           brew tap --custom-remote dortanes/ravenpass "$GITHUB_WORKSPACE"
+          brew trust --cask dortanes/ravenpass/ravenpass
           brew audit --cask --online dortanes/ravenpass/ravenpass
 
   core:

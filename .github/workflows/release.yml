@@ -263,6 +263,7 @@ jobs:
           checksum="$(shasum -a 256 "$dmg")"
           checksum="${checksum%% *}"
           brew tap --custom-remote dortanes/ravenpass "$GITHUB_WORKSPACE"
+          brew trust --cask dortanes/ravenpass/ravenpass
           current="$(brew info --cask --json=v2 dortanes/ravenpass/ravenpass)"
           if [ "$(jq -r '.casks[0].version' <<< "$current")" = "$version" ] &&
              [ "$(jq -r '.casks[0].sha256' <<< "$current")" = "$checksum" ]; then
