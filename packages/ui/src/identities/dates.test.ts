@@ -122,16 +122,21 @@ test("under a month the time left is stated in days", () => {
 test("a typed date is read in the order of the interface language", () => {
   const russian = DateEntryFormat.for("ru");
   const english = DateEntryFormat.for("en");
+  const chinese = DateEntryFormat.for("zh");
   assert.equal(russian.read("05.03.2026"), "2026-03-05");
   assert.equal(english.read("03/05/2026"), "2026-03-05");
+  assert.equal(chinese.read("2026/03/05"), "2026-03-05");
   assert.equal(russian.display("2026-03-05"), "05.03.2026");
   assert.equal(english.display("2026-03-05"), "03/05/2026");
+  assert.equal(chinese.display("2026-03-05"), "2026/03/05");
   assert.equal(english.display(""), "");
   assert.equal(russian.read(""), "");
+  assert.equal(chinese.read(""), "");
 });
 
 test("a typed date that is not whole or not real is incomplete", () => {
   const russian = DateEntryFormat.for("ru");
+  const chinese = DateEntryFormat.for("zh");
   for (const typed of [
     "05.03",
     "05.03.20",
@@ -142,6 +147,9 @@ test("a typed date that is not whole or not real is incomplete", () => {
     assert.equal(russian.read(typed), null, typed);
   }
   assert.equal(DateEntryFormat.for("en").read("13/01/2026"), null);
+  assert.equal(chinese.read("2026/13/01"), null);
+  assert.equal(chinese.read("2026/02/30"), null);
+  assert.equal(chinese.read("1899/01/01"), null);
 });
 
 test("a picked day is stored as the vault keeps it", () => {

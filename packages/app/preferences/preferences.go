@@ -20,6 +20,7 @@ type Language string
 const (
 	English Language = "en"
 	Russian Language = "ru"
+	Chinese Language = "zh"
 )
 
 const (
@@ -31,7 +32,7 @@ const (
 var ErrUnsupportedLanguage = errors.New("unsupported language")
 
 // Languages lists the tags this build offers, in the order the interface shows them.
-func Languages() []Language { return []Language{English, Russian} }
+func Languages() []Language { return []Language{English, Russian, Chinese} }
 
 // supported reports whether this build offers language.
 func supported(language Language) bool {

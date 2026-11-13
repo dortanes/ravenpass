@@ -8,7 +8,7 @@ import (
 
 func TestForMatchesTheLanguageWithEnglishAsFallback(t *testing.T) {
 	for tag, want := range map[string]string{
-		"en": "en", "en-GB": "en", "ru": "ru", "ru-RU": "ru", "RU": "ru", "de-DE": "en", "": "en", "not a tag": "en",
+		"en": "en", "en-GB": "en", "ru": "ru", "ru-RU": "ru", "RU": "ru", "zh": "zh", "zh-CN": "zh", "ZH": "zh", "de-DE": "en", "": "en", "not a tag": "en",
 	} {
 		if got := For(tag).Language(); got != want {
 			t.Errorf("For(%q) = %s, want %s", tag, got, want)
@@ -19,6 +19,9 @@ func TestForMatchesTheLanguageWithEnglishAsFallback(t *testing.T) {
 func TestTextReadsTheLanguageAndFallsBackToEnglish(t *testing.T) {
 	if got := For("ru").Text("system.menu.quit"); got != "Выйти из Ravenpass" {
 		t.Fatalf("Russian text = %q", got)
+	}
+	if got := For("zh").Text("system.menu.quit"); got != "退出 Ravenpass" {
+		t.Fatalf("Chinese text = %q", got)
 	}
 	if got := (Catalog{language: "xx"}).Text("system.menu.quit"); got != "Quit Ravenpass" {
 		t.Fatalf("fallback text = %q", got)

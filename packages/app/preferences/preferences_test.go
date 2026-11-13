@@ -50,7 +50,8 @@ func TestTheFirstOfferedDeviceLanguageIsFollowedUntilOneIsChosen(t *testing.T) {
 		{"region", []string{"ru-RU"}, Russian},
 		{"first offered", []string{"de-DE", "ru-RU", "en-US"}, Russian},
 		{"order kept", []string{"en-GB", "ru"}, English},
-		{"script and region", []string{"zh-Hans-CN"}, English},
+		{"script and region", []string{"zh-Hans-CN"}, Chinese},
+		{"unsupported fallback", []string{"ja-JP"}, English},
 		{"case and underscore", []string{"RU_ru"}, Russian},
 		{"unreadable skipped", []string{"", "not a tag", "ru-RU"}, Russian},
 		{"region without a base", []string{"und-RU"}, English},
@@ -393,7 +394,7 @@ func TestTitledPromptsGiveATitleAndASentence(t *testing.T) {
 			catalog.RevealReason("Wallet"),
 		} {
 			title, sentence, found := strings.Cut(prompt, "\n")
-			if !found || title == "" || strings.ContainsRune(sentence, '\n') || !strings.HasSuffix(sentence, ".") {
+			if !found || title == "" || strings.ContainsRune(sentence, '\n') || (!strings.HasSuffix(sentence, ".") && !strings.HasSuffix(sentence, "。")) {
 				t.Fatalf("%q prompt %q is not a title and a sentence", language, prompt)
 			}
 		}
