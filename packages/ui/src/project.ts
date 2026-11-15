@@ -7,7 +7,7 @@ export const licenseAddress = `${sourceRepository}/blob/main/LICENSE`;
 /** GitHub keeps a report sent here private between the reporter and the maintainers. */
 export const vulnerabilityReportAddress = `${sourceRepository}/security/advisories/new`;
 
-export const donationAddress = "https://ko-fi.com/dortanes";
+export const donationAddress = "https://anthy.net/donate";
 
 export interface BuildInfo {
   version: string;

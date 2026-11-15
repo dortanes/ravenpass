@@ -5,9 +5,9 @@
 
 ROOT := $(abspath ../..)
 VERSION := $(shell tr -d '[:space:]' < $(ROOT)/version.txt)
-PACKAGE := dist/Ravenpass-$(VERSION)-chrome.zip
-STORE_PACKAGE := dist/Ravenpass-$(VERSION)-chrome-web-store.zip
-RELEASE_NOTICES := dist/Ravenpass-$(VERSION)-chrome-notices.txt
+PACKAGE := dist/Ravenpass-chrome.zip
+STORE_PACKAGE := dist/Ravenpass-chrome-web-store.zip
+RELEASE_NOTICES := dist/Ravenpass-chrome-notices.txt
 NOTICES_FILE := dist/chrome/THIRD_PARTY_NOTICES.txt
 
 include $(ROOT)/notices/notices.mk
