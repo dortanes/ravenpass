@@ -17,9 +17,11 @@ go-licenses-check = $(call go-licenses,$(1),check) --allowed_licenses=$(subst $(
 
 # $(call notices-start,file,product) starts the notices file for product with Ravenpass's own license.
 define notices-start
-printf '%s\n%s\n\n' 'Ravenpass is licensed under GPL-3.0-or-later.' \
+printf '%s\n%s\n\n' 'Ravenpass is licensed under GPL-3.0-or-later with the additional permission that follows the license.' \
 	'Source code: https://github.com/dortanes/ravenpass' > $(1)
 cat $(ROOT)/LICENSE >> $(1)
+printf '\n' >> $(1)
+cat $(ROOT)/LICENSE-EXCEPTION >> $(1)
 $(call notices-section,$(1),$(2) $(VERSION): third-party notices)
 printf '\n%s\n' '$(2) includes the third-party software below, each under the license reproduced with it.' >> $(1)
 endef

@@ -43,6 +43,8 @@ Commit messages and pull request titles follow [Conventional Commits](https://ww
 
 A pull request describes the change, its risks and how it was verified, and includes screenshots for interface changes, with no real secrets in them.
 
+By contributing, you license your contribution under GPL-3.0-or-later with the app store permission in [`LICENSE-EXCEPTION`](LICENSE-EXCEPTION).
+
 ## Releases
 
 Releases are automated with [release-please](https://github.com/googleapis/release-please). Every push to `main` updates a release pull request that bumps `version.txt` and the extension manifest and writes `CHANGELOG.md` from the commits since the last release. Merging it tags a draft release, builds and signs the apps, attaches them and publishes the release:

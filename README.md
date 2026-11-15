@@ -104,7 +104,7 @@ Every way to donate is listed at [anthy.net/donate](https://anthy.net/donate).
 
 ## License
 
-Ravenpass is free software under the [GNU General Public License v3.0 or later](LICENSE).
+Ravenpass is free software under the [GNU General Public License v3.0 or later](LICENSE), with an additional permission to distribute it through app stores ([LICENSE-EXCEPTION](LICENSE-EXCEPTION)).
 
 ---
 
