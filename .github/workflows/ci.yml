@@ -13,8 +13,84 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  changes:
+    name: Changed areas
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      homebrew: ${{ steps.filter.outputs.homebrew }}
+      core: ${{ steps.filter.outputs.core }}
+      licenses: ${{ steps.filter.outputs.licenses }}
+      interface: ${{ steps.filter.outputs.interface }}
+      extension: ${{ steps.filter.outputs.extension }}
+      desktop: ${{ steps.filter.outputs.desktop }}
+      android: ${{ steps.filter.outputs.android }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            ci: &ci
+              - .github/workflows/ci.yml
+              - Makefile
+            node: &node
+              - package.json
+              - package-lock.json
+              - .nvmrc
+              - tsconfig.base.json
+              - biome.json
+            ui: &ui
+              - packages/ui/**
+              - packages/app/messages/**
+            homebrew:
+              - *ci
+              - Casks/**
+            core:
+              - *ci
+              - go.work*
+              - "**/*.go"
+              - "**/go.mod"
+              - "**/go.sum"
+            licenses:
+              - *ci
+              - notices/**
+              - package-lock.json
+              - "**/package.json"
+              - go.work*
+              - "**/go.mod"
+              - "**/go.sum"
+              - apps/mobile/build/android/**/*.gradle.kts
+              - apps/mobile/build/android/gradle/**
+            interface:
+              - *ci
+              - *node
+              - *ui
+            extension:
+              - *ci
+              - *node
+              - *ui
+              - apps/extension/**
+            desktop:
+              - *ci
+              - *node
+              - go.work*
+              - packages/**
+              - apps/desktop/**
+            android:
+              - *ci
+              - *node
+              - go.work*
+              - packages/**
+              - apps/mobile/**
+
   homebrew:
     name: Homebrew cask
+    needs: changes
+    if: needs.changes.outputs.homebrew == 'true'
     runs-on: macos-26
     timeout-minutes: 15
     env:
@@ -32,6 +108,8 @@ jobs:
 
   core:
     name: Go core
+    needs: changes
+    if: needs.changes.outputs.core == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -44,6 +122,8 @@ jobs:
 
   licenses:
     name: Dependency licenses
+    needs: changes
+    if: needs.changes.outputs.licenses == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -52,24 +132,26 @@ jobs:
         with:
           go-version-file: go.work
           cache-dependency-path: "**/go.sum"
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
           java-version: "21"
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - run: make licenses-check
 
   interface:
     name: Interface
+    needs: changes
+    if: needs.changes.outputs.interface == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -86,11 +168,13 @@ jobs:
 
   extension:
     name: Chrome extension
+    needs: changes
+    if: needs.changes.outputs.extension == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -99,6 +183,8 @@ jobs:
 
   desktop:
     name: macOS app
+    needs: changes
+    if: needs.changes.outputs.desktop == 'true'
     runs-on: macos-26
     timeout-minutes: 60
     steps:
@@ -107,7 +193,7 @@ jobs:
         with:
           go-version-file: go.work
           cache-dependency-path: "**/go.sum"
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -118,6 +204,8 @@ jobs:
 
   android:
     name: Android app
+    needs: changes
+    if: needs.changes.outputs.android == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
@@ -126,15 +214,15 @@ jobs:
         with:
           go-version-file: go.work
           cache-dependency-path: "**/go.sum"
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
         with:
           distribution: temurin
           java-version: "21"
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
       - name: Install GTK and WebKitGTK headers
         # Host tests compile Wails' Linux webview, which links against them.
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libgtk-4-dev libwebkitgtk-6.0-dev
