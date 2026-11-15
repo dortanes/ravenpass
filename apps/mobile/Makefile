@@ -31,7 +31,7 @@ JNI_LIB := build/android/app/src/main/jniLibs/arm64-v8a/libwails.so
 ADB := $(ANDROID_HOME)/platform-tools/adb
 GRADLE := cd build/android && ./gradlew
 APK_DIR := build/android/app/build/outputs/apk
-RELEASE_APK := $(APK_DIR)/release/Ravenpass-$(VERSION)-android-arm64.apk
+RELEASE_APK := $(APK_DIR)/release/Ravenpass-android-arm64.apk
 NOTICES_FILE := build/android/app/src/main/assets/THIRD_PARTY_NOTICES.txt
 NOTICES_DRAFT := build/android/app/build/THIRD_PARTY_NOTICES.txt
 LICENSE_REPORT := build/android/app/build/reports/dependency-license/THIRD-PARTY-NOTICES.txt
@@ -104,7 +104,7 @@ apk: lib strings notices
 release: lib-release strings notices
 	$(GRADLE) assembleRelease
 	cp $(APK_DIR)/release/app-release.apk $(RELEASE_APK)
-	cp $(NOTICES_FILE) $(APK_DIR)/release/Ravenpass-$(VERSION)-android-arm64-notices.txt
+	cp $(NOTICES_FILE) $(APK_DIR)/release/Ravenpass-android-arm64-notices.txt
 
 install: lib strings notices
 	$(GRADLE) installDebug

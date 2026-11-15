@@ -259,7 +259,7 @@ jobs:
             echo "::error::Unsupported release version: $version"
             exit 1
           fi
-          dmg="release-assets/Ravenpass-$version-macos-arm64.dmg"
+          dmg="release-assets/Ravenpass-macos-arm64.dmg"
           checksum="$(shasum -a 256 "$dmg")"
           checksum="${checksum%% *}"
           brew tap --custom-remote dortanes/ravenpass "$GITHUB_WORKSPACE"

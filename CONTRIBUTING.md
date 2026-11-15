@@ -52,6 +52,8 @@ Releases are automated with [release-please](https://github.com/googleapis/relea
 - the Chrome extension zip, which is also submitted to the Chrome Web Store once that is configured,
 - a third-party notices file for each app, `SHA256SUMS`, and build provenance attestations.
 
+File names carry no version, so `releases/latest/download/Ravenpass-macos-arm64.dmg` and `releases/latest/download/Ravenpass-android-arm64.apk` always point at the newest build.
+
 A failed build leaves the release as a draft, so the latest published release always has its files.
 
 No version number is edited by hand.

@@ -46,7 +46,7 @@ NOTARY_ARGS ?= --keychain-profile ravenpass-notary
 # The sandboxed AutoFill extension can read the app's files to check its signature only under /Applications.
 DEVELOPMENT_DIR ?= /Applications
 RELEASE_DIR := bin/release
-RELEASE_DMG := $(RELEASE_DIR)/Ravenpass-$(VERSION)-macos-arm64.dmg
+RELEASE_DMG := $(RELEASE_DIR)/Ravenpass-macos-arm64.dmg
 NOTICES_FILE := bin/THIRD_PARTY_NOTICES.txt
 
 help:
@@ -229,7 +229,7 @@ release: signing-profiles app $(AUTOFILL) notices
 release-sign: signing-profiles
 	rm -rf $(RELEASE_DIR)
 	mkdir -p $(RELEASE_DIR)/image
-	cp $(NOTICES_FILE) $(RELEASE_DIR)/Ravenpass-$(VERSION)-macos-arm64-notices.txt
+	cp $(NOTICES_FILE) $(RELEASE_DIR)/Ravenpass-macos-arm64-notices.txt
 	$(call signed-app,$(RELEASE_DIR)/image,$(RELEASE_IDENTITY),Ravenpass_Developer_ID.provisionprofile,Ravenpass_Autofill_Developer_ID.provisionprofile,--timestamp)
 	ln -s /Applications $(RELEASE_DIR)/image/Applications
 	hdiutil create -volname Ravenpass -srcfolder $(RELEASE_DIR)/image -fs HFS+ -format UDZO -ov $(RELEASE_DMG)
