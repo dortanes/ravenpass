@@ -1,6 +1,6 @@
 import {
   formatForDisplay,
-  type Hotkey,
+  type HotkeyChord,
   useHotkey,
 } from "@tanstack/react-hotkeys";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -239,7 +239,7 @@ export function VaultView({
   const shortcutSetting = useHostSetting({
     key: queryKeys.shortcuts,
     read: () => api.shortcuts(),
-    write: (action: ShortcutAction, hotkey: Hotkey | null) =>
+    write: (action: ShortcutAction, hotkey: HotkeyChord | null) =>
       api.setShortcut(action, hotkey ?? ""),
     readFailure: "app.error.setting-read",
     writeFailure: "workspace.error.shortcut",
