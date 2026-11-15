@@ -1,7 +1,7 @@
 import { match } from "@formatjs/intl-localematcher";
 
 /** English is the source catalog and the fallback. */
-export const languages = ["en", "ru"] as const;
+export const languages = ["en", "ru", "zh"] as const;
 
 export type Language = (typeof languages)[number];
 
@@ -15,6 +15,7 @@ export function isLanguage(value: string): value is Language {
 export const languageNames: Record<Language, string> = {
   en: "English",
   ru: "Русский",
+  zh: "简体中文",
 };
 
 function wellFormed(tag: string): boolean {

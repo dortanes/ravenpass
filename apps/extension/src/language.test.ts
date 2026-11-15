@@ -12,7 +12,7 @@ function storedLanguage() {
 test("the browser's language is in use until a language is kept", async () => {
   const { language } = storedLanguage();
   assert.deepEqual(await language.getLanguage(), {
-    languages: ["en", "ru"],
+    languages: ["en", "ru", "zh"],
     language: "ru-RU",
     chosen: false,
   });
@@ -22,7 +22,7 @@ test("the popup's choice is in use over the browser's language", async () => {
   const { language } = storedLanguage();
   await language.setLanguage("en");
   assert.deepEqual(await language.getLanguage(), {
-    languages: ["en", "ru"],
+    languages: ["en", "ru", "zh"],
     language: "en",
     chosen: true,
   });
@@ -37,7 +37,7 @@ test("the desktop app's language is in use over the popup's choice until it is f
   assert.equal((await language.getLanguage()).language, "ru");
   await language.forgetDesktopLanguage();
   assert.deepEqual(await language.getLanguage(), {
-    languages: ["en", "ru"],
+    languages: ["en", "ru", "zh"],
     language: "en",
     chosen: true,
   });

@@ -39,8 +39,8 @@ func TestAStringSourceInEveryLanguageParses(t *testing.T) {
 }
 
 func TestEachLanguageGoesToItsOwnDirectory(t *testing.T) {
-	if Directory("en") != "values" || Directory("ru") != "values-ru" {
-		t.Fatalf("directories %s, %s", Directory("en"), Directory("ru"))
+	if Directory("en") != "values" || Directory("ru") != "values-ru" || Directory("zh") != "values-zh" {
+		t.Fatalf("directories %s, %s, %s", Directory("en"), Directory("ru"), Directory("zh"))
 	}
 }
 

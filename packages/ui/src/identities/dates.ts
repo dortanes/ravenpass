@@ -8,6 +8,7 @@ import { intervalToDuration } from "date-fns/intervalToDuration";
 import { isValid } from "date-fns/isValid";
 import { enUS } from "date-fns/locale/en-US";
 import { ru } from "date-fns/locale/ru";
+import { zhCN } from "date-fns/locale/zh-CN";
 import { parse } from "date-fns/parse";
 import { startOfDay } from "date-fns/startOfDay";
 
@@ -21,7 +22,9 @@ export const expiringSoonDays = 90;
 export const earliestYear = 1900;
 
 export function dateLocale(language: string): Locale {
-  return language === "ru" ? ru : enUS;
+  if (language === "ru") return ru;
+  if (language === "zh") return zhCN;
+  return enUS;
 }
 
 /** `new Date("YYYY-MM-DD")` reads UTC midnight; this reads local midnight. */
@@ -59,23 +62,35 @@ export class CalendarDate {
   }
 }
 
-/** How a typed date reads: `DD.MM.YYYY` in Russian, `MM/DD/YYYY` in English. */
+/** How a typed date reads: `YYYY/MM/DD` in Chinese, `DD.MM.YYYY` in Russian, `MM/DD/YYYY` in English. */
 export class DateEntryFormat {
   /** The day order, in the terms of Maskito's date mask. */
-  readonly mode: "dd/mm/yyyy" | "mm/dd/yyyy";
+  readonly mode: "dd/mm/yyyy" | "mm/dd/yyyy" | "yyyy/mm/dd";
   readonly separator: "." | "/";
   private readonly pattern: string;
   private readonly form: RegExp;
 
-  private constructor(dayFirst: boolean) {
-    this.mode = dayFirst ? "dd/mm/yyyy" : "mm/dd/yyyy";
-    this.separator = dayFirst ? "." : "/";
-    this.pattern = dayFirst ? "dd.MM.yyyy" : "MM/dd/yyyy";
-    this.form = dayFirst ? /^\d{2}\.\d{2}\.\d{4}$/ : /^\d{2}\/\d{2}\/\d{4}$/;
+  private constructor(mode: "dd/mm/yyyy" | "mm/dd/yyyy" | "yyyy/mm/dd") {
+    this.mode = mode;
+    if (mode === "yyyy/mm/dd") {
+      this.separator = "/";
+      this.pattern = "yyyy/MM/dd";
+      this.form = /^\d{4}\/\d{2}\/\d{2}$/;
+    } else if (mode === "dd/mm/yyyy") {
+      this.separator = ".";
+      this.pattern = "dd.MM.yyyy";
+      this.form = /^\d{2}\.\d{2}\.\d{4}$/;
+    } else {
+      this.separator = "/";
+      this.pattern = "MM/dd/yyyy";
+      this.form = /^\d{2}\/\d{2}\/\d{4}$/;
+    }
   }
 
   static for(language: string): DateEntryFormat {
-    return new DateEntryFormat(language === "ru");
+    if (language === "zh") return new DateEntryFormat("yyyy/mm/dd");
+    if (language === "ru") return new DateEntryFormat("dd/mm/yyyy");
+    return new DateEntryFormat("mm/dd/yyyy");
   }
 
   /** Empty for an unreadable date. */

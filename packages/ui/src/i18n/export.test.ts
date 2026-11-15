@@ -10,8 +10,8 @@ test("a host's names take their messages in every language", () => {
       search: "workspace.toolbar.search",
     }),
     {
-      app_name: { en: "Ravenpass", ru: "Ravenpass" },
-      search: { en: "Search passwords", ru: "Поиск паролей" },
+      app_name: { en: "Ravenpass", ru: "Ravenpass", zh: "Ravenpass" },
+      search: { en: "Search passwords", ru: "Поиск паролей", zh: "搜索密码" },
     },
   );
 });
@@ -36,6 +36,7 @@ test("a host that fills values itself takes messages with placeholders", () => {
       unlock: {
         en: "save a passkey for {site}",
         ru: "сохранить ключ доступа для сайта {site}",
+        zh: "为 {site} 保存通行密钥",
       },
     },
   );
@@ -51,6 +52,7 @@ test("apostrophes and placeholders come through as the catalogs write them", () 
     assert.deepEqual(exported[name], {
       en: catalogs.en[key],
       ru: catalogs.ru[key],
+      zh: catalogs.zh[key],
     });
   }
   assert.equal(exported.mismatch?.en, "The PINs don't match.");

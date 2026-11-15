@@ -9,7 +9,7 @@ function contextMenu(language = "en") {
   const menu = new ContextMenu({
     language: {
       getLanguage: async () => ({
-        languages: ["en", "ru"],
+        languages: ["en", "ru", "zh"],
         language,
         chosen: true,
       }),
@@ -86,5 +86,14 @@ test("the items follow the language", async () => {
     ["show-codes", "Показать одноразовые коды"],
     ["show-cards", "Показать карты"],
     ["upload-identity-file", "Загрузить файл из профиля…"],
+  ]);
+
+  const { menu: menuZh, updated: updatedZh } = contextMenu("zh");
+  await menuZh.retitle();
+  assert.deepEqual(updatedZh, [
+    ["show-passwords", "显示密码"],
+    ["show-codes", "显示一次性代码"],
+    ["show-cards", "显示卡片"],
+    ["upload-identity-file", "上传身份文件…"],
   ]);
 });

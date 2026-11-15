@@ -26,6 +26,7 @@ const keys = Object.keys(catalogs.en) as MessageKey[];
 const pluralCategories: Record<Language, readonly string[]> = {
   en: ["one", "other"],
   ru: ["few", "many", "one", "other"],
+  zh: ["other"],
 };
 
 function argumentNames(elements: MessageFormatElement[]): string[] {
@@ -83,10 +84,22 @@ test("no message is empty and none is left untranslated by accident", () => {
     "settings.trash.detail",
     "system.file.vault",
   ]);
-  const identical = keys.filter(
+  const identicalRussian = keys.filter(
     (key) => !keptAsWritten.has(key) && catalogs.en[key] === catalogs.ru[key],
   );
-  assert.deepEqual(identical, [], "these Russian messages are still English");
+  assert.deepEqual(
+    identicalRussian,
+    [],
+    "these Russian messages are still English",
+  );
+  const identicalChinese = keys.filter(
+    (key) => !keptAsWritten.has(key) && catalogs.en[key] === catalogs.zh[key],
+  );
+  assert.deepEqual(
+    identicalChinese,
+    [],
+    "these Chinese messages are still English",
+  );
 });
 
 test("every message parses as ICU MessageFormat in its language", () => {
@@ -146,6 +159,10 @@ test("a count reads in the plural form its language needs", () => {
   assert.equal(words("ru", 2), "2 слова");
   assert.equal(words("ru", 5), "5 слов");
   assert.equal(words("ru", 21), "21 слово");
+  assert.equal(words("zh", 1), "1 个单词");
+  assert.equal(words("zh", 2), "2 个单词");
+  assert.equal(words("zh", 5), "5 个单词");
+  assert.equal(words("zh", 21), "21 个单词");
 });
 
 test("a named value fills its placeholder", () => {
@@ -174,11 +191,15 @@ test("a delay reads in the largest unit that divides it evenly", () => {
   assert.equal(formatDelay(120, "ru", "long"), "2 минуты");
   assert.equal(formatDelay(3600, "ru", "long"), "1 час");
   assert.equal(formatDelay(30, "ru", "short"), "30 с");
+  assert.equal(formatDelay(120, "zh", "long"), "2分钟");
+  assert.equal(formatDelay(3600, "zh", "long"), "1小时");
+  assert.equal(formatDelay(30, "zh", "short"), "30秒");
 });
 
 test("a percentage reads as the language writes it", () => {
   assert.equal(formatPercent(115, "en"), "115%");
   assert.equal(formatPercent(85, "ru"), "85 %");
+  assert.equal(formatPercent(85, "zh"), "85%");
 });
 
 test("a system language tag maps to an offered language", () => {
@@ -186,9 +207,12 @@ test("a system language tag maps to an offered language", () => {
   assert.equal(matchLanguage("RU"), "ru");
   assert.equal(matchLanguage("en-GB"), "en");
   assert.equal(matchLanguage("de-DE"), "en");
+  assert.equal(matchLanguage("zh-CN"), "zh");
+  assert.equal(matchLanguage("ZH"), "zh");
   assert.equal(matchLanguage(""), "en");
   assert.equal(matchLanguage("x_y!"), "en");
   assert.ok(isLanguage("ru"));
+  assert.ok(isLanguage("zh"));
   assert.ok(!isLanguage("de"));
 });
 

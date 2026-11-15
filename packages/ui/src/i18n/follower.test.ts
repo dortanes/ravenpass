@@ -4,7 +4,7 @@ import type { LanguageSettings, LanguageSource } from "../vault-api.ts";
 import { LanguageFollower } from "./follower.ts";
 import type { Language } from "./language.ts";
 
-const offered = ["en", "ru"];
+const offered = ["en", "ru", "zh"];
 
 function settings(language: string, chosen: boolean): LanguageSettings {
   return { languages: offered, language, chosen };
