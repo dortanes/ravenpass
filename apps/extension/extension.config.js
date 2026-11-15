@@ -12,7 +12,7 @@ const mainWorldScript = fileURLToPath(
 
 const pluginName = "ravenpass:bare-main-world-script";
 
-// Extension.js wraps content scripts in a global-setting loader and puts a script-loading bridge before each MAIN-world script.
+// Extension.js wraps content scripts in a global-setting loader; releases before 4.1.39 also put a script-loading bridge before each MAIN-world script.
 class BareMainWorldScript {
   apply(compiler) {
     const wrapperRules = compiler.options.module.rules.filter((rule) =>
@@ -36,9 +36,10 @@ class BareMainWorldScript {
       );
       const manifest = JSON.parse(await readFile(manifestFile, "utf8"));
       const scripts = manifest.content_scripts ?? [];
-      const bridges = scripts.filter(
-        (_, index) => scripts[index + 1]?.world === "MAIN",
-      );
+      const bridged = scripts.length > declared.content_scripts.length;
+      const bridges = bridged
+        ? scripts.filter((_, index) => scripts[index + 1]?.world === "MAIN")
+        : [];
       if (scripts.length - bridges.length !== declared.content_scripts.length) {
         throw new Error(`${pluginName}: unexpected content scripts.`);
       }

@@ -1,6 +1,6 @@
 import {
   formatForDisplay,
-  type Hotkey,
+  type HotkeyChord,
   useHotkeyRecorder,
 } from "@tanstack/react-hotkeys";
 import { cn } from "cn";
@@ -27,7 +27,7 @@ export function ShortcutsPanel({
   shortcuts: Shortcuts;
   busy: boolean;
   /** Records an action's hotkey; `null` restores its default. */
-  onChange: (action: ShortcutAction, hotkey: Hotkey | null) => void;
+  onChange: (action: ShortcutAction, hotkey: HotkeyChord | null) => void;
   /** Shortcuts stay silent while new keys are being recorded. Must keep its identity. */
   onRecording: (recording: boolean) => void;
 }) {
@@ -35,7 +35,7 @@ export function ShortcutsPanel({
   const [editing, setEditing] = useState<ShortcutAction | null>(null);
   const [refused, setRefused] = useState<{
     action: ShortcutAction;
-    hotkey: Hotkey;
+    hotkey: HotkeyChord;
     refusal: ShortcutRefusal;
   } | null>(null);
   const recorder = useHotkeyRecorder({
@@ -76,7 +76,7 @@ export function ShortcutsPanel({
     startRecording();
   }
 
-  function explain(refusal: ShortcutRefusal, hotkey: Hotkey): string {
+  function explain(refusal: ShortcutRefusal, hotkey: HotkeyChord): string {
     const keys = formatForDisplay(hotkey);
     switch (refusal.kind) {
       case "bare":
