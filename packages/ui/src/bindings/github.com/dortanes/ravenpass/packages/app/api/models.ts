@@ -525,22 +525,12 @@ export interface ExtensionLinks {
 }
 
 /**
- * GeneratedPassword is one password the generator handed out; Mode is "words" or "characters" and At is RFC 3339 in
- * UTC.
+ * GeneratedPassword is a password the generator handed out; At is RFC 3339 in UTC.
  */
 export interface GeneratedPassword {
     "value": string;
     "mode": string;
     "at": string;
-}
-
-/**
- * GeneratorHistorySetting is whether the generator's history is kept, for how many days, and the periods offered.
- */
-export interface GeneratorHistorySetting {
-    "enabled": boolean;
-    "days": number;
-    "offered": number[] | null;
 }
 
 /**
@@ -1001,6 +991,15 @@ export interface PasskeyView {
      * CreatedAt is in Unix milliseconds.
      */
     "createdAt": number;
+}
+
+/**
+ * PasswordHistorySetting is whether the generator's history is kept, for how many days, and the periods offered.
+ */
+export interface PasswordHistorySetting {
+    "enabled": boolean;
+    "days": number;
+    "offered": number[] | null;
 }
 
 /**

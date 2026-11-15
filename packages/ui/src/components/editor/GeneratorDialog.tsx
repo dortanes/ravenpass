@@ -1,10 +1,7 @@
 import { toast } from "sonner";
 import { useTranslator } from "../../i18n/translator.tsx";
 import type { VaultApi } from "../../vault-api.ts";
-import {
-  GeneratorForm,
-  usePasswordGenerator,
-} from "../generator/GeneratorForm.tsx";
+import { PasswordForm, useWordGenerator } from "../generator/PasswordForm.tsx";
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -20,7 +17,7 @@ export type GeneratorHost = Pick<
   "seedWordlist" | "recordGeneratedPassword"
 >;
 
-/** GeneratorDialog shows a new password and its options; `onUse` takes the one shown, which the history records. */
+/** GeneratorDialog shows a new password and its options; `onUse` takes the one shown, and the history keeps it. */
 export function GeneratorDialog({
   open,
   host,
@@ -33,7 +30,7 @@ export function GeneratorDialog({
   onClose: () => void;
 }) {
   const { t, failure } = useTranslator();
-  const generator = usePasswordGenerator(host, open);
+  const generator = useWordGenerator(host, open);
 
   return (
     <ResponsiveDialog
@@ -47,9 +44,9 @@ export function GeneratorDialog({
           <ResponsiveDialogTitle>{t("generator.title")}</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
         {generator && (
-          <GeneratorForm
+          <PasswordForm
             generator={generator}
-            actions={(generated) => (
+            footer={(password, mode) => (
               <ResponsiveDialogFooter>
                 <Button
                   type="button"
@@ -64,15 +61,12 @@ export function GeneratorDialog({
                   variant="raised"
                   size="pill"
                   onClick={() => {
+                    onUse(password);
                     host
-                      .recordGeneratedPassword(
-                        generated.password,
-                        generated.mode,
-                      )
+                      .recordGeneratedPassword(password, mode)
                       .catch((cause: unknown) =>
                         toast.error(failure(cause, "generator.error.record")),
                       );
-                    onUse(generated.password);
                   }}
                 >
                   {t("generator.use")}

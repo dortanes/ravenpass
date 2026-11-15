@@ -12,9 +12,9 @@ import (
 	"github.com/dortanes/ravenpass/packages/app/backups"
 	"github.com/dortanes/ravenpass/packages/app/confirmation"
 	"github.com/dortanes/ravenpass/packages/app/devicerecords"
-	"github.com/dortanes/ravenpass/packages/app/genhistory"
 	"github.com/dortanes/ravenpass/packages/app/localfile"
 	"github.com/dortanes/ravenpass/packages/app/ownerauth"
+	"github.com/dortanes/ravenpass/packages/app/passwordhistory"
 	"github.com/dortanes/ravenpass/packages/app/preferences"
 	"github.com/dortanes/ravenpass/packages/app/siteicons"
 	"github.com/dortanes/ravenpass/packages/app/storage"
@@ -25,12 +25,13 @@ import (
 
 // The files the services keep in the host's directory.
 const (
-	storageFile        = "storage.json"
-	preferencesFile    = "preferences.json"
-	deviceFile         = "device.json"
-	iconsDirectory     = "icons"
-	generatorDirectory = "generator"
-	backupsFile        = "backups.json"
+	storageFile     = "storage.json"
+	preferencesFile = "preferences.json"
+	deviceFile      = "device.json"
+	iconsDirectory  = "icons"
+	// historyDirectory replaces 0.3's "generator", which is left in place and no longer read.
+	historyDirectory = "password-history"
+	backupsFile      = "backups.json"
 )
 
 // Platform is what a host supplies to the start-up chain.
@@ -56,7 +57,7 @@ type Services struct {
 	Owner         *ownerauth.Authenticator
 	Vault         *vaultservice.Service
 	Icons         *siteicons.Service
-	Generator     *genhistory.Store
+	History       *passwordhistory.Store
 	Confirmations *confirmation.Queue
 	Verifier      *verification.Verifier
 	Autofill      *autofill.Service
@@ -101,19 +102,14 @@ func Build(platform Platform) (*Services, error) {
 	if err != nil {
 		return nil, err
 	}
-	generator, err := genhistory.New(filepath.Join(directory, generatorDirectory), vault, func() int {
-		return settings.GeneratorHistory().Days
-	})
-	if err != nil {
-		return nil, err
-	}
-	vault.KeepDeviceData(generator)
+	history := passwordhistory.New(filepath.Join(directory, historyDirectory), vault, settings.PasswordHistory)
+	vault.HoldOwnerData(history)
 	confirmations, err := confirmation.New(vault)
 	if err != nil {
 		return nil, err
 	}
 	s := &Services{
-		Files: files, Settings: settings, Owner: owner, Vault: vault, Icons: icons, Generator: generator, Confirmations: confirmations,
+		Files: files, Settings: settings, Owner: owner, Vault: vault, Icons: icons, History: history, Confirmations: confirmations,
 	}
 	if s.Verifier, err = verification.New(vault, owner, s.Words, confirmations); err != nil {
 		return nil, err
@@ -137,6 +133,6 @@ func (s *Services) Serve(host api.Host) (*api.Service, error) {
 	host.Confirmations.Queue = s.Confirmations
 	host.Confirmations.Owner = s.Verifier
 	host.Backups = s.Backups
-	host.Generator = s.Generator
+	host.History = s.History
 	return api.New(s.Vault, s.Settings, s.Icons, host)
 }

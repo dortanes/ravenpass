@@ -16,10 +16,10 @@ import (
 	"github.com/dortanes/ravenpass/packages/app/backups"
 	"github.com/dortanes/ravenpass/packages/app/breaches"
 	"github.com/dortanes/ravenpass/packages/app/confirmation"
-	"github.com/dortanes/ravenpass/packages/app/genhistory"
 	"github.com/dortanes/ravenpass/packages/app/linkserver"
 	"github.com/dortanes/ravenpass/packages/app/linkstore"
 	"github.com/dortanes/ravenpass/packages/app/ownerauth"
+	"github.com/dortanes/ravenpass/packages/app/passwordhistory"
 	"github.com/dortanes/ravenpass/packages/app/pasteboard"
 	"github.com/dortanes/ravenpass/packages/app/photos"
 	"github.com/dortanes/ravenpass/packages/app/preferences"
@@ -143,8 +143,8 @@ type Service struct {
 	folders BackupFolders
 	about   About
 	apps    AppNames
-	// generator is nil on a host that keeps no generator history.
-	generator *genhistory.Store
+	// history is nil on a host that keeps no password history.
+	history *passwordhistory.Store
 }
 
 // Confirmations is how the service reaches the confirmation panel.
@@ -194,8 +194,8 @@ type Host struct {
 	SystemAutofill SystemAutofill
 	// Backups is set on a host that backs up the open vault on its own.
 	Backups *backups.Keeper
-	// Generator is set on a host that keeps the passwords the generator handed out.
-	Generator *genhistory.Store
+	// History is set on a host that keeps the passwords the generator handed out.
+	History *passwordhistory.Store
 	// BackupFolders is nil where the owner picks the backup folder with the desktop folder dialog.
 	BackupFolders BackupFolders
 	// About is nil where the process runs from a macOS app bundle.
@@ -317,7 +317,7 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 		shows: shows, screens: screens, systemAutofill: systemAutofill,
 		confirmations: confirmations.Queue, panel: panel,
 		showMain: confirmations.ShowMain, reloadMain: confirmations.ReloadMain, owner: confirmations.Owner,
-		backups: host.Backups, generator: host.Generator, folders: folders, about: about, apps: apps,
+		backups: host.Backups, history: host.History, folders: folders, about: about, apps: apps,
 	}
 	s.confirmations.UnlockOnDevice(s.unlockOnDevice)
 	vault.OnLock(s.lockedInside)

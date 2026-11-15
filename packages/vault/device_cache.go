@@ -4,37 +4,21 @@ import "golang.org/x/crypto/chacha20poly1305"
 
 const maxDeviceCacheBytes = 32 << 20
 
-// deviceKind keeps device caches and device data apart: each has its own key purpose and additional data tag.
-type deviceKind struct {
-	purpose string
-	tag     byte
-}
-
-var (
-	deviceCache = deviceKind{purpose: "device-cache/", tag: 5}
-	deviceData  = deviceKind{purpose: "device-data/", tag: 6}
-)
-
 // SealDeviceCache seals device-side data that opens only in this vault under the same name, a fixed purpose and never user data.
 func (s *Session) SealDeviceCache(name string, plaintext []byte) ([]byte, error) {
-	return s.sealOnDevice(deviceCache, name, plaintext)
+	if name == "" {
+		return nil, ErrInvalidInput
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.locked {
+		return nil, ErrLocked
+	}
+	return sealForDevice(&s.dataKey, s.vaultID, deviceCachePurpose(name), deviceCacheAAD(s.vaultID, name), plaintext)
 }
 
 // OpenDeviceCache opens what SealDeviceCache sealed for the same name in this vault.
 func (s *Session) OpenDeviceCache(name string, sealed []byte) ([]byte, error) {
-	return s.openOnDevice(deviceCache, name, sealed)
-}
-
-func (s *Session) sealOnDevice(kind deviceKind, name string, plaintext []byte) ([]byte, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.locked {
-		return nil, ErrLocked
-	}
-	return sealOnDevice(&s.dataKey, s.vaultID, kind, name, plaintext)
-}
-
-func (s *Session) openOnDevice(kind deviceKind, name string, sealed []byte) ([]byte, error) {
 	if name == "" {
 		return nil, ErrInvalidInput
 	}
@@ -43,31 +27,23 @@ func (s *Session) openOnDevice(kind deviceKind, name string, sealed []byte) ([]b
 	if s.locked {
 		return nil, ErrLocked
 	}
-	box, err := decodeEnvelope(sealed, s.vaultID, maxDeviceCacheBytes)
-	if err != nil {
-		return nil, err
-	}
-	key, err := deriveKey(s.dataKey[:], s.vaultID, kind.purpose+name)
-	if err != nil {
-		return nil, err
-	}
-	plaintext, err := openBox(key, box, kind.aad(s.vaultID, name))
-	clear(key[:])
-	return plaintext, err
+	return openForDevice(&s.dataKey, s.vaultID, deviceCachePurpose(name), deviceCacheAAD(s.vaultID, name), sealed)
 }
 
-func sealOnDevice(dataKey *[32]byte, vaultID ID, kind deviceKind, name string, plaintext []byte) ([]byte, error) {
-	if name == "" {
-		return nil, ErrInvalidInput
-	}
+func deviceCachePurpose(name string) string {
+	return "device-cache/" + name
+}
+
+// sealForDevice seals plaintext outside the container under a key derived from dataKey for purpose.
+func sealForDevice(dataKey *[32]byte, vaultID ID, purpose string, aad, plaintext []byte) ([]byte, error) {
 	if len(plaintext) > maxDeviceCacheBytes-chacha20poly1305.Overhead {
 		return nil, ErrResourceLimit
 	}
-	key, err := deriveKey(dataKey[:], vaultID, kind.purpose+name)
+	key, err := deriveKey(dataKey[:], vaultID, purpose)
 	if err != nil {
 		return nil, err
 	}
-	box, err := seal(key, plaintext, kind.aad(vaultID, name))
+	box, err := seal(key, plaintext, aad)
 	clear(key[:])
 	if err != nil {
 		return nil, err
@@ -75,10 +51,17 @@ func sealOnDevice(dataKey *[32]byte, vaultID ID, kind deviceKind, name string, p
 	return encodeEnvelope(vaultID, box), nil
 }
 
-func (k deviceKind) aad(vaultID ID, name string) []byte {
-	hash := headerHash(vaultID)
-	result := make([]byte, 0, 33+len(name))
-	result = append(result, k.tag)
-	result = append(result, hash[:]...)
-	return append(result, name...)
+// openForDevice opens what sealForDevice sealed under the same key, purpose and additional data.
+func openForDevice(dataKey *[32]byte, vaultID ID, purpose string, aad, sealed []byte) ([]byte, error) {
+	box, err := decodeEnvelope(sealed, vaultID, maxDeviceCacheBytes)
+	if err != nil {
+		return nil, err
+	}
+	key, err := deriveKey(dataKey[:], vaultID, purpose)
+	if err != nil {
+		return nil, err
+	}
+	plaintext, err := openBox(key, box, aad)
+	clear(key[:])
+	return plaintext, err
 }

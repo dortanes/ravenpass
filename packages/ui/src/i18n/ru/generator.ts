@@ -2,7 +2,6 @@ export const generator = {
   "generator.open": "Сгенерировать пароль",
   "generator.title": "Новый пароль",
   "generator.again": "Сгенерировать другой",
-  "generator.value": "Сгенерированный пароль",
   "generator.strength": "{strength} · {bits} бит",
   "generator.strength.weak": "Слабый",
   "generator.strength.fair": "Средний",
@@ -24,53 +23,54 @@ export const generator = {
     "{count, plural, one {# символ} few {# символа} many {# символов} other {# символа}}",
   "generator.uppercase": "Заглавные буквы",
   "generator.digits": "Цифры",
-  "generator.digits.minimum":
-    "{count, plural, one {Не меньше # цифры} few {Не меньше # цифр} many {Не меньше # цифр} other {Не меньше # цифры}}",
   "generator.symbols": "Спецсимволы",
-  "generator.symbols.minimum":
-    "{count, plural, one {Не меньше # спецсимвола} few {Не меньше # спецсимволов} many {Не меньше # спецсимволов} other {Не меньше # спецсимвола}}",
-  "generator.avoid-ambiguous": "Без похожих символов",
-  "generator.avoid-ambiguous.detail": "Исключает I, O, l, 0 и 1.",
+  "generator.digits.fewest":
+    "{count, plural, one {# цифра и больше} few {# цифры и больше} many {# цифр и больше} other {# цифры и больше}}",
+  "generator.symbols.fewest":
+    "{count, plural, one {# спецсимвол и больше} few {# спецсимвола и больше} many {# спецсимволов и больше} other {# спецсимвола и больше}}",
+  "generator.look-alikes": "Без I, O, l, 0 и 1",
   "generator.cancel": "Отмена",
   "generator.use": "Использовать",
-  "generator.copy": "Копировать",
+  "generator.copy": "Скопировать пароль",
   "generator.copied": "Пароль скопирован.",
-  "generator.history": "История",
+  "generator.history": "Скопированные и использованные",
   "generator.history.empty":
-    "{count, plural, one {Здесь появятся пароли, которые вы скопируете или используете. Они хранятся # день.} few {Здесь появятся пароли, которые вы скопируете или используете. Они хранятся # дня.} many {Здесь появятся пароли, которые вы скопируете или используете. Они хранятся # дней.} other {Здесь появятся пароли, которые вы скопируете или используете. Они хранятся # дня.}}",
+    "Пароли, которые вы скопируете здесь или используете в записи, хранятся в списке {count, plural, one {# день} few {# дня} many {# дней} other {# дня}}.",
   "generator.history.off":
-    "История выключена. Включите её в настройках конфиденциальности, чтобы сохранять пароли, которые вы копируете или используете.",
-  "generator.history.more": "Показать ещё {count, number}",
-  "generator.history.clear": "Очистить историю…",
+    "Включите историю паролей в настройках конфиденциальности, чтобы видеть скопированные и использованные пароли.",
+  "generator.history.show": "Показать пароль",
+  "generator.history.hide": "Скрыть пароль",
+  "generator.history.clear": "Очистить список…",
   "generator.history.clear.title":
-    "{count, plural, one {Удалить # пароль из истории?} few {Удалить # пароля из истории?} many {Удалить # паролей из истории?} other {Удалить # пароля из истории?}}",
+    "{count, plural, one {Удалить # пароль из списка?} few {Удалить # пароля из списка?} many {Удалить # паролей из списка?} other {Удалить # пароля из списка?}}",
   "generator.history.clear.detail":
-    "Это действие нельзя отменить. Пароли, сохранённые в записях, останутся.",
-  "generator.history.clear.confirm": "Очистить историю",
-  "generator.history.cleared": "История очищена.",
+    "Пароли, сохранённые в записях, останутся. Действие нельзя отменить.",
+  "generator.history.clear.confirm": "Очистить",
   "generator.error.words":
     "Ravenpass не удалось загрузить список слов. Перезапустите Ravenpass и повторите попытку.",
   "generator.error.history":
-    "Ravenpass не удалось открыть историю генератора. Откройте хранилище заново и повторите попытку.",
-  "generator.error.record": "Ravenpass не удалось добавить пароль в историю.",
+    "Ravenpass не удалось прочитать список скопированных паролей. Заблокируйте и снова разблокируйте хранилище, затем повторите попытку.",
+  "generator.error.record":
+    "Ravenpass не удалось добавить пароль в список скопированных.",
   "generator.error.copy":
     "Ravenpass не удалось скопировать пароль. Повторите попытку.",
   "generator.error.clear":
-    "Ravenpass не удалось очистить историю. Повторите попытку.",
+    "Ravenpass не удалось очистить список. Повторите попытку.",
 
-  "settings.generator-history": "Хранить сгенерированные пароли",
-  "settings.generator-history.detail":
-    "Пароли, которые вы копируете или используете из генератора, только на этом устройстве.",
-  "settings.generator-history.period": "Удалять через",
-  "settings.generator-history.days":
+  "settings.password-history": "История паролей",
+  "settings.password-history.detail":
+    "Хранит сгенерированные пароли, которые вы скопировали или использовали, только на этом устройстве.",
+  "settings.password-history.period": "Хранить",
+  "settings.password-history.days":
     "{count, plural, one {# день} few {# дня} many {# дней} other {# дня}}",
-  "settings.generator-history.off.title":
-    "{count, plural, one {При выключении из истории удалится # пароль. Продолжить?} few {При выключении из истории удалятся # пароля. Продолжить?} many {При выключении из истории удалятся # паролей. Продолжить?} other {При выключении из истории удалятся # пароля. Продолжить?}}",
-  "settings.generator-history.off.confirm": "Удалить и выключить",
-  "settings.generator-history.shorten.title":
-    "{count, plural, one {С новым сроком из истории сейчас удалится # пароль. Продолжить?} few {С новым сроком из истории сейчас удалятся # пароля. Продолжить?} many {С новым сроком из истории сейчас удалятся # паролей. Продолжить?} other {С новым сроком из истории сейчас удалятся # пароля. Продолжить?}}",
-  "settings.generator-history.shorten.confirm": "Удалить и изменить",
-  "settings.generator-history.cancel": "Отмена",
-  "settings.generator-history.error":
-    "Ravenpass не удалось изменить историю генератора. Повторите попытку.",
+  "settings.password-history.off.title":
+    "{count, plural, one {Выключение истории удалит # пароль.} few {Выключение истории удалит # пароля.} many {Выключение истории удалит # паролей.} other {Выключение истории удалит # пароля.}}",
+  "settings.password-history.off.confirm": "Выключить и удалить",
+  "settings.password-history.shorten.title":
+    "{count, plural, one {Более короткий срок сразу удалит # пароль.} few {Более короткий срок сразу удалит # пароля.} many {Более короткий срок сразу удалит # паролей.} other {Более короткий срок сразу удалит # пароля.}}",
+  "settings.password-history.shorten.confirm": "Удалить и сократить",
+  "settings.password-history.delete.detail":
+    "Пароли, сохранённые в записях, останутся.",
+  "settings.password-history.error":
+    "Ravenpass не удалось изменить историю паролей. Повторите попытку.",
 };

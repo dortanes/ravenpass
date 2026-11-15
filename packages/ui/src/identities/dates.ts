@@ -21,10 +21,10 @@ export const expiringSoonDays = 90;
 /** The earliest year the vault accepts in a date. */
 export const earliestYear = 1900;
 
+const dateLocales: Readonly<Record<string, Locale>> = { ru, zh: zhCN };
+
 export function dateLocale(language: string): Locale {
-  if (language === "ru") return ru;
-  if (language === "zh") return zhCN;
-  return enUS;
+  return dateLocales[language] ?? enUS;
 }
 
 /** `new Date("YYYY-MM-DD")` reads UTC midnight; this reads local midnight. */
@@ -62,35 +62,54 @@ export class CalendarDate {
   }
 }
 
-/** How a typed date reads: `YYYY/MM/DD` in Chinese, `DD.MM.YYYY` in Russian, `MM/DD/YYYY` in English. */
+/** The orders a date is typed in; `mode` is in the terms of Maskito's date mask. */
+const entryOrders = {
+  monthFirst: {
+    mode: "mm/dd/yyyy",
+    separator: "/",
+    pattern: "MM/dd/yyyy",
+    form: /^\d{2}\/\d{2}\/\d{4}$/,
+  },
+  dayFirst: {
+    mode: "dd/mm/yyyy",
+    separator: ".",
+    pattern: "dd.MM.yyyy",
+    form: /^\d{2}\.\d{2}\.\d{4}$/,
+  },
+  yearFirst: {
+    mode: "yyyy/mm/dd",
+    separator: "/",
+    pattern: "yyyy/MM/dd",
+    form: /^\d{4}\/\d{2}\/\d{2}$/,
+  },
+} as const;
+
+type EntryOrder = (typeof entryOrders)[keyof typeof entryOrders];
+
+/** Languages not listed type the month first, as English does. */
+const languageOrders: Readonly<Record<string, EntryOrder>> = {
+  ru: entryOrders.dayFirst,
+  zh: entryOrders.yearFirst,
+};
+
+/** How a typed date reads: `DD.MM.YYYY` in Russian, `YYYY/MM/DD` in Chinese, `MM/DD/YYYY` in English. */
 export class DateEntryFormat {
-  /** The day order, in the terms of Maskito's date mask. */
-  readonly mode: "dd/mm/yyyy" | "mm/dd/yyyy" | "yyyy/mm/dd";
-  readonly separator: "." | "/";
+  readonly mode: EntryOrder["mode"];
+  readonly separator: EntryOrder["separator"];
   private readonly pattern: string;
   private readonly form: RegExp;
 
-  private constructor(mode: "dd/mm/yyyy" | "mm/dd/yyyy" | "yyyy/mm/dd") {
-    this.mode = mode;
-    if (mode === "yyyy/mm/dd") {
-      this.separator = "/";
-      this.pattern = "yyyy/MM/dd";
-      this.form = /^\d{4}\/\d{2}\/\d{2}$/;
-    } else if (mode === "dd/mm/yyyy") {
-      this.separator = ".";
-      this.pattern = "dd.MM.yyyy";
-      this.form = /^\d{2}\.\d{2}\.\d{4}$/;
-    } else {
-      this.separator = "/";
-      this.pattern = "MM/dd/yyyy";
-      this.form = /^\d{2}\/\d{2}\/\d{4}$/;
-    }
+  private constructor(order: EntryOrder) {
+    this.mode = order.mode;
+    this.separator = order.separator;
+    this.pattern = order.pattern;
+    this.form = order.form;
   }
 
   static for(language: string): DateEntryFormat {
-    if (language === "zh") return new DateEntryFormat("yyyy/mm/dd");
-    if (language === "ru") return new DateEntryFormat("dd/mm/yyyy");
-    return new DateEntryFormat("mm/dd/yyyy");
+    return new DateEntryFormat(
+      languageOrders[language] ?? entryOrders.monthFirst,
+    );
   }
 
   /** Empty for an unreadable date. */

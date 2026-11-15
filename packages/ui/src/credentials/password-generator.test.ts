@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-  characterRuns,
   defaultGeneratorOptions,
-  fitGeneratorOptions,
+  fitCharacterOptions,
   PasswordGenerator,
+  passwordParts,
   type RandomIndex,
   randomIndex,
   readGeneratorOptions,
@@ -92,78 +92,7 @@ test("character passwords use every chosen class and no other", () => {
     symbols: false,
   });
   assert.match(password, /^[a-z]{20}$/);
-  assert.ok(Math.abs(bits - 20 * Math.log2(26)) < 1e-9, `${bits} bits`);
-});
-
-test("character passwords hold at least the minimum digits and symbols", () => {
-  const generator = new PasswordGenerator(words);
-  const options = {
-    ...defaultGeneratorOptions,
-    mode: "characters" as const,
-    length: 12,
-    minDigits: 4,
-    minSymbols: 3,
-  };
-  for (let i = 0; i < 50; i++) {
-    const { password } = generator.generate(options);
-    assert.equal(password.length, 12);
-    assert.ok((password.match(/[0-9]/g) ?? []).length >= 4, password);
-    assert.ok((password.match(/[^a-zA-Z0-9]/g) ?? []).length >= 3, password);
-  }
-});
-
-test("avoiding ambiguous characters leaves out I, O, l, 0 and 1", () => {
-  const generator = new PasswordGenerator(words);
-  for (let i = 0; i < 50; i++) {
-    const { password } = generator.generate({
-      ...defaultGeneratorOptions,
-      mode: "characters",
-      length: 64,
-      avoidAmbiguous: true,
-    });
-    assert.doesNotMatch(password, /[IOl01]/);
-  }
-});
-
-test("the bits count every draw from its own class", () => {
-  const generator = new PasswordGenerator(words, () => 0);
-  const { password, bits } = generator.generate({
-    ...defaultGeneratorOptions,
-    mode: "characters",
-    length: 8,
-    symbols: false,
-    minDigits: 2,
-  });
-  assert.equal([...password].sort().join(""), "00Aaaaaa");
-  const pool = 26 + 26 + 10;
-  const expected = 2 * Math.log2(26) + 2 * Math.log2(10) + 4 * Math.log2(pool);
-  assert.ok(Math.abs(bits - expected) < 1e-9, `${bits} bits`);
-});
-
-test("minimums and length keep the guaranteed characters within the password", () => {
-  const options = {
-    ...defaultGeneratorOptions,
-    mode: "characters" as const,
-    length: 8,
-  };
-  assert.equal(
-    fitGeneratorOptions({ ...options, minDigits: 9 }, "minDigits").length,
-    12,
-  );
-  const shortened = fitGeneratorOptions(
-    { ...options, minDigits: 4, minSymbols: 4, length: 8 },
-    "length",
-  );
-  assert.deepEqual([shortened.minDigits, shortened.minSymbols], [4, 2]);
-});
-
-test("characterRuns splits a password into letters, digits and symbols", () => {
-  assert.deepEqual(characterRuns("ab12#c"), [
-    { text: "ab", kind: "letter" },
-    { text: "12", kind: "digit" },
-    { text: "#", kind: "symbol" },
-    { text: "c", kind: "letter" },
-  ]);
+  assert.equal(bits, 20 * Math.log2(26));
 });
 
 test("strength follows the entropy", () => {
@@ -193,6 +122,104 @@ test("stored options keep what is valid and fall back for the rest", () => {
       mode: "characters",
       capitalize: false,
       length: 32,
+    },
+  );
+});
+
+const characters = { ...defaultGeneratorOptions, mode: "characters" } as const;
+
+test("a character password holds at least the fewest digits and symbols chosen", () => {
+  const generator = new PasswordGenerator(words);
+  for (let i = 0; i < 50; i++) {
+    const { password } = generator.generate({
+      ...characters,
+      length: 12,
+      fewestDigits: 4,
+      fewestSymbols: 3,
+    });
+    assert.equal(password.length, 12);
+    assert.ok((password.match(/[0-9]/g)?.length ?? 0) >= 4, password);
+    assert.ok((password.match(/[^a-zA-Z0-9]/g)?.length ?? 0) >= 3, password);
+  }
+  const { password } = generator.generate({ ...characters, digits: false });
+  assert.doesNotMatch(password, /[0-9]/);
+});
+
+test("required characters count only their own class in the bits", () => {
+  const generator = new PasswordGenerator(words);
+  const { bits } = generator.generate({
+    ...characters,
+    length: 10,
+    uppercase: false,
+    symbols: false,
+    fewestDigits: 2,
+  });
+  const pool = Math.log2(36);
+  assert.equal(bits, Math.log2(26) + 2 * Math.log2(10) + 7 * pool);
+});
+
+test("look-alike characters can be left out", () => {
+  const generator = new PasswordGenerator(words);
+  for (let i = 0; i < 50; i++) {
+    const { password } = generator.generate({
+      ...characters,
+      length: 64,
+      skipLookAlikes: true,
+    });
+    assert.doesNotMatch(password, /[IOl01]/);
+  }
+});
+
+test("a raised minimum lengthens the password and a shorter length lowers the minimums", () => {
+  const raised = fitCharacterOptions(
+    { ...characters, length: 8, fewestDigits: 9, fewestSymbols: 9 },
+    "fewest",
+  );
+  assert.equal(raised.length, 20);
+  const shortened = fitCharacterOptions(
+    { ...characters, length: 8, fewestDigits: 5, fewestSymbols: 4 },
+    "length",
+  );
+  assert.equal(shortened.length, 8);
+  assert.ok(2 + shortened.fewestDigits + shortened.fewestSymbols <= 8);
+  assert.ok(shortened.fewestDigits >= 1 && shortened.fewestSymbols >= 1);
+  const bounded = fitCharacterOptions(
+    { ...characters, fewestDigits: 0, fewestSymbols: 40 },
+    "fewest",
+  );
+  assert.equal(bounded.fewestDigits, 1);
+  assert.equal(bounded.fewestSymbols, 9);
+});
+
+test("a shown password tints digits, and symbols only in a character password", () => {
+  assert.deepEqual(passwordParts("Orbit-Velvet7", "words"), [
+    { text: "Orbit-Velvet", tint: null },
+    { text: "7", tint: "digit" },
+  ]);
+  assert.deepEqual(passwordParts("ab12#!c", "characters"), [
+    { text: "ab", tint: null },
+    { text: "12", tint: "digit" },
+    { text: "#!", tint: "symbol" },
+    { text: "c", tint: null },
+  ]);
+});
+
+test("stored minimums out of bounds fall back and still fit the length", () => {
+  assert.deepEqual(
+    readGeneratorOptions(
+      JSON.stringify({
+        mode: "characters",
+        length: 8,
+        fewestDigits: 9,
+        fewestSymbols: 12,
+        skipLookAlikes: true,
+      }),
+    ),
+    {
+      ...characters,
+      length: 12,
+      fewestDigits: 9,
+      skipLookAlikes: true,
     },
   );
 });

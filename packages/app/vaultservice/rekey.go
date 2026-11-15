@@ -150,8 +150,8 @@ func (s *Service) commitRekey(stage *stagedRekey, rebound *unlock.PlatformCreden
 	moved := history.movedTo(replaced).movedTo(stage.rekey.KeyIdentity())
 	next := rewrapped(policy, stage, rebound)
 	record := func() error { return errors.Join(s.savePolicy(id, next), s.saveKeyHistory(id, moved)) }
-	// Device data is sealed for the new key before the save and written only once the file holds it.
-	resealed := s.resealDeviceData(id, stage.rekey)
+	// Owner data is sealed for the new key ahead of the save, and stored only once the file holds that key.
+	ownerWrites := s.resealOwnerData(id, stage.rekey)
 	pending, err := s.session.PrepareRekey(stage.rekey)
 	if err != nil {
 		return vault.Head{}, err
@@ -160,14 +160,14 @@ func (s *Service) commitRekey(stage *stagedRekey, rebound *unlock.PlatformCreden
 	err = s.commitThen(pending, record)
 	switch {
 	case err == nil:
-		writeDeviceData(resealed)
+		writeAll(ownerWrites)
 		s.discardRekey()
 		return written, nil
 	case s.fileHolds(written):
 		if repairErr := record(); repairErr != nil {
 			slog.Warn("move the ways in to a new vault key the file holds", "err", repairErr)
 		}
-		writeDeviceData(resealed)
+		writeAll(ownerWrites)
 		return vault.Head{}, errors.Join(ErrKeyChangeUnfinished, err)
 	case errors.Is(err, storage.ErrTooLarge), errors.Is(err, storage.ErrStaleHead), s.fileHolds(previous):
 		return vault.Head{}, err

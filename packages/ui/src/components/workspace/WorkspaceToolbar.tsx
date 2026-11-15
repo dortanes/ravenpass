@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { LockKeyhole, Plus, Settings2, WandSparkles } from "lucide-react";
+import { KeySquare, LockKeyhole, Plus, Settings2 } from "lucide-react";
 import type { ComponentType, RefObject } from "react";
 import { useCompactLayout } from "../../host/compact.ts";
 import { useTranslator } from "../../i18n/translator.tsx";
@@ -55,7 +55,7 @@ export function WorkspaceToolbar({
   /** Creates an item of the kind the open place holds. */
   onNew: () => void;
   onLock: () => void;
-  /** Opens the password generator, which a compact screen reaches from the toolbar. */
+  /** Opens the Generator place, which a compact screen reaches from the toolbar. */
   onGenerator: () => void;
   /** Opens settings, which a compact screen reaches from the toolbar. */
   onSettings: () => void;
@@ -105,7 +105,7 @@ export function WorkspaceToolbar({
             {lock}
             <VaultAction
               label={t("workspace.rail.generator")}
-              icon={WandSparkles}
+              icon={KeySquare}
               compact
               onClick={onGenerator}
             />

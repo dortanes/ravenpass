@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/dortanes/ravenpass/packages/app/messages"
 )
@@ -50,8 +51,8 @@ func TestTheFirstOfferedDeviceLanguageIsFollowedUntilOneIsChosen(t *testing.T) {
 		{"region", []string{"ru-RU"}, Russian},
 		{"first offered", []string{"de-DE", "ru-RU", "en-US"}, Russian},
 		{"order kept", []string{"en-GB", "ru"}, English},
-		{"script and region", []string{"zh-Hans-CN"}, Chinese},
-		{"unsupported fallback", []string{"ja-JP"}, English},
+		{"script and region", []string{"zh-Hans-CN"}, SimplifiedChinese},
+		{"not offered", []string{"pt-BR"}, English},
 		{"case and underscore", []string{"RU_ru"}, Russian},
 		{"unreadable skipped", []string{"", "not a tag", "ru-RU"}, Russian},
 		{"region without a base", []string{"und-RU"}, English},
@@ -394,7 +395,9 @@ func TestTitledPromptsGiveATitleAndASentence(t *testing.T) {
 			catalog.RevealReason("Wallet"),
 		} {
 			title, sentence, found := strings.Cut(prompt, "\n")
-			if !found || title == "" || strings.ContainsRune(sentence, '\n') || (!strings.HasSuffix(sentence, ".") && !strings.HasSuffix(sentence, "。")) {
+			last, _ := utf8.DecodeLastRuneInString(sentence)
+			// Chinese ends a sentence with the ideographic full stop.
+			if !found || title == "" || strings.ContainsRune(sentence, '\n') || !strings.ContainsRune(".。", last) {
 				t.Fatalf("%q prompt %q is not a title and a sentence", language, prompt)
 			}
 		}

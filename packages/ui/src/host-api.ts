@@ -24,7 +24,6 @@ import type {
   CredentialSummary,
   ExportStatus,
   ExtensionLinks,
-  GeneratorHistoryEntry,
   Identity,
   IdentityAddresses,
   IdentityDocument,
@@ -591,12 +590,6 @@ function watchLanguage(onChange: () => void): () => void {
   ).watch(onChange);
 }
 
-function generatorHistoryEntryOf(
-  entry: models.GeneratedPassword,
-): GeneratorHistoryEntry {
-  return { ...entry, mode: entry.mode === "words" ? "words" : "characters" };
-}
-
 /** The vault API of a Wails host, desktop or mobile: both bind the same Go service. */
 export const hostApi: VaultApi = {
   capabilities: service.Capabilities,
@@ -715,12 +708,12 @@ export const hostApi: VaultApi = {
   setBankDetails: service.SetBankDetails,
   breachChecks: service.GetBreachChecks,
   setBreachChecks: service.SetBreachChecks,
-  async generatorHistorySetting() {
-    const setting = await service.GetGeneratorHistorySetting();
+  async passwordHistory() {
+    const setting = await service.GetPasswordHistory();
     return { ...setting, offered: setting.offered ?? [] };
   },
-  setGeneratorHistorySetting: service.SetGeneratorHistorySetting,
-  countGeneratorHistoryPast: service.CountGeneratorHistoryPast,
+  setPasswordHistory: service.SetPasswordHistory,
+  countPasswordHistoryPast: service.CountPasswordHistoryPast,
   async checkBreaches() {
     const check = await service.CheckBreaches();
     return { checked: check.checked, breaches: listed(check.breaches) };
@@ -752,13 +745,14 @@ export const hostApi: VaultApi = {
   async listGroups() {
     return (await service.ListGroups()) ?? [];
   },
-  async generatorHistory() {
-    return listed(await service.GeneratorHistory()).map(
-      generatorHistoryEntryOf,
-    );
+  async keptPasswords() {
+    return listed(await service.PasswordHistory()).map((kept) => ({
+      ...kept,
+      mode: kept.mode === "characters" ? "characters" : "words",
+    }));
   },
   recordGeneratedPassword: service.RecordGeneratedPassword,
-  clearGeneratorHistory: service.ClearGeneratorHistory,
+  clearPasswordHistory: service.ClearPasswordHistory,
   copyGeneratedPassword: service.CopyGeneratedPassword,
   createGroup: service.CreateGroup,
   renameGroup: service.RenameGroup,

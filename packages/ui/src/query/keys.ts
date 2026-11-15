@@ -24,7 +24,7 @@ export const queryKeys = {
   siteIcons: [...hostScope, "site-icons"],
   bankDetails: [...hostScope, "bank-details"],
   breachChecks: [...hostScope, "breach-checks"],
-  generatorHistorySetting: [...hostScope, "generator-history-setting"],
+  passwordHistory: [...hostScope, "password-history"],
   screenshots: [...hostScope, "screenshots"],
   systemAutofill: [...hostScope, "system-autofill"],
   identityList: [...hostScope, "identity-list"],
@@ -43,6 +43,7 @@ export const queryKeys = {
   seeds: [...vaultScope, "seeds"],
   groups: [...vaultScope, "groups"],
   trash: [...vaultScope, "trash"],
+  keptPasswords: [...vaultScope, "kept-passwords"],
   /** The vault-wide check for the passwords as they were read at `version`. */
   breaches: (version: number) => [...vaultScope, "breaches", version],
   exportStatus: [...vaultScope, "export-status"],

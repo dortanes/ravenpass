@@ -17,18 +17,18 @@ export interface GeneratorOptions {
   uppercase: boolean;
   digits: boolean;
   symbols: boolean;
-  /** How many digits a password holds at least, when digits are on. */
-  minDigits: number;
-  /** How many symbols a password holds at least, when symbols are on. */
-  minSymbols: number;
-  /** Leaves out the characters easily taken for one another: I, O, l, 0 and 1. */
-  avoidAmbiguous: boolean;
+  /** The fewest digits a password holds while digits are on. */
+  fewestDigits: number;
+  /** The fewest symbols a password holds while symbols are on. */
+  fewestSymbols: number;
+  /** Leaves out I, O, l, 0 and 1, which read alike in many fonts. */
+  skipLookAlikes: boolean;
 }
 
 export const generatorBounds = {
   words: { min: 3, max: 10 },
   length: { min: 8, max: 64 },
-  minimum: { min: 1, max: 9 },
+  fewest: { min: 1, max: 9 },
 } as const;
 
 export const defaultGeneratorOptions: GeneratorOptions = {
@@ -41,9 +41,9 @@ export const defaultGeneratorOptions: GeneratorOptions = {
   uppercase: true,
   digits: true,
   symbols: true,
-  minDigits: 1,
-  minSymbols: 1,
-  avoidAmbiguous: false,
+  fewestDigits: 1,
+  fewestSymbols: 1,
+  skipLookAlikes: false,
 };
 
 /** How hard a password is to guess, from its entropy. */
@@ -51,7 +51,6 @@ export type Strength = "weak" | "fair" | "strong" | "very-strong";
 
 export interface GeneratedPassword {
   password: string;
-  mode: GeneratorMode;
   /** Entropy in bits, given the options and the list it was drawn from. */
   bits: number;
 }
@@ -60,7 +59,11 @@ const lowercase = "abcdefghijklmnopqrstuvwxyz";
 const uppercase = lowercase.toUpperCase();
 const digits = "0123456789";
 const symbols = "!#$%&*+-=?@^_";
-const ambiguous = /[IOl01]/g;
+const lookAlikes = new Set("IOl01");
+
+function withoutLookAlikes(set: string): string {
+  return [...set].filter((character) => !lookAlikes.has(character)).join("");
+}
 
 /** Draws an integer from 0 up to bound, exclusive, uniformly. */
 export type RandomIndex = (bound: number) => number;
@@ -117,46 +120,37 @@ export class PasswordGenerator {
       words[at] = `${words[at]}${this.#pick(digits)}`;
       bits += Math.log2(digits.length * count);
     }
-    return { password: words.join(options.separator), mode: "words", bits };
+    return { password: words.join(options.separator), bits };
   }
 
-  // Each guaranteed character is drawn from its class and the rest from every chosen class, then all are shuffled.
-  // The bits count the draws and not the shuffle, so the strength never overstates.
+  // Random positions take the characters the options require, each drawn from its own class; the other positions
+  // draw from every chosen class. The bits count each draw from the set it was made from, never the positions.
   #characters(options: GeneratorOptions): GeneratedPassword {
-    const fitted = fitGeneratorOptions(
-      { ...options, length: clamp(options.length, generatorBounds.length) },
-      "length",
-    );
-    const classes = characterClasses(fitted.avoidAmbiguous);
-    const chosen = [classes.lowercase];
-    const guaranteed = [classes.lowercase];
-    if (fitted.uppercase) {
-      chosen.push(classes.uppercase);
-      guaranteed.push(classes.uppercase);
+    const fitted = fitCharacterOptions(options, "length");
+    const sets = characterSets(fitted);
+    const pool = sets.chosen.join("");
+    const positions = this.#shuffled(fitted.length);
+    const drawn: string[] = Array.from({ length: fitted.length });
+    // Draws per set size, so equal sets add up as one product.
+    const draws = new Map<number, number>();
+    positions.forEach((position, index) => {
+      const set = sets.required[index] ?? pool;
+      drawn[position] = this.#pick(set);
+      draws.set(set.length, (draws.get(set.length) ?? 0) + 1);
+    });
+    let bits = 0;
+    for (const [size, count] of draws) bits += count * Math.log2(size);
+    return { password: drawn.join(""), bits };
+  }
+
+  /** The positions 0 up to count in a uniformly random order. */
+  #shuffled(count: number): number[] {
+    const order = Array.from({ length: count }, (_, index) => index);
+    for (let last = count - 1; last > 0; last--) {
+      const other = this.#random(last + 1);
+      [order[last], order[other]] = [order[other] ?? 0, order[last] ?? 0];
     }
-    if (fitted.digits) {
-      chosen.push(classes.digits);
-      guaranteed.push(...Array(fitted.minDigits).fill(classes.digits));
-    }
-    if (fitted.symbols) {
-      chosen.push(symbols);
-      guaranteed.push(...Array(fitted.minSymbols).fill(symbols));
-    }
-    const pool = chosen.join("");
-    const sets = [
-      ...guaranteed,
-      ...Array(fitted.length - guaranteed.length).fill(pool),
-    ];
-    const characters = sets.map((set) => this.#pick(set));
-    for (let i = characters.length - 1; i > 0; i--) {
-      const j = this.#random(i + 1);
-      [characters[i], characters[j]] = [
-        characters[j] ?? "",
-        characters[i] ?? "",
-      ];
-    }
-    const bits = sets.reduce((sum, set) => sum + Math.log2(set.length), 0);
-    return { password: characters.join(""), mode: "characters", bits };
+    return order;
   }
 
   #pick(from: string | readonly string[]): string {
@@ -164,69 +158,92 @@ export class PasswordGenerator {
   }
 }
 
-function characterClasses(avoidAmbiguous: boolean) {
-  const kept = (set: string) =>
-    avoidAmbiguous ? set.replace(ambiguous, "") : set;
-  return {
-    lowercase: kept(lowercase),
-    uppercase: kept(uppercase),
-    digits: kept(digits),
-  };
+/** The classes options choose, and one set per character a password must hold. */
+function characterSets(options: GeneratorOptions): {
+  chosen: string[];
+  required: string[];
+} {
+  const set = (characters: string) =>
+    options.skipLookAlikes ? withoutLookAlikes(characters) : characters;
+  const chosen = [set(lowercase)];
+  const required = [set(lowercase)];
+  if (options.uppercase) {
+    chosen.push(set(uppercase));
+    required.push(set(uppercase));
+  }
+  if (options.digits) {
+    chosen.push(set(digits));
+    for (let i = 0; i < options.fewestDigits; i++) required.push(set(digits));
+  }
+  if (options.symbols) {
+    chosen.push(symbols);
+    for (let i = 0; i < options.fewestSymbols; i++) required.push(symbols);
+  }
+  return { chosen, required };
 }
 
-/** How many characters options make a password hold at least. */
-function guaranteedCount(options: GeneratorOptions): number {
-  return (
-    1 +
-    (options.uppercase ? 1 : 0) +
-    (options.digits ? options.minDigits : 0) +
-    (options.symbols ? options.minSymbols : 0)
-  );
+function requiredCount(options: GeneratorOptions): number {
+  return characterSets(options).required.length;
 }
 
 /**
- * fitGeneratorOptions keeps the characters a password must hold within its length after `changed` changed: a longer
- * minimum lengthens the password, a shorter length lowers the minimums, symbols first.
+ * fitCharacterOptions bounds every count and keeps the required characters within the length: a raised fewest count
+ * lengthens the password, and a shortened length lowers the larger fewest count until the password holds them.
  */
-export function fitGeneratorOptions(
+export function fitCharacterOptions(
   options: GeneratorOptions,
-  changed: "length" | "minDigits" | "minSymbols",
+  changed: "length" | "fewest",
 ): GeneratorOptions {
-  const next = {
+  const fitted: GeneratorOptions = {
     ...options,
-    minDigits: clamp(options.minDigits, generatorBounds.minimum),
-    minSymbols: clamp(options.minSymbols, generatorBounds.minimum),
+    length: clamp(options.length, generatorBounds.length),
+    fewestDigits: clamp(options.fewestDigits, generatorBounds.fewest),
+    fewestSymbols: clamp(options.fewestSymbols, generatorBounds.fewest),
   };
-  if (changed !== "length") {
-    next.length = Math.max(next.length, guaranteedCount(next));
-    return next;
+  if (changed === "fewest") {
+    fitted.length = Math.max(fitted.length, requiredCount(fitted));
+    return fitted;
   }
-  while (guaranteedCount(next) > next.length) {
-    if (next.symbols && next.minSymbols > 1) next.minSymbols--;
-    else if (next.digits && next.minDigits > 1) next.minDigits--;
-    else break;
+  while (requiredCount(fitted) > fitted.length) {
+    const digitsCanDrop = fitted.digits && fitted.fewestDigits > 1;
+    const symbolsCanDrop = fitted.symbols && fitted.fewestSymbols > 1;
+    if (
+      symbolsCanDrop &&
+      (!digitsCanDrop || fitted.fewestSymbols >= fitted.fewestDigits)
+    ) {
+      fitted.fewestSymbols--;
+    } else if (digitsCanDrop) {
+      fitted.fewestDigits--;
+    } else {
+      break;
+    }
   }
-  return next;
+  return fitted;
 }
 
-export type CharacterKind = "letter" | "digit" | "symbol";
+/** One stretch of a shown password and whether it is tinted as digits or symbols. */
+export interface PasswordPart {
+  text: string;
+  tint: "digit" | "symbol" | null;
+}
 
-/** characterRuns splits a password into runs of letters, digits and symbols, so each can be shown apart. */
-export function characterRuns(
+/** passwordParts splits a password for showing: digits tinted always, symbols only in a character password. */
+export function passwordParts(
   password: string,
-): { text: string; kind: CharacterKind }[] {
-  const runs: { text: string; kind: CharacterKind }[] = [];
+  mode: GeneratorMode,
+): PasswordPart[] {
+  const parts: PasswordPart[] = [];
   for (const character of password) {
-    const kind: CharacterKind = /\p{L}/u.test(character)
-      ? "letter"
-      : /\p{N}/u.test(character)
-        ? "digit"
-        : "symbol";
-    const last = runs.at(-1);
-    if (last?.kind === kind) last.text += character;
-    else runs.push({ text: character, kind });
+    const tint = digits.includes(character)
+      ? "digit"
+      : mode === "characters" && symbols.includes(character)
+        ? "symbol"
+        : null;
+    const last = parts.at(-1);
+    if (last && last.tint === tint) last.text += character;
+    else parts.push({ text: character, tint });
   }
-  return runs;
+  return parts;
 }
 
 function capitalized(word: string): string {
@@ -253,7 +270,7 @@ export function readGeneratorOptions(stored: string | null): GeneratorOptions {
   const flag = (key: keyof GeneratorOptions, fallback: boolean) =>
     typeof value[key] === "boolean" ? value[key] : fallback;
   const count = (
-    key: "words" | "length" | "minDigits" | "minSymbols",
+    key: "words" | "length" | "fewestDigits" | "fewestSymbols",
     bounds: { min: number; max: number },
   ) => {
     const number = value[key];
@@ -265,7 +282,7 @@ export function readGeneratorOptions(stored: string | null): GeneratorOptions {
       : defaults[key];
   };
   const separator = wordSeparators.find((item) => item === value.separator);
-  return fitGeneratorOptions(
+  return fitCharacterOptions(
     {
       mode:
         value.mode === "words" || value.mode === "characters"
@@ -279,10 +296,10 @@ export function readGeneratorOptions(stored: string | null): GeneratorOptions {
       uppercase: flag("uppercase", defaults.uppercase),
       digits: flag("digits", defaults.digits),
       symbols: flag("symbols", defaults.symbols),
-      minDigits: count("minDigits", generatorBounds.minimum),
-      minSymbols: count("minSymbols", generatorBounds.minimum),
-      avoidAmbiguous: flag("avoidAmbiguous", defaults.avoidAmbiguous),
+      fewestDigits: count("fewestDigits", generatorBounds.fewest),
+      fewestSymbols: count("fewestSymbols", generatorBounds.fewest),
+      skipLookAlikes: flag("skipLookAlikes", defaults.skipLookAlikes),
     },
-    "length",
+    "fewest",
   );
 }

@@ -20,7 +20,8 @@ type Language string
 const (
 	English Language = "en"
 	Russian Language = "ru"
-	Chinese Language = "zh"
+	// SimplifiedChinese takes the bare tag, so zh-Hans and zh-CN match it.
+	SimplifiedChinese Language = "zh"
 )
 
 const (
@@ -32,7 +33,7 @@ const (
 var ErrUnsupportedLanguage = errors.New("unsupported language")
 
 // Languages lists the tags this build offers, in the order the interface shows them.
-func Languages() []Language { return []Language{English, Russian, Chinese} }
+func Languages() []Language { return []Language{English, Russian, SimplifiedChinese} }
 
 // supported reports whether this build offers language.
 func supported(language Language) bool {
@@ -69,9 +70,10 @@ type record struct {
 	IdentityListOn     bool `json:"identityListOn,omitempty"`
 	ScreenshotsAllowed bool `json:"screenshotsAllowed,omitempty"`
 	BreachChecksOn     bool `json:"breachChecksOn,omitempty"`
-	// GeneratorHistoryDays is zero for defaultGeneratorHistoryDays.
-	GeneratorHistoryDays int  `json:"generatorHistoryDays,omitempty"`
-	GeneratorHistoryOff  bool `json:"generatorHistoryOff,omitempty"`
+	// HistoryOff and HistoryDays keep the tags 0.3 wrote, so a history turned off stays off.
+	HistoryOff bool `json:"generatorHistoryOff,omitempty"`
+	// HistoryDays is zero for defaultHistoryDays.
+	HistoryDays int `json:"generatorHistoryDays,omitempty"`
 	// Appearance is empty for AppearanceSystem.
 	Appearance Appearance `json:"appearance,omitempty"`
 	// AutoBackupOn requires AutoBackupFolder.
@@ -226,8 +228,8 @@ func (s *Store) load() {
 		stored.ClipboardClearSeconds = 0
 	}
 	s.keepOfferedAutoLock(&stored)
-	if !offeredGeneratorHistoryDays(stored.GeneratorHistoryDays) {
-		stored.GeneratorHistoryDays = 0
+	if !offeredHistoryDays(stored.HistoryDays) {
+		stored.HistoryDays = 0
 	}
 	if !offeredSignInStyle(stored.SignInStyle) {
 		stored.SignInStyle = ""

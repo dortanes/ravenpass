@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { languages } from "@ravenpass/ui/i18n/language.ts";
 import { StoredLanguage } from "./language.ts";
 import { MemoryLocalArea } from "./test-doubles.test-support.ts";
 
@@ -12,7 +13,7 @@ function storedLanguage() {
 test("the browser's language is in use until a language is kept", async () => {
   const { language } = storedLanguage();
   assert.deepEqual(await language.getLanguage(), {
-    languages: ["en", "ru", "zh"],
+    languages: [...languages],
     language: "ru-RU",
     chosen: false,
   });
@@ -22,7 +23,7 @@ test("the popup's choice is in use over the browser's language", async () => {
   const { language } = storedLanguage();
   await language.setLanguage("en");
   assert.deepEqual(await language.getLanguage(), {
-    languages: ["en", "ru", "zh"],
+    languages: [...languages],
     language: "en",
     chosen: true,
   });
@@ -37,7 +38,7 @@ test("the desktop app's language is in use over the popup's choice until it is f
   assert.equal((await language.getLanguage()).language, "ru");
   await language.forgetDesktopLanguage();
   assert.deepEqual(await language.getLanguage(), {
-    languages: ["en", "ru", "zh"],
+    languages: [...languages],
     language: "en",
     chosen: true,
   });

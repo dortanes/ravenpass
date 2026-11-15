@@ -2,22 +2,22 @@
   "system.dialog.choose-vault-location": {
     "en": "Choose where to keep your vault",
     "ru": "Выберите место для хранилища",
-    "zh": "选择保险库保存位置"
+    "zh": "选择密码库的存放位置"
   },
   "system.dialog.select-vault-file": {
     "en": "Select a vault file",
     "ru": "Выберите файл хранилища",
-    "zh": "选择保险库文件"
+    "zh": "选择密码库文件"
   },
   "system.dialog.save-export": {
     "en": "Save an encrypted copy of your vault",
     "ru": "Сохраните зашифрованную копию хранилища",
-    "zh": "保存保险库的加密副本"
+    "zh": "保存密码库的加密副本"
   },
   "system.dialog.save-recovery-key": {
     "en": "Save your recovery key",
     "ru": "Сохраните ключ восстановления",
-    "zh": "保存恢复密钥"
+    "zh": "保存你的恢复密钥"
   },
   "system.dialog.choose-photo": {
     "en": "Choose a photo",
@@ -27,7 +27,7 @@
   "system.dialog.choose-scan": {
     "en": "Choose a scan of the document",
     "ru": "Выберите скан документа",
-    "zh": "选择文档扫描件"
+    "zh": "选择证件的扫描件"
   },
   "system.dialog.choose-qr-code": {
     "en": "Choose a picture of the QR code",
@@ -47,12 +47,12 @@
   "system.dialog.choose-backup-folder": {
     "en": "Choose a folder for automatic backups",
     "ru": "Выберите папку для автоматических копий",
-    "zh": "选择自动备份文件夹"
+    "zh": "选择自动备份的文件夹"
   },
   "system.filter.vault": {
     "en": "Ravenpass vault",
     "ru": "Хранилище Ravenpass",
-    "zh": "Ravenpass 保险库"
+    "zh": "Ravenpass 密码库"
   },
   "system.filter.text": {
     "en": "Text file",
@@ -62,17 +62,17 @@
   "system.filter.photo": {
     "en": "Image",
     "ru": "Изображение",
-    "zh": "图像"
+    "zh": "图片"
   },
   "system.filter.scan": {
     "en": "Image or PDF",
     "ru": "Изображение или PDF",
-    "zh": "图像或 PDF"
+    "zh": "图片或 PDF"
   },
   "system.filter.import": {
     "en": "Exported vault",
     "ru": "Экспорт хранилища",
-    "zh": "导出的保险库"
+    "zh": "导出的密码库"
   },
   "system.file.vault": {
     "en": "vault.rpv",
@@ -92,7 +92,7 @@
   "system.reason.share-file": {
     "en": "share “{file}” from {identity} with {site}",
     "ru": "передать сайту {site} файл «{file}» из профиля «{identity}»",
-    "zh": "与 {site} 共享来自 {identity} 的 “{file}”"
+    "zh": "将 {identity} 的“{file}”共享给 {site}"
   },
   "system.reason.save-passkey": {
     "en": "save a passkey for {site}",
@@ -102,7 +102,7 @@
   "system.reason.sign-in-passkey": {
     "en": "sign in to {site} as {account} with a passkey",
     "ru": "войти на сайт {site} как «{account}» с ключом доступа",
-    "zh": "使用通行密钥作为 {account} 登录到 {site}"
+    "zh": "用通行密钥以 {account} 的身份登录 {site}"
   },
   "system.reason.fill-sign-in": {
     "en": "fill the sign-in for {account} on {site}",
@@ -112,37 +112,37 @@
   "system.reason.fill-card": {
     "en": "fill the card “{card}” on {site}",
     "ru": "вставить карту «{card}» на сайте {site}",
-    "zh": "在 {site} 上填充卡片 “{card}”"
+    "zh": "在 {site} 上填充卡片“{card}”"
   },
   "system.reason.change-unlock": {
     "en": "change how your vault unlocks",
     "ru": "изменить способ разблокировки хранилища",
-    "zh": "更改保险库解锁方式"
+    "zh": "更改密码库的解锁方式"
   },
   "system.reason.create-vault": {
     "en": "create a new vault",
     "ru": "создать новое хранилище",
-    "zh": "创建新保险库"
+    "zh": "创建新的密码库"
   },
   "system.reason.open-vault": {
     "en": "open another vault file",
     "ru": "открыть другой файл хранилища",
-    "zh": "打开其他保险库文件"
+    "zh": "打开另一个密码库文件"
   },
   "system.reason.delete-vault": {
     "en": "delete the vault “{vault}”",
     "ru": "удалить хранилище «{vault}»",
-    "zh": "删除保险库 “{vault}”"
+    "zh": "删除密码库“{vault}”"
   },
   "system.reason.reveal-item": {
     "en": "show “{item}”",
     "ru": "показать «{item}»",
-    "zh": "显示 “{item}”"
+    "zh": "显示“{item}”"
   },
   "system.reason.unlock-vault": {
     "en": "unlock your vault",
     "ru": "разблокировать хранилище",
-    "zh": "解锁保险库"
+    "zh": "解锁你的密码库"
   },
   "system.prompt.share-file.title": {
     "en": "Share a file",
@@ -152,7 +152,7 @@
   "system.prompt.share-file": {
     "en": "Confirm it's you to share “{file}” from {identity} with {site}.",
     "ru": "Подтвердите, что это вы, чтобы передать сайту {site} файл «{file}» из профиля «{identity}».",
-    "zh": "请确认您的身份以与 {site} 共享来自 {identity} 的 “{file}”。"
+    "zh": "确认是你本人，以便将 {identity} 的“{file}”共享给 {site}。"
   },
   "system.prompt.save-passkey.title": {
     "en": "Save a passkey",
@@ -162,17 +162,17 @@
   "system.prompt.save-passkey": {
     "en": "Confirm it's you to save a passkey for {site}.",
     "ru": "Подтвердите, что это вы, чтобы сохранить ключ доступа для сайта {site}.",
-    "zh": "请确认您的身份以为 {site} 保存通行密钥。"
+    "zh": "确认是你本人，以便为 {site} 保存通行密钥。"
   },
   "system.prompt.sign-in-passkey.title": {
     "en": "Sign in with a passkey",
     "ru": "Вход с ключом доступа",
-    "zh": "使用通行密钥登录"
+    "zh": "用通行密钥登录"
   },
   "system.prompt.sign-in-passkey": {
     "en": "Confirm it's you to sign in to {site} as {account}.",
     "ru": "Подтвердите, что это вы, чтобы войти на сайт {site} как «{account}».",
-    "zh": "请确认您的身份以作为 {account} 登录到 {site}。"
+    "zh": "确认是你本人，以便以 {account} 的身份登录 {site}。"
   },
   "system.prompt.fill-sign-in.title": {
     "en": "Fill a sign-in",
@@ -182,7 +182,7 @@
   "system.prompt.fill-sign-in": {
     "en": "Confirm it's you to fill the sign-in for {account} on {site}.",
     "ru": "Подтвердите, что это вы, чтобы вставить данные входа «{account}» на сайте {site}.",
-    "zh": "请确认您的身份以在 {site} 上填充 {account} 的登录信息。"
+    "zh": "确认是你本人，以便在 {site} 上填充 {account} 的登录信息。"
   },
   "system.prompt.fill-card.title": {
     "en": "Fill a card",
@@ -192,7 +192,7 @@
   "system.prompt.fill-card": {
     "en": "Confirm it's you to fill the card “{card}” on {site}.",
     "ru": "Подтвердите, что это вы, чтобы вставить карту «{card}» на сайте {site}.",
-    "zh": "请确认您的身份以在 {site} 上填充卡片 “{card}”。"
+    "zh": "确认是你本人，以便在 {site} 上填充卡片“{card}”。"
   },
   "system.prompt.change-unlock.title": {
     "en": "Change unlock settings",
@@ -202,47 +202,47 @@
   "system.prompt.change-unlock": {
     "en": "Confirm it's you to change how your vault unlocks.",
     "ru": "Подтвердите, что это вы, чтобы изменить способ разблокировки хранилища.",
-    "zh": "请确认您的身份以更改保险库解锁方式。"
+    "zh": "确认是你本人，以便更改密码库的解锁方式。"
   },
   "system.prompt.create-vault.title": {
     "en": "Create a vault",
     "ru": "Создание хранилища",
-    "zh": "创建保险库"
+    "zh": "创建密码库"
   },
   "system.prompt.create-vault": {
     "en": "Confirm it's you to create a new vault.",
     "ru": "Подтвердите, что это вы, чтобы создать новое хранилище.",
-    "zh": "请确认您的身份以创建新保险库。"
+    "zh": "确认是你本人，以便创建新的密码库。"
   },
   "system.prompt.open-vault.title": {
     "en": "Open a vault file",
     "ru": "Открытие файла хранилища",
-    "zh": "打开保险库文件"
+    "zh": "打开密码库文件"
   },
   "system.prompt.open-vault": {
     "en": "Confirm it's you to open another vault file.",
     "ru": "Подтвердите, что это вы, чтобы открыть другой файл хранилища.",
-    "zh": "请确认您的身份以打开其他保险库文件。"
+    "zh": "确认是你本人，以便打开另一个密码库文件。"
   },
   "system.prompt.delete-vault.title": {
     "en": "Delete a vault",
     "ru": "Удаление хранилища",
-    "zh": "删除保险库"
+    "zh": "删除密码库"
   },
   "system.prompt.delete-vault": {
     "en": "Confirm it's you to delete the vault “{vault}”.",
     "ru": "Подтвердите, что это вы, чтобы удалить хранилище «{vault}».",
-    "zh": "请确认您的身份以删除保险库 “{vault}”。"
+    "zh": "确认是你本人，以便删除密码库“{vault}”。"
   },
   "system.prompt.reveal-item.title": {
     "en": "Show a secret",
     "ru": "Показ секрета",
-    "zh": "显示机密内容"
+    "zh": "显示机密信息"
   },
   "system.prompt.reveal-item": {
     "en": "Confirm it's you to show “{item}”.",
     "ru": "Подтвердите, что это вы, чтобы показать «{item}».",
-    "zh": "请确认您的身份以显示 “{item}”。"
+    "zh": "确认是你本人，以便显示“{item}”。"
   },
   "system.prompt.unlock-vault.title": {
     "en": "Unlock Ravenpass",
@@ -252,12 +252,12 @@
   "system.prompt.unlock-vault": {
     "en": "Confirm it's you to unlock your vault.",
     "ru": "Подтвердите, что это вы, чтобы разблокировать хранилище.",
-    "zh": "请确认您的身份以解锁保险库。"
+    "zh": "确认是你本人，以便解锁你的密码库。"
   },
   "system.place.on-this-device": {
     "en": "On this device",
     "ru": "На этом устройстве",
-    "zh": "在此设备上"
+    "zh": "在这台设备上"
   },
   "system.recovery-file.title": {
     "en": "Ravenpass recovery key",
@@ -267,7 +267,7 @@
   "system.recovery-file.notice": {
     "en": "This key unlocks an existing encrypted Ravenpass vault or export. It does not contain your passwords or a copy of the vault. This file is not encrypted. Keep it private.",
     "ru": "Этот ключ открывает существующее зашифрованное хранилище Ravenpass или его копию. Он не содержит ваши пароли и не является копией хранилища. Этот файл не зашифрован. Храните его в тайне.",
-    "zh": "此密钥可解锁现有的 Ravenpass 加密保险库或导出副本。它不包含您的密码，也不是保险库的副本。此文件未加密，请妥善保管私密。"
+    "zh": "此密钥用于解锁已有的 Ravenpass 加密密码库或导出文件，其中不包含你的密码，也不是密码库的副本。此文件未加密，请妥善保管，不要让他人看到。"
   },
   "system.recovery-sheet.printed": {
     "en": "Printed on {date}",
@@ -277,12 +277,12 @@
   "system.recovery-sheet.keep": {
     "en": "Keep this sheet somewhere safe and private.",
     "ru": "Храните этот лист в надёжном месте, недоступном для других.",
-    "zh": "请将此单据保存在安全私密的地方。"
+    "zh": "请将这张纸存放在安全、私密的地方。"
   },
   "system.recovery-sheet.warning": {
     "en": "Anyone with these words can open your vault.",
     "ru": "Любой, у кого есть эти слова, сможет открыть ваше хранилище.",
-    "zh": "任何知晓这些单词的人都可以打开您的保险库。"
+    "zh": "任何拿到这些单词的人都能打开你的密码库。"
   },
   "system.menu.open": {
     "en": "Open Ravenpass",
@@ -292,7 +292,7 @@
   "system.menu.lock": {
     "en": "Lock vault",
     "ru": "Заблокировать хранилище",
-    "zh": "锁定保险库"
+    "zh": "锁定密码库"
   },
   "system.menu.quit": {
     "en": "Quit Ravenpass",
@@ -307,12 +307,12 @@
   "settings.import.note.one-time-code": {
     "en": "One-time code setup",
     "ru": "Настройка одноразового кода",
-    "zh": "一次性代码设置"
+    "zh": "一次性验证码设置"
   },
   "settings.import.note.title": {
     "en": "Title",
     "ru": "Обращение",
-    "zh": "称谓"
+    "zh": "标题"
   },
   "settings.import.note.company": {
     "en": "Company",
@@ -327,7 +327,7 @@
   "settings.import.note.expiry": {
     "en": "Expiration date",
     "ru": "Срок действия",
-    "zh": "到期日"
+    "zh": "有效期"
   },
   "settings.import.note.security-code": {
     "en": "Security code",
@@ -347,7 +347,7 @@
   "settings.import.note.brand": {
     "en": "Brand",
     "ru": "Платёжная система",
-    "zh": "卡品牌"
+    "zh": "品牌"
   },
   "settings.import.note.private-key": {
     "en": "Private key",
@@ -387,12 +387,12 @@
   "settings.import.note.routing-number": {
     "en": "Routing number",
     "ru": "Маршрутный номер",
-    "zh": "路由号"
+    "zh": "路由号码"
   },
   "settings.import.note.branch-number": {
     "en": "Branch number",
     "ru": "Номер отделения",
-    "zh": "分行代码"
+    "zh": "支行号"
   },
   "settings.import.note.pin": {
     "en": "PIN",
@@ -422,7 +422,7 @@
   "settings.import.note.sex": {
     "en": "Sex",
     "ru": "Пол",
-    "zh": "生理性别"
+    "zh": "性别"
   },
   "settings.import.note.birth-place": {
     "en": "Place of birth",
@@ -442,7 +442,7 @@
   "settings.import.note.national-id": {
     "en": "National ID number",
     "ru": "Личный номер",
-    "zh": "公民身份号码"
+    "zh": "身份证号"
   },
   "settings.import.note.issued-on": {
     "en": "Issued on",
@@ -462,7 +462,7 @@
   "settings.import.note.issuer": {
     "en": "Issued by",
     "ru": "Кем выдан",
-    "zh": "签发机构"
+    "zh": "签发机关"
   },
   "settings.import.note.name": {
     "en": "Name",
@@ -482,6 +482,6 @@
   "workspace.duplicate.name": {
     "en": "{name} (copy)",
     "ru": "{name} (копия)",
-    "zh": "{name} (副本)"
+    "zh": "{name}（副本）"
   }
 }

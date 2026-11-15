@@ -164,6 +164,14 @@ func entropyFromMnemonic(phrase string) ([]byte, error) {
 	return entropy, nil
 }
 
+func deviceCacheAAD(vaultID ID, name string) []byte {
+	hash := headerHash(vaultID)
+	result := make([]byte, 0, 33+len(name))
+	result = append(result, 5)
+	result = append(result, hash[:]...)
+	return append(result, name...)
+}
+
 // An envelope is [vaultID, suite, box]: a box sealed outside the container, bound to its vault.
 type wireEnvelope struct {
 	_       struct{} `cbor:",toarray"`

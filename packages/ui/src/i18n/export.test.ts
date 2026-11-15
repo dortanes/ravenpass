@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { exportMessages } from "./export.ts";
+import { languages } from "./language.ts";
 import { catalogs } from "./messages.ts";
 
 test("a host's names take their messages in every language", () => {
@@ -11,7 +12,11 @@ test("a host's names take their messages in every language", () => {
     }),
     {
       app_name: { en: "Ravenpass", ru: "Ravenpass", zh: "Ravenpass" },
-      search: { en: "Search passwords", ru: "Поиск паролей", zh: "搜索密码" },
+      search: {
+        en: "Search passwords",
+        ru: "Поиск паролей",
+        zh: catalogs.zh["workspace.toolbar.search"],
+      },
     },
   );
 });
@@ -36,7 +41,7 @@ test("a host that fills values itself takes messages with placeholders", () => {
       unlock: {
         en: "save a passkey for {site}",
         ru: "сохранить ключ доступа для сайта {site}",
-        zh: "为 {site} 保存通行密钥",
+        zh: catalogs.zh["system.reason.save-passkey"],
       },
     },
   );
@@ -49,11 +54,12 @@ test("apostrophes and placeholders come through as the catalogs write them", () 
   } as const;
   const exported = exportMessages(keys, { values: true });
   for (const [name, key] of Object.entries(keys)) {
-    assert.deepEqual(exported[name], {
-      en: catalogs.en[key],
-      ru: catalogs.ru[key],
-      zh: catalogs.zh[key],
-    });
+    assert.deepEqual(
+      exported[name],
+      Object.fromEntries(
+        languages.map((language) => [language, catalogs[language][key]]),
+      ),
+    );
   }
   assert.equal(exported.mismatch?.en, "The PINs don't match.");
 });

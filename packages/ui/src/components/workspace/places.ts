@@ -17,14 +17,10 @@ export type ItemPlaceName =
   | "notes"
   | "seeds";
 
-/** A place holding no items. */
-export type ToolPlaceName = "settings" | "generator";
+/** A place beside the items that fills the workspace on its own. */
+export type UtilityPlace = "generator" | "settings";
 
-export type WorkspacePlace = ItemPlaceName | ToolPlaceName;
-
-export function isToolPlace(place: WorkspacePlace): place is ToolPlaceName {
-  return place === "settings" || place === "generator";
-}
+export type WorkspacePlace = ItemPlaceName | UtilityPlace;
 
 export interface ItemPlaceEntry {
   id: ItemPlaceName;
@@ -54,6 +50,10 @@ const itemKindNames = Object.keys(kindPlaces);
 
 export function isItemKindName(value: string): value is ItemKindName {
   return itemKindNames.includes(value);
+}
+
+export function holdsItems(place: WorkspacePlace): place is ItemPlaceName {
+  return itemPlaces.some((item) => item.id === place);
 }
 
 export function placeOf(id: ItemPlaceName): ItemPlaceEntry {

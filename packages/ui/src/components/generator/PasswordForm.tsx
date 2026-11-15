@@ -3,13 +3,13 @@ import { cn } from "cn";
 import { RefreshCw } from "lucide-react";
 import { type ReactNode, useId, useMemo, useState } from "react";
 import {
-  characterRuns,
-  fitGeneratorOptions,
+  fitCharacterOptions,
   type GeneratedPassword,
   type GeneratorMode,
   type GeneratorOptions,
   generatorBounds,
   PasswordGenerator,
+  passwordParts,
   readGeneratorOptions,
   type Strength,
   type WordSeparator,
@@ -52,10 +52,12 @@ const separatorNames: Record<WordSeparator, MessageKey> = {
   " ": "generator.separator.space",
 };
 
-/** usePasswordGenerator loads the word list once `enabled` and returns the generator over it. */
-export function usePasswordGenerator(
+const tints = { digit: "text-tint-digit", symbol: "text-tint-symbol" };
+
+/** useWordGenerator is the generator over the BIP-39 list, null until the list loads once `enabled`. */
+export function useWordGenerator(
   host: Pick<VaultApi, "seedWordlist">,
-  enabled = true,
+  enabled: boolean,
 ): PasswordGenerator | null {
   const wordlist = useQuery({
     queryKey: queryKeys.seedWordlist,
@@ -69,16 +71,13 @@ export function usePasswordGenerator(
   );
 }
 
-/**
- * GeneratorForm shows a new password, its strength and its options, kept on the device; `actions` acts on the
- * password shown.
- */
-export function GeneratorForm({
+/** PasswordForm shows a new password, its strength and the options kept on the device; `footer` acts on the password shown. */
+export function PasswordForm({
   generator,
-  actions,
+  footer,
 }: {
   generator: PasswordGenerator;
-  actions: (generated: GeneratedPassword) => ReactNode;
+  footer: (password: string, mode: GeneratorMode) => ReactNode;
 }) {
   const { t } = useTranslator();
   const id = useId();
@@ -98,11 +97,13 @@ export function GeneratorForm({
     quietStorage.setItem(optionsKey, JSON.stringify(changed));
   }
 
-  function changeCount(
-    option: "length" | "minDigits" | "minSymbols",
-    value: number,
-  ) {
-    change(fitGeneratorOptions({ ...options, [option]: value }, option));
+  function changeCount(next: Partial<GeneratorOptions>) {
+    change(
+      fitCharacterOptions(
+        { ...options, ...next },
+        "length" in next ? "length" : "fewest",
+      ),
+    );
   }
 
   return (
@@ -110,21 +111,19 @@ export function GeneratorForm({
       <div className="flex items-start gap-2 rounded-row bg-field px-[13px] py-3">
         <output
           className="min-w-0 flex-1 font-mono text-[15px] leading-[1.45] break-all"
-          aria-label={t("generator.value")}
           aria-live="polite"
         >
-          {characterRuns(generated.password).map((run, index) => (
-            <span
-              // biome-ignore lint/suspicious/noArrayIndexKey: the runs of one password never reorder.
-              key={index}
-              className={cn(
-                run.kind === "digit" && "text-(--generated-digit)",
-                run.kind === "symbol" && "text-(--generated-symbol)",
-              )}
-            >
-              {run.text}
-            </span>
-          ))}
+          {passwordParts(generated.password, options.mode).map(
+            (part, index) => (
+              <span
+                // biome-ignore lint/suspicious/noArrayIndexKey: one password's parts never reorder.
+                key={index}
+                className={part.tint ? tints[part.tint] : undefined}
+              >
+                {part.text}
+              </span>
+            ),
+          )}
         </output>
         <RowButton
           label={t("generator.again")}
@@ -205,82 +204,74 @@ export function GeneratorForm({
             label={t("generator.length", { count: options.length })}
             value={options.length}
             bounds={generatorBounds.length}
-            onChange={(length) => changeCount("length", length)}
+            onChange={(length) => changeCount({ length })}
           />
           <Toggle
             id={`${id}-uppercase`}
             label={t("generator.uppercase")}
             checked={options.uppercase}
-            onChange={(uppercase) => change({ uppercase })}
+            onChange={(uppercase) => changeCount({ uppercase })}
           />
           <Toggle
             id={`${id}-digits`}
             label={t("generator.digits")}
             checked={options.digits}
-            onChange={(digits) => change({ digits })}
+            onChange={(digits) => changeCount({ digits })}
           />
           {options.digits && (
             <Count
-              label={t("generator.digits.minimum", {
-                count: options.minDigits,
+              label={t("generator.digits.fewest", {
+                count: options.fewestDigits,
               })}
-              value={options.minDigits}
-              bounds={generatorBounds.minimum}
-              onChange={(minDigits) => changeCount("minDigits", minDigits)}
+              value={options.fewestDigits}
+              bounds={generatorBounds.fewest}
+              onChange={(fewestDigits) => changeCount({ fewestDigits })}
             />
           )}
           <Toggle
             id={`${id}-symbols`}
             label={t("generator.symbols")}
             checked={options.symbols}
-            onChange={(symbols) => change({ symbols })}
+            onChange={(symbols) => changeCount({ symbols })}
           />
           {options.symbols && (
             <Count
-              label={t("generator.symbols.minimum", {
-                count: options.minSymbols,
+              label={t("generator.symbols.fewest", {
+                count: options.fewestSymbols,
               })}
-              value={options.minSymbols}
-              bounds={generatorBounds.minimum}
-              onChange={(minSymbols) => changeCount("minSymbols", minSymbols)}
+              value={options.fewestSymbols}
+              bounds={generatorBounds.fewest}
+              onChange={(fewestSymbols) => changeCount({ fewestSymbols })}
             />
           )}
           <Toggle
-            id={`${id}-ambiguous`}
-            label={t("generator.avoid-ambiguous")}
-            detail={t("generator.avoid-ambiguous.detail")}
-            checked={options.avoidAmbiguous}
-            onChange={(avoidAmbiguous) => change({ avoidAmbiguous })}
+            id={`${id}-look-alikes`}
+            label={t("generator.look-alikes")}
+            checked={options.skipLookAlikes}
+            onChange={(skipLookAlikes) => change({ skipLookAlikes })}
           />
         </div>
       )}
 
-      {actions(generated)}
+      {footer(generated.password, options.mode)}
     </div>
   );
 }
 
 function OptionRow({
   label,
-  detail,
   htmlFor,
   children,
 }: {
   label: string;
-  detail?: string;
   htmlFor: string;
   children: ReactNode;
 }) {
   return (
     <div className="flex min-h-7 items-center justify-between gap-3">
-      <span className="grid gap-0.5">
-        <label htmlFor={htmlFor} className="text-[13px]">
-          {label}
-        </label>
-        {detail && (
-          <span className="text-[11px] text-muted-foreground">{detail}</span>
-        )}
-      </span>
+      <label htmlFor={htmlFor} className="text-[13px]">
+        {label}
+      </label>
       {children}
     </div>
   );
@@ -289,18 +280,16 @@ function OptionRow({
 function Toggle({
   id,
   label,
-  detail,
   checked,
   onChange,
 }: {
   id: string;
   label: string;
-  detail?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <OptionRow label={label} detail={detail} htmlFor={id}>
+    <OptionRow label={label} htmlFor={id}>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />
     </OptionRow>
   );

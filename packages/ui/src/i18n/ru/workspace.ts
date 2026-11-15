@@ -12,7 +12,7 @@ export const workspace: typeof english = {
   "workspace.region.notes": "Заметки",
   "workspace.region.seeds": "Сиды",
   "workspace.region.settings": "Настройки",
-  "workspace.region.generator": "Генератор паролей",
+  "workspace.region.generator": "Генератор",
 
   "workspace.toolbar.search": "Поиск паролей",
   "workspace.toolbar.search.placeholder": "Поиск по названиям, логинам и почте",
@@ -26,7 +26,7 @@ export const workspace: typeof english = {
   "workspace.rail.notes": "Заметки",
   "workspace.rail.seeds": "Сиды",
   "workspace.rail.settings": "Настройки",
-  "workspace.rail.generator": "Генератор",
+  "workspace.rail.generator": "Создать пароль",
   "workspace.back": "Назад — {place}",
 
   "workspace.palette.title": "Поиск по хранилищу",

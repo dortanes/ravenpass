@@ -168,8 +168,8 @@ type Service struct {
 	states changecount.Counter
 	// now dates moves to the trash and the purges of items past the retention period.
 	now func() time.Time
-	// deviceData is the owner's data on this device that a key change seals again.
-	deviceData []DeviceData
+	// ownerData holds what a recovery key change seals again for the new key.
+	ownerData []OwnerDataHolder
 }
 
 // New returns a locked Service over files, keys and device.
