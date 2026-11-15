@@ -1,4 +1,4 @@
-import type { Hotkey } from "@tanstack/react-hotkeys";
+import type { HotkeyChord } from "@tanstack/react-hotkeys";
 import { cn } from "cn";
 import type { Appearance } from "../host/appearance.ts";
 import { useCapabilities } from "../host/capabilities.tsx";
@@ -160,7 +160,7 @@ export function SettingsView({
   onForgetVault: (vault: Vault) => void;
   onDeleteVault: (vault: Vault) => void;
   shortcuts: Shortcuts;
-  onShortcut: (action: ShortcutAction, hotkey: Hotkey | null) => void;
+  onShortcut: (action: ShortcutAction, hotkey: HotkeyChord | null) => void;
   onRecordingShortcut: (recording: boolean) => void;
   unlockMethods: UnlockMethods | null;
   unlockPending: UnlockPending | null;

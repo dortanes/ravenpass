@@ -1,5 +1,5 @@
 import {
-  type Hotkey,
+  type HotkeyChord,
   normalizeHotkey,
   parseHotkey,
   validateHotkey,
@@ -11,7 +11,7 @@ export type ShortcutAction = "palette" | "search";
 export interface ShortcutDefinition {
   action: ShortcutAction;
   label: MessageKey;
-  hotkey: Hotkey;
+  hotkey: HotkeyChord;
 }
 
 /** In the order settings list them, with default hotkeys. */
@@ -29,7 +29,7 @@ export const shortcutDefinitions: readonly ShortcutDefinition[] = [
 ];
 
 /** Taken by text editing and the macOS app menu. */
-const reservedHotkeys: readonly Hotkey[] = [
+const reservedHotkeys: readonly HotkeyChord[] = [
   "Mod+A",
   "Mod+C",
   "Mod+V",
@@ -53,25 +53,25 @@ export type ShortcutRefusal =
 export class Shortcuts {
   static readonly defaults = new Shortcuts(new Map());
 
-  private readonly chosen: ReadonlyMap<ShortcutAction, Hotkey>;
+  private readonly chosen: ReadonlyMap<ShortcutAction, HotkeyChord>;
 
-  private constructor(chosen: ReadonlyMap<ShortcutAction, Hotkey>) {
+  private constructor(chosen: ReadonlyMap<ShortcutAction, HotkeyChord>) {
     this.chosen = chosen;
   }
 
   /** Keeps only known actions with valid hotkeys. */
   static fromRecorded(recorded: Readonly<Record<string, string>>): Shortcuts {
-    const chosen = new Map<ShortcutAction, Hotkey>();
+    const chosen = new Map<ShortcutAction, HotkeyChord>();
     for (const { action } of shortcutDefinitions) {
       const hotkey = recorded[action];
       if (hotkey && validateHotkey(hotkey).valid) {
-        chosen.set(action, hotkey as Hotkey);
+        chosen.set(action, hotkey as HotkeyChord);
       }
     }
     return new Shortcuts(chosen);
   }
 
-  hotkey(action: ShortcutAction): Hotkey {
+  hotkey(action: ShortcutAction): HotkeyChord {
     return this.chosen.get(action) ?? definitionOf(action).hotkey;
   }
 
@@ -80,7 +80,7 @@ export class Shortcuts {
   }
 
   /** Null when `hotkey` can run `action`. */
-  refusal(hotkey: Hotkey, action: ShortcutAction): ShortcutRefusal | null {
+  refusal(hotkey: HotkeyChord, action: ShortcutAction): ShortcutRefusal | null {
     const parsed = parseHotkey(hotkey);
     if (!parsed.ctrl && !parsed.alt && !parsed.meta) return { kind: "bare" };
     const wanted = normalizeHotkey(hotkey);
@@ -97,7 +97,7 @@ export class Shortcuts {
   }
 
   /** `null` restores the default. */
-  with(action: ShortcutAction, hotkey: Hotkey | null): Shortcuts {
+  with(action: ShortcutAction, hotkey: HotkeyChord | null): Shortcuts {
     const chosen = new Map(this.chosen);
     if (hotkey === null) chosen.delete(action);
     else chosen.set(action, hotkey);
