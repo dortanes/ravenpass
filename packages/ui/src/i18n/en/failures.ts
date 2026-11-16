@@ -167,7 +167,8 @@ export const failures = {
     "No backup folder is chosen. Choose a folder, then turn on automatic backups.",
   "failure.shortcut-invalid":
     "Ravenpass cannot use those keys as a shortcut. Choose other keys.",
-  "failure.pin-invalid": "A PIN is 6 to 12 digits. Enter one and try again.",
+  "failure.pin-invalid":
+    "A PIN is 6 to 12 letters or digits. Enter one and try again.",
   "failure.pin-wrong": "That PIN is wrong. Wait a moment and try again.",
   "failure.pin-too-soon":
     "Too many wrong PINs in a row. Wait a few seconds, then try again.",

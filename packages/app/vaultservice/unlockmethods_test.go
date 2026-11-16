@@ -441,13 +441,19 @@ func TestVerifyPINNeedsAnOpenVault(t *testing.T) {
 func TestOnlyAPINWithinTheRuleIsAccepted(t *testing.T) {
 	service, keys := readyVault(t)
 	before := bytes.Clone(keys.policy[service.device.policyVault])
-	for _, pin := range []string{"", "12345", "1234567890123", "12345a"} {
+	for _, pin := range []string{"", "12345", "1234567890123", "12345!", "123 456"} {
 		if err := service.SetPIN(openingOf(service), pin); !errors.Is(err, vault.ErrInvalidPIN) {
 			t.Errorf("PIN %q: got %v, want ErrInvalidPIN", pin, err)
 		}
 	}
 	if !bytes.Equal(keys.policy[service.device.policyVault], before) {
 		t.Fatal("a refused PIN changed the unlock record")
+	}
+
+	for _, pin := range []string{"12345a", "Pass123"} {
+		if err := service.SetPIN(openingOf(service), pin); err != nil {
+			t.Errorf("PIN %q should be accepted: %v", pin, err)
+		}
 	}
 }
 

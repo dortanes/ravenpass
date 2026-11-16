@@ -75,7 +75,7 @@ export const access: typeof english = {
   "unlock-methods.pin.only": "PIN 码是这台设备上唯一可用的解锁方式。",
   "unlock-methods.pin.title": "PIN 码",
   "unlock-methods.pin.description":
-    "{min} 到 {max, plural, other {# 位数字}}。",
+    "{min} 到 {max, plural, other {# 位字母或数字}}。",
   "unlock-methods.pin.weaker": "请避免使用容易被猜到的 PIN 码。",
   "unlock-methods.pin.set": "设置 PIN 码",
   "unlock-methods.pin.change": "更改 PIN 码",

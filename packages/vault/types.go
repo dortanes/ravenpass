@@ -52,7 +52,7 @@ var (
 	ErrNoTOTP                 = errors.New("credential has no one-time code setup")
 	ErrPasskeysFull           = errors.New("credential holds as many passkeys as it can")
 	ErrInvalidPhrase          = errors.New("recovery phrase is invalid")
-	ErrInvalidPIN             = errors.New("PIN must be 6 to 12 digits")
+	ErrInvalidPIN             = errors.New("PIN must be 6 to 12 letters or digits")
 	ErrLocked                 = errors.New("vault is locked")
 	ErrNotFound               = errors.New("vault item was not found")
 	ErrStaleSelection         = errors.New("vault item selection is no longer current")

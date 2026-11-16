@@ -11,6 +11,8 @@ test("a PIN shorter than the vault takes is not kept, whatever its repeat", () =
 test("a PIN long enough is kept once its repeat is the same", () => {
   assert.equal(checkNewPin("123456", "123456", 6), "matched");
   assert.equal(checkNewPin("123456789012", "123456789012", 6), "matched");
+  assert.equal(checkNewPin("Pass123", "Pass123", 6), "matched");
+  assert.equal(checkNewPin("Pass123", "pass123", 6), "mismatched");
 });
 
 test("a repeat shorter than the PIN is still being typed", () => {

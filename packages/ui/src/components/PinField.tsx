@@ -4,7 +4,7 @@ import { useTranslator } from "../i18n/translator.tsx";
 import { AccessField } from "./AccessField.tsx";
 import { PinAttemptsWarning } from "./PinAttemptsWarning.tsx";
 
-/** PinField takes a masked PIN on the numeric keyboard and drops anything but digits as typed. */
+/** PinField takes a masked PIN and drops anything but letters and digits as typed. */
 export function PinField({
   id,
   value,
@@ -54,15 +54,19 @@ export function PinField({
         id={id}
         className={cn("font-mono text-[19px] tracking-[0.4em]", className)}
         type="password"
-        inputMode="numeric"
         autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="none"
+        spellCheck={false}
         autoFocus={autoFocus}
         value={value}
         placeholder={label ?? t("unlock.pin.placeholder")}
         maxLength={maxLength}
         disabled={disabled}
         aria-invalid={invalid || undefined}
-        onChange={(event) => onChange(event.target.value.replace(/\D/gu, ""))}
+        onChange={(event) =>
+          onChange(event.target.value.replace(/[^0-9a-zA-Z]/g, ""))
+        }
       />
       {attemptsLeft !== undefined && (
         <PinAttemptsWarning attemptsLeft={attemptsLeft} />

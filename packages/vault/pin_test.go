@@ -84,16 +84,19 @@ func TestTheSaltMakesEveryPINKeyDifferent(t *testing.T) {
 	}
 }
 
-func TestOnlyADigitPINOfTheRightLengthIsAccepted(t *testing.T) {
+func TestOnlyALetterOrDigitPINOfTheRightLengthIsAccepted(t *testing.T) {
 	salt, secret := pinInputs(t)
 	for name, pin := range map[string]string{
-		"empty":        "",
-		"too short":    "12345",
-		"too long":     "1234567890123",
-		"with letters": "12345a",
-		"with spaces":  "123 456",
-		"with a sign":  "+12345",
-		"not ASCII":    "１２３４５６",
+		"empty":             "",
+		"too short digits":  "12345",
+		"too short letters": "abcde",
+		"too long digits":   "1234567890123",
+		"too long letters":  "abcdefghijklm",
+		"with spaces":       "123 456",
+		"with a sign":       "+12345",
+		"with symbols":      "12345!",
+		"not ASCII digits":  "１２３４５６",
+		"not ASCII letters": "密码1234",
 	} {
 		if ValidPIN(pin) {
 			t.Errorf("%s (%q) was accepted", name, pin)
@@ -102,10 +105,34 @@ func TestOnlyADigitPINOfTheRightLengthIsAccepted(t *testing.T) {
 			t.Errorf("%s (%q): got %v, want ErrInvalidPIN", name, pin, err)
 		}
 	}
-	for _, pin := range []string{"000000", "123456", "123456789012"} {
+	for _, pin := range []string{
+		"000000",
+		"123456",
+		"123456789012",
+		"abcdef",
+		"ABCDEF",
+		"Pass123",
+		"PinCode12",
+		"12345a",
+	} {
 		if !ValidPIN(pin) {
 			t.Errorf("%q was refused", pin)
 		}
+	}
+}
+
+func TestPINIsCaseSensitive(t *testing.T) {
+	salt, secret := pinInputs(t)
+	upper, err := DerivePINKey("Pass123", salt, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lower, err := DerivePINKey("pass123", salt, secret)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Equal(upper[:], lower[:]) {
+		t.Fatal("PIN derivation should be case-sensitive")
 	}
 }
 

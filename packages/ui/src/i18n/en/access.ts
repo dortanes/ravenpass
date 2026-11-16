@@ -91,7 +91,7 @@ export const access = {
     "The PIN is the only way to unlock that works on this device.",
   "unlock-methods.pin.title": "PIN",
   "unlock-methods.pin.description":
-    "{min} to {max, plural, one {# digit} other {# digits}}.",
+    "{min} to {max, plural, one {# letter or digit} other {# letters or digits}}.",
   "unlock-methods.pin.weaker": "Avoid a PIN that is easy to guess.",
   "unlock-methods.pin.set": "Set a PIN",
   "unlock-methods.pin.change": "Change PIN",

@@ -94,7 +94,7 @@ export const access: typeof english = {
     "Пин-код — единственный способ разблокировки, который работает на этом устройстве.",
   "unlock-methods.pin.title": "Пин-код",
   "unlock-methods.pin.description":
-    "От {min} до {max, plural, one {# цифры} few {# цифр} many {# цифр} other {# цифры}}.",
+    "От {min} до {max, plural, one {# буквы или цифры} few {# букв или цифр} many {# букв или цифр} other {# буквы или цифры}}.",
   "unlock-methods.pin.weaker": "Не используйте пин-код, который легко угадать.",
   "unlock-methods.pin.set": "Задать пин-код",
   "unlock-methods.pin.change": "Сменить пин-код",
