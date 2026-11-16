@@ -1,6 +1,7 @@
 {
   "system.dialog.choose-vault-location": "system.dialog.choose-vault-location",
   "system.dialog.select-vault-file": "system.dialog.select-vault-file",
+  "system.dialog.choose-vault-folder": "system.dialog.choose-vault-folder",
   "system.dialog.save-export": "system.dialog.save-export",
   "system.dialog.save-recovery-key": "system.dialog.save-recovery-key",
   "system.dialog.choose-photo": "system.dialog.choose-photo",

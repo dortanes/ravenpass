@@ -17,6 +17,7 @@ func TitledPrompts() Option {
 type Dialogs struct {
 	ChooseVaultLocation string
 	SelectVaultFile     string
+	ChooseVaultFolder   string
 	SaveExport          string
 	SaveRecoveryKey     string
 	ChoosePhoto         string
@@ -58,6 +59,7 @@ func dialogsIn(catalog messages.Catalog, titled bool) Dialogs {
 	dialogs := Dialogs{
 		ChooseVaultLocation: catalog.Text("system.dialog.choose-vault-location"),
 		SelectVaultFile:     catalog.Text("system.dialog.select-vault-file"),
+		ChooseVaultFolder:   catalog.Text("system.dialog.choose-vault-folder"),
 		SaveExport:          catalog.Text("system.dialog.save-export"),
 		SaveRecoveryKey:     catalog.Text("system.dialog.save-recovery-key"),
 		ChoosePhoto:         catalog.Text("system.dialog.choose-photo"),

@@ -5,6 +5,7 @@ node_modules/
 /apps/desktop/bin/
 /apps/desktop/frontend/
 /apps/desktop/internal/secureenclave/*.syso
+/apps/desktop/internal/sandbox/*.syso
 /apps/extension/dist/
 /apps/extension/.extension-js/
 /apps/extension/extension-env.d.ts

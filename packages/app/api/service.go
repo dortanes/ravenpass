@@ -178,6 +178,8 @@ type Host struct {
 	Photos PhotoPicker
 	// Saver is nil where the owner saves files with the desktop save dialog.
 	Saver FileSaver
+	// Sandbox is nil where the desktop dialogs' picks are reached by their paths alone.
+	Sandbox Sandbox
 	// Printer is nil on a host without a system print dialog.
 	Printer Printer
 	// QRCodes is nil on a host that reads no QR code pictures.
@@ -235,7 +237,11 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 	if host.Pasteboard != nil {
 		clipboard = host.Pasteboard
 	}
-	var files VaultFiles = dialogFiles{currentApp: host.CurrentApp, dialogs: settings.Dialogs}
+	var sandbox Sandbox = unconfined{}
+	if host.Sandbox != nil {
+		sandbox = host.Sandbox
+	}
+	var files VaultFiles = dialogFiles{currentApp: host.CurrentApp, dialogs: settings.Dialogs, sandbox: sandbox}
 	if host.Files != nil {
 		files = host.Files
 	}
@@ -255,7 +261,7 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 		photoPicker = host.Photos
 		offers.PhotoPicker = true
 	}
-	var saver FileSaver = dialogSaver{currentApp: host.CurrentApp}
+	var saver FileSaver = dialogSaver{currentApp: host.CurrentApp, sandbox: sandbox}
 	if host.Saver != nil {
 		saver = host.Saver
 		offers.SaveFiles = true
@@ -297,7 +303,7 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 		offers.SystemAutofill = true
 	}
 	offers.AutoBackups = host.Backups != nil
-	var folders BackupFolders = dialogFolders{currentApp: host.CurrentApp}
+	var folders BackupFolders = dialogFolders{currentApp: host.CurrentApp, sandbox: sandbox}
 	if host.BackupFolders != nil {
 		folders = host.BackupFolders
 	}

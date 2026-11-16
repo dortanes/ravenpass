@@ -138,7 +138,7 @@ func TestRecoveryFileIsPrivateVerifiedAndReplaceable(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "recovery.txt")
 	phrase := "private words that must stay on this device"
 	english := newTestPreferences(t).RecoveryFile()
-	if err := writeRecoveryKey(savedPath(path), phrase, english); err != nil {
+	if err := writeRecoveryKey(savedPath{path: path, sandbox: unconfined{}}, phrase, english); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(path)
@@ -155,7 +155,7 @@ func TestRecoveryFileIsPrivateVerifiedAndReplaceable(t *testing.T) {
 	if !strings.Contains(string(first), phrase) || !strings.Contains(string(first), "does not contain your passwords") || !strings.Contains(string(first), "This file is not encrypted. Keep it private.") {
 		t.Fatal("recovery file is missing its key or handling notice")
 	}
-	if err := writeRecoveryKey(savedPath(path), "replacement words", english); err != nil {
+	if err := writeRecoveryKey(savedPath{path: path, sandbox: unconfined{}}, "replacement words", english); err != nil {
 		t.Fatalf("replace error = %v", err)
 	}
 	second, err := os.ReadFile(path)

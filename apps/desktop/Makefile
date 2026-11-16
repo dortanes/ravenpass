@@ -2,7 +2,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: help deps dev dev-prepare dev-build frontend bindings bindings-check runtime-version \
-	secure-enclave app autofill check test-secure-enclave notices licenses-check package \
+	secure-enclave sandbox app autofill check test-secure-enclave notices licenses-check package \
 	package-development release release-sign release-staple signing-profiles clean
 
 ROOT := $(abspath ../..)
@@ -33,6 +33,8 @@ AUTOFILL := bin/$(AUTOFILL_NAME).appex
 
 SECURE_ENCLAVE_SOURCE := internal/secureenclave/secureenclave.swift
 SECURE_ENCLAVE_OBJECT := internal/secureenclave/secureenclave_darwin_arm64.syso
+SANDBOX_SOURCE := internal/sandbox/sandbox.swift
+SANDBOX_OBJECT := internal/sandbox/sandbox_darwin_arm64.syso
 
 # Signing material stays outside the repository: identities in a keychain, profiles in PROFILES.
 # An empty TEAM_ID from the environment or command line would sign entitlements that no profile matches.
@@ -65,6 +67,7 @@ help:
 	@echo "  make autofill             unsigned AutoFill extension in $(AUTOFILL)"
 	@echo "  make frontend             build the interface into frontend"
 	@echo "  make secure-enclave       compile the Secure Enclave bridge"
+	@echo "  make sandbox              compile the App Sandbox folder access bridge"
 	@echo "  make notices              third-party notices in $(NOTICES_FILE)"
 	@echo "  make licenses-check       fail on a Go dependency outside the license allowlist"
 	@echo "  make runtime-version      fail when @wailsio/runtime differs from the Wails version in go.mod"
@@ -80,7 +83,12 @@ deps:
 $(SECURE_ENCLAVE_OBJECT): $(SECURE_ENCLAVE_SOURCE)
 	swiftc -parse-as-library -emit-object -O -module-name RavenpassSecureEnclave -target $(SWIFT_TARGET) $< -o $@
 
+$(SANDBOX_OBJECT): $(SANDBOX_SOURCE)
+	swiftc -parse-as-library -emit-object -O -module-name RavenpassSandbox -target $(SWIFT_TARGET) $< -o $@
+
 secure-enclave: $(SECURE_ENCLAVE_OBJECT)
+
+sandbox: $(SANDBOX_OBJECT)
 
 # The bindings import @wailsio/runtime, which the interface bundles.
 bindings:
@@ -99,7 +107,7 @@ runtime-version:
 frontend: deps bindings
 	$(UI) run build
 
-app: frontend secure-enclave
+app: frontend secure-enclave sandbox
 	mkdir -p bin
 	$(GO_DARWIN) go build -tags $(GO_TAGS) -trimpath -ldflags="-s -w" -o bin/Ravenpass .
 
@@ -121,7 +129,7 @@ $(AUTOFILL): $(AUTOFILL_BINARY) autofill/Info.plist $(ROOT)/version.txt frontend
 
 autofill: $(AUTOFILL)
 
-check: runtime-version frontend secure-enclave autofill
+check: runtime-version frontend secure-enclave sandbox autofill
 	$(GO_DARWIN) go vet ./... $(ROOT)/packages/app/...
 	$(GO_DARWIN) go test -race ./... $(ROOT)/packages/app/...
 
@@ -147,7 +155,7 @@ dev: deps
 dev-prepare: deps bindings
 	$(UI) run build
 
-dev-build: bindings secure-enclave
+dev-build: bindings secure-enclave sandbox
 	mkdir -p bin
 	$(GO_DARWIN) go build -tags adhoc -o bin/Ravenpass-dev .
 
@@ -243,4 +251,4 @@ release-staple:
 	spctl --assess --type open --context context:primary-signature --verbose=2 $(RELEASE_DMG)
 
 clean:
-	rm -rf bin frontend $(SECURE_ENCLAVE_OBJECT)
+	rm -rf bin frontend $(SECURE_ENCLAVE_OBJECT) $(SANDBOX_OBJECT)

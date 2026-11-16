@@ -49,7 +49,7 @@ func (s *Service) CreateVault(ctx context.Context) (StorageChange, error) {
 	if beside.Kind != status.Default.Kind {
 		beside = status.Default
 	}
-	target, err := s.freeVaultFile(beside)
+	target, err := s.freeVaultFile(beside, s.preferences.Dialogs().VaultFileName)
 	if err != nil {
 		return StorageChange{}, err
 	}
@@ -66,10 +66,10 @@ func (s *Service) CancelVaultCreation() error {
 	return present(s.vault.CancelVaultCreation())
 }
 
-// freeVaultFile is the first free vault file beside beside: "vault.rpv", then "vault 2.rpv" and on.
-func (s *Service) freeVaultFile(beside storage.Target) (storage.Target, error) {
+// freeVaultFile is the first free vault file beside beside named as proposed: "vault.rpv", then "vault 2.rpv" and on.
+func (s *Service) freeVaultFile(beside storage.Target, proposed string) (storage.Target, error) {
 	folder := filepath.Dir(beside.Path)
-	name := strings.TrimSuffix(s.preferences.Dialogs().VaultFileName, vaultExtension)
+	name := strings.TrimSuffix(proposed, vaultExtension)
 	for number := 1; number <= proposedVaultNames; number++ {
 		file := name + vaultExtension
 		if number > 1 {

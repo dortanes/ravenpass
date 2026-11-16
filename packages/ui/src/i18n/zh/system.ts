@@ -4,6 +4,7 @@ import type { system as english } from "../en/system.ts";
 export const system: typeof english = {
   "system.dialog.choose-vault-location": "选择密码库的存放位置",
   "system.dialog.select-vault-file": "选择密码库文件",
+  "system.dialog.choose-vault-folder": "选择密码库所在的文件夹",
   "system.dialog.save-export": "保存密码库的加密副本",
   "system.dialog.save-recovery-key": "保存你的恢复密钥",
   "system.dialog.choose-photo": "选择照片",

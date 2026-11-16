@@ -3,6 +3,8 @@ import type { system as english } from "../en/system.ts";
 export const system: typeof english = {
   "system.dialog.choose-vault-location": "Выберите место для хранилища",
   "system.dialog.select-vault-file": "Выберите файл хранилища",
+  "system.dialog.choose-vault-folder":
+    "Выберите папку, в которой лежит хранилище",
   "system.dialog.save-export": "Сохраните зашифрованную копию хранилища",
   "system.dialog.save-recovery-key": "Сохраните ключ восстановления",
   "system.dialog.choose-photo": "Выберите фотографию",

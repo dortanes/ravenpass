@@ -9,6 +9,11 @@
     "ru": "Выберите файл хранилища",
     "zh": "选择密码库文件"
   },
+  "system.dialog.choose-vault-folder": {
+    "en": "Choose the folder your vault is in",
+    "ru": "Выберите папку, в которой лежит хранилище",
+    "zh": "选择密码库所在的文件夹"
+  },
   "system.dialog.save-export": {
     "en": "Save an encrypted copy of your vault",
     "ru": "Сохраните зашифрованную копию хранилища",

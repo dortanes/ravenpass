@@ -5,6 +5,7 @@
 export const system = {
   "system.dialog.choose-vault-location": "Choose where to keep your vault",
   "system.dialog.select-vault-file": "Select a vault file",
+  "system.dialog.choose-vault-folder": "Choose the folder your vault is in",
   "system.dialog.save-export": "Save an encrypted copy of your vault",
   "system.dialog.save-recovery-key": "Save your recovery key",
   "system.dialog.choose-photo": "Choose a photo",

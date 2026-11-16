@@ -169,13 +169,25 @@ func (s *Service) RetryStorage() error {
 // newVaultLocation asks the owner where a new vault file goes, or proposes a free file for a host-kept kind.
 func (s *Service) newVaultLocation(kind storage.Kind) (storage.Target, bool, error) {
 	if slices.Contains(s.files.Kinds(), kind) {
-		return s.files.Create(kind, s.preferences.Dialogs().VaultFileName)
+		target, chosen, err := s.files.Create(kind, s.preferences.Dialogs().VaultFileName)
+		if err != nil || !chosen || kind != storage.LocalFile {
+			return target, chosen, err
+		}
+		// A local vault goes in the folder the owner picked, under the first name free there.
+		free, err := s.freeVaultFile(target, filepath.Base(target.Path))
+		if err != nil {
+			return storage.Target{}, false, err
+		}
+		if free.Path == target.Path {
+			free.Label = target.Label
+		}
+		return free, true, nil
 	}
 	home := s.vault.Storage().Default
 	if kind != home.Kind {
 		return storage.Target{}, false, storage.ErrUnsupportedKind
 	}
-	target, err := s.freeVaultFile(home)
+	target, err := s.freeVaultFile(home, s.preferences.Dialogs().VaultFileName)
 	return target, err == nil, err
 }
 

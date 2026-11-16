@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/dortanes/ravenpass/packages/app/localfile"
@@ -305,6 +306,28 @@ func TestPickedLocationsKeepTheirProvidersName(t *testing.T) {
 	}
 }
 
+func TestAFolderThatHoldsAVaultGetsTheNextFreeName(t *testing.T) {
+	home := t.TempDir()
+	service, files := newServiceWithStorage(t, filepath.Join(home, "storage.json"), filepath.Join(home, localfile.DefaultVaultName))
+	if err := files.Open(); err != nil {
+		t.Fatal(err)
+	}
+	folder := t.TempDir()
+	taken := filepath.Join(folder, localfile.DefaultVaultName)
+	if err := os.WriteFile(taken, []byte("another vault"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	service.files = &pickedFiles{kinds: []storage.Kind{storage.LocalFile}, created: storage.Target{Kind: storage.LocalFile, Path: taken}}
+
+	change, err := service.SelectStorageLocation(string(storage.LocalFile))
+	if err != nil || change.Path != filepath.Join(folder, "vault 2.rpv") {
+		t.Fatalf("selecting a folder that holds a vault = %+v, %v", change, err)
+	}
+	if data, err := os.ReadFile(taken); err != nil || string(data) != "another vault" {
+		t.Fatal("the vault already in the folder changed")
+	}
+}
+
 func TestAMoveGoesOnceToTheLocationChosenBeforeIt(t *testing.T) {
 	home := t.TempDir()
 	service, files := newServiceWithStorage(t, filepath.Join(home, "storage.json"), filepath.Join(home, localfile.DefaultVaultName))
@@ -399,5 +422,25 @@ func TestVaultExtensionIsKept(t *testing.T) {
 		if got := withVaultExtension(given); got != want {
 			t.Errorf("withVaultExtension(%q) = %q, want %q", given, got, want)
 		}
+	}
+}
+
+func TestOnlyVaultFilesInAFolderAreOffered(t *testing.T) {
+	folder := t.TempDir()
+	for _, name := range []string{"Personal.rpv", "Work.RPV", ".Personal.rpv.lock", "notes.txt"} {
+		if err := os.WriteFile(filepath.Join(folder, name), []byte("x"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Mkdir(filepath.Join(folder, "Shared.rpv"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	got := vaultFilesIn(folder)
+	want := []string{filepath.Join(folder, "Personal.rpv"), filepath.Join(folder, "Work.RPV")}
+	if !slices.Equal(got, want) {
+		t.Fatalf("vault files = %v, want %v", got, want)
+	}
+	if got := vaultFilesIn(filepath.Join(folder, "missing")); len(got) != 0 {
+		t.Fatalf("a missing folder offered %v", got)
 	}
 }

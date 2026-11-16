@@ -1,9 +1,6 @@
 package api
 
-import (
-	"github.com/dortanes/ravenpass/packages/app/savedfile"
-	"github.com/wailsapp/wails/v3/pkg/application"
-)
+import "github.com/wailsapp/wails/v3/pkg/application"
 
 // Media types of the files the owner saves besides scans, which carry their own.
 const (
@@ -41,6 +38,7 @@ type SaveTarget interface {
 // dialogSaver saves files with the desktop's save dialog.
 type dialogSaver struct {
 	currentApp func() *application.App
+	sandbox    Sandbox
 }
 
 func (saver dialogSaver) Choose(file SavedFile) (SaveTarget, bool, error) {
@@ -59,14 +57,17 @@ func (saver dialogSaver) Choose(file SavedFile) (SaveTarget, bool, error) {
 	if path == "" {
 		return nil, false, nil
 	}
-	return savedPath(path), true, nil
+	return savedPath{path: path, sandbox: saver.sandbox}, true, nil
 }
 
 // savedPath is a file the desktop save dialog named; a failed write leaves the prior content, so Discard is a no-op.
-type savedPath string
+type savedPath struct {
+	path    string
+	sandbox Sandbox
+}
 
-func (path savedPath) Write(data []byte) error {
-	return savedfile.Replace(string(path), data, MaxVaultBytes)
+func (saved savedPath) Write(data []byte) error {
+	return saved.sandbox.Replace(saved.path, data, MaxVaultBytes)
 }
 
 func (savedPath) Discard() {}

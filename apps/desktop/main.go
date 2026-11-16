@@ -23,6 +23,7 @@ import (
 	"github.com/dortanes/ravenpass/apps/desktop/internal/pagezoom"
 	"github.com/dortanes/ravenpass/apps/desktop/internal/printing"
 	"github.com/dortanes/ravenpass/apps/desktop/internal/qrcodes"
+	"github.com/dortanes/ravenpass/apps/desktop/internal/sandbox"
 	"github.com/dortanes/ravenpass/apps/desktop/internal/secureenclave"
 	"github.com/dortanes/ravenpass/apps/desktop/internal/systemlanguages"
 	"github.com/dortanes/ravenpass/packages/app/api"
@@ -51,6 +52,11 @@ func main() {
 		log.Fatal(err)
 	}
 	applicationDirectory := filepath.Join(configDirectory, "Ravenpass")
+	// The folders the owner picked are reopened before the vault location is.
+	var confined api.Sandbox
+	if sandbox.Contained() {
+		confined = sandbox.Open(filepath.Join(applicationDirectory, "folders.json"))
+	}
 	core, err := appcore.Build(appcore.Platform{
 		Directory:         applicationDirectory,
 		Languages:         systemlanguages.Preferred,
@@ -101,6 +107,7 @@ func main() {
 		Places:     clouddrive.Places{},
 		Printer:    printing.Mac{},
 		QRCodes:    qrcodes.Mac{},
+		Sandbox:    confined,
 		Offers:     api.Capabilities{Shortcuts: true, DockIcon: true, StorageLocations: true, SaveFiles: true, CopyScans: true, Appearance: true},
 	})
 	if err != nil {

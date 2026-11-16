@@ -35,23 +35,12 @@ type BackupFolder struct {
 // dialogFolders picks the backup folder with the desktop's open dialog.
 type dialogFolders struct {
 	currentApp func() *application.App
+	sandbox    Sandbox
 }
 
 func (folders dialogFolders) Choose(prompt string) (string, storage.Label, bool, error) {
-	app := folders.currentApp()
-	if app == nil {
-		return "", storage.Label{}, false, fail(failureWindowUnavailable)
-	}
-	path, err := app.Dialog.OpenFile().
-		SetTitle(prompt).
-		CanChooseDirectories(true).
-		CanChooseFiles(false).
-		CanCreateDirectories(true).
-		PromptForSingleSelection()
-	if err != nil {
-		return "", storage.Label{}, false, fail(failureLocationNotSelected)
-	}
-	return path, storage.Label{}, path != "", nil
+	path, chosen, err := chooseFolder(folders.currentApp, folders.sandbox, prompt)
+	return path, storage.Label{}, chosen, err
 }
 
 // GetAutoBackup reports the automatic backup setting and status.
