@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0](https://github.com/dortanes/ravenpass/compare/v0.3.0...v0.4.0) (2026-11-16)
+
+
+### Features
+
+* add Chinese (Simplified) language support ([#46](https://github.com/dortanes/ravenpass/issues/46)) ([180ee33](https://github.com/dortanes/ravenpass/commit/180ee334abbad50ca89f10caf745a83c350966c4))
+* **desktop:** ✨ pick vault folders for the App Sandbox ([472e6e9](https://github.com/dortanes/ravenpass/commit/472e6e9b70c49408e97bc3b650b150cc3902303c))
+
+
+### Bug Fixes
+
+* support WebKit extension pairing and autofill ([0ae5588](https://github.com/dortanes/ravenpass/commit/0ae5588d7dcf803e5cbe66543a5f2edaadd7657f))
+
+
+### Dependencies
+
+* bump the go group across 4 directories with 9 updates ([#47](https://github.com/dortanes/ravenpass/issues/47)) ([95089df](https://github.com/dortanes/ravenpass/commit/95089dfca1aecee5aa4361bcb6de7c3a07aec030))
+* bump the gradle group across 1 directory with 3 updates ([#42](https://github.com/dortanes/ravenpass/issues/42)) ([0cfa96c](https://github.com/dortanes/ravenpass/commit/0cfa96cec33100faaba38a4937d9b0536906e37a))
+* bump the npm-production group across 1 directory with 22 updates ([#44](https://github.com/dortanes/ravenpass/issues/44)) ([47de818](https://github.com/dortanes/ravenpass/commit/47de81887cbe579121c4787e6bda05d8ee705575))
+
 ## [0.3.0](https://github.com/dortanes/ravenpass/compare/v0.2.0...v0.3.0) (2026-10-07)
 
 
