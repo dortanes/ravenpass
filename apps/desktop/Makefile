@@ -3,7 +3,7 @@
 .DEFAULT_GOAL := help
 .PHONY: help deps dev dev-prepare dev-build frontend bindings bindings-check runtime-version \
 	secure-enclave sandbox app autofill check test-secure-enclave notices licenses-check package \
-	package-development release release-sign release-staple signing-profiles clean
+	package-development release release-sign release-staple app-store app-store-upload signing-profiles clean
 
 ROOT := $(abspath ../..)
 VERSION := $(shell tr -d '[:space:]' < $(ROOT)/version.txt)
@@ -43,12 +43,20 @@ override TEAM_ID := VRR562LFAB
 endif
 PROFILES ?=
 DEVELOPMENT_IDENTITY ?= Apple Development
+# RavenpassAppStore signs the app for the App Sandbox, as the store build is.
+APP_ENTITLEMENTS ?= Ravenpass
 RELEASE_IDENTITY ?= Developer ID Application
 NOTARY_ARGS ?= --keychain-profile ravenpass-notary
 # The sandboxed AutoFill extension can read the app's files to check its signature only under /Applications.
 DEVELOPMENT_DIR ?= /Applications
 RELEASE_DIR := bin/release
 RELEASE_DMG := $(RELEASE_DIR)/Ravenpass-macos-arm64.dmg
+APP_STORE_IDENTITY ?= Apple Distribution
+APP_STORE_INSTALLER_IDENTITY ?= 3rd Party Mac Developer Installer
+# altool reads AuthKey_<APPLE_API_KEY_ID>.p8 from ~/.appstoreconnect/private_keys or $API_PRIVATE_KEYS_DIR.
+APP_STORE_AUTH ?= --api-key "$(APPLE_API_KEY_ID)" --api-issuer "$(APPLE_API_ISSUER_ID)"
+APP_STORE_DIR := bin/app-store
+APP_STORE_PACKAGE := $(APP_STORE_DIR)/Ravenpass.pkg
 NOTICES_FILE := bin/THIRD_PARTY_NOTICES.txt
 
 help:
@@ -63,6 +71,8 @@ help:
 	@echo "  make release              Developer ID signed, notarized $(RELEASE_DMG)"
 	@echo "  make release-sign         sign and notarize the already built app into the disk image"
 	@echo "  make release-staple       staple a notarization Apple accepted after release stopped waiting"
+	@echo "  make app-store            sandboxed, Apple Distribution signed and validated $(APP_STORE_PACKAGE)"
+	@echo "  make app-store-upload     upload $(APP_STORE_PACKAGE) to App Store Connect"
 	@echo "  make app                  unsigned bin/Ravenpass binary with the built interface"
 	@echo "  make autofill             unsigned AutoFill extension in $(AUTOFILL)"
 	@echo "  make frontend             build the interface into frontend"
@@ -202,7 +212,7 @@ test "$$(/usr/libexec/PlistBuddy -c 'Print :com.apple.application-identifier' bi
 endef
 
 # $(call signed-app,directory,identity,app profile,extension profile,codesign options) embeds each
-# bundle's provisioning profile and signs inside out with the hardened runtime.
+# bundle's provisioning profile and signs inside out with the hardened runtime, the app with APP_ENTITLEMENTS.
 define signed-app
 ! go version -m bin/Ravenpass | grep -Eq -- '-tags=([^[:space:]]*,)?adhoc(,|[[:space:]]|$$)' \
 	|| { echo "bin/Ravenpass was built for ad-hoc signing; build it again without the adhoc tag"; exit 1; }
@@ -212,10 +222,10 @@ cp "$(PROFILES)/$(3)" "$(1)/Ravenpass.app/Contents/embedded.provisionprofile"
 ditto $(AUTOFILL) "$(1)/Ravenpass.app/Contents/PlugIns/$(AUTOFILL_NAME).appex"
 cp "$(PROFILES)/$(4)" "$(1)/Ravenpass.app/Contents/PlugIns/$(AUTOFILL_NAME).appex/Contents/embedded.provisionprofile"
 $(call entitlements,$(AUTOFILL_NAME),com.dortanes.ravenpass.autofill)
-$(call entitlements,Ravenpass,com.dortanes.ravenpass)
+$(call entitlements,$(APP_ENTITLEMENTS),com.dortanes.ravenpass)
 codesign --force --options runtime $(5) --entitlements bin/$(AUTOFILL_NAME).entitlements \
 	--sign "$(2)" "$(1)/Ravenpass.app/Contents/PlugIns/$(AUTOFILL_NAME).appex"
-codesign --force --options runtime $(5) --entitlements bin/Ravenpass.entitlements \
+codesign --force --options runtime $(5) --entitlements bin/$(APP_ENTITLEMENTS).entitlements \
 	--sign "$(2)" "$(1)/Ravenpass.app"
 codesign --verify --deep --strict "$(1)/Ravenpass.app"
 $(call profile-match,$(1)/Ravenpass.app/Contents/PlugIns/$(AUTOFILL_NAME).appex)
@@ -244,6 +254,18 @@ release-sign: signing-profiles
 	codesign --force --timestamp --sign "$(RELEASE_IDENTITY)" $(RELEASE_DMG)
 	xcrun notarytool submit $(RELEASE_DMG) $(NOTARY_ARGS) --wait
 	$(MAKE) release-staple
+
+app-store: APP_ENTITLEMENTS := RavenpassAppStore
+app-store: signing-profiles app $(AUTOFILL) notices
+	rm -rf $(APP_STORE_DIR)
+	mkdir -p $(APP_STORE_DIR)
+	$(call signed-app,$(APP_STORE_DIR),$(APP_STORE_IDENTITY),Ravenpass_App_Store.provisionprofile,Ravenpass_Autofill_App_Store.provisionprofile,--timestamp)
+	productbuild --component $(APP_STORE_DIR)/Ravenpass.app /Applications \
+		--sign "$(APP_STORE_INSTALLER_IDENTITY)" $(APP_STORE_PACKAGE)
+	xcrun altool --validate-app $(APP_STORE_PACKAGE) --type macos $(APP_STORE_AUTH)
+
+app-store-upload:
+	xcrun altool --upload-package $(APP_STORE_PACKAGE) --type macos $(APP_STORE_AUTH)
 
 # Staples the ticket once Apple accepts the submission, including one still in progress when release stopped waiting.
 release-staple:

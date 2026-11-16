@@ -96,4 +96,10 @@ The Chrome Web Store needs one manual upload to create the listing. Its public k
   - `Ravenpass_Developer_ID.provisionprofile` and `Ravenpass_Autofill_Developer_ID.provisionprofile` in `PROFILES`, plus `Ravenpass_Development.provisionprofile` and `Ravenpass_Autofill_Development.provisionprofile` for `package-development`;
   - notarization credentials, stored once with `xcrun notarytool store-credentials ravenpass-notary`, or passed as `NOTARY_ARGS`;
   - `TEAM_ID=<your team>` when signing for a team other than the project's.
+- **Mac App Store:** `make -C apps/desktop app-store PROFILES=<folder>` signs the app for the App Sandbox, builds `bin/app-store/Ravenpass.pkg` and validates it with App Store Connect; `make -C apps/desktop app-store-upload` uploads it. They need:
+  - the Apple Distribution and Mac Installer Distribution identities in the login keychain;
+  - `Ravenpass_App_Store.provisionprofile` and `Ravenpass_Autofill_App_Store.provisionprofile` in `PROFILES`;
+  - `APPLE_API_KEY_ID` and `APPLE_API_ISSUER_ID` in the environment, with the key's `AuthKey_<id>.p8` in `~/.appstoreconnect/private_keys`.
+
+  `make -C apps/desktop package-development APP_ENTITLEMENTS=RavenpassAppStore DEVELOPMENT_DIR=bin/sandbox` builds a development app that runs in the App Sandbox as the store build does. It keeps its files in its own container, apart from the regular build's.
 - **Android:** `make -C apps/mobile release` reads the keystore from the `RAVENPASS_ANDROID_KEYSTORE`, `RAVENPASS_ANDROID_KEYSTORE_PASSWORD`, `RAVENPASS_ANDROID_KEY_ALIAS` and `RAVENPASS_ANDROID_KEY_PASSWORD` environment variables.
