@@ -45,6 +45,9 @@ PROFILES ?=
 DEVELOPMENT_IDENTITY ?= Apple Development
 # RavenpassAppStore signs the app for the App Sandbox, as the store build is.
 APP_ENTITLEMENTS ?= Ravenpass
+# CFBundleVersion of the app and its extension. App Store Connect takes each build number once, so the store build
+# counts the commits on its branch, which only grows.
+BUNDLE_VERSION ?= $(VERSION)
 RELEASE_IDENTITY ?= Developer ID Application
 NOTARY_ARGS ?= --keychain-profile ravenpass-notary
 # The sandboxed AutoFill extension can read the app's files to check its signature only under /Applications.
@@ -189,7 +192,7 @@ mkdir -p "$(1)/Ravenpass.app/Contents/MacOS" "$(1)/Ravenpass.app/Contents/Resour
 cp bin/Ravenpass "$(1)/Ravenpass.app/Contents/MacOS/Ravenpass"
 cp build/darwin/Info.plist "$(1)/Ravenpass.app/Contents/Info.plist"
 plutil -insert CFBundleShortVersionString -string "$(VERSION)" "$(1)/Ravenpass.app/Contents/Info.plist"
-plutil -insert CFBundleVersion -string "$(VERSION)" "$(1)/Ravenpass.app/Contents/Info.plist"
+plutil -insert CFBundleVersion -string "$(BUNDLE_VERSION)" "$(1)/Ravenpass.app/Contents/Info.plist"
 cp build/darwin/icons.icns "$(1)/Ravenpass.app/Contents/Resources/icons.icns"
 cp $(NOTICES_FILE) "$(1)/Ravenpass.app/Contents/Resources/THIRD_PARTY_NOTICES.txt"
 endef
@@ -220,6 +223,7 @@ $(call bundle,$(1))
 mkdir -p "$(1)/Ravenpass.app/Contents/PlugIns"
 cp "$(PROFILES)/$(3)" "$(1)/Ravenpass.app/Contents/embedded.provisionprofile"
 ditto $(AUTOFILL) "$(1)/Ravenpass.app/Contents/PlugIns/$(AUTOFILL_NAME).appex"
+plutil -replace CFBundleVersion -string "$(BUNDLE_VERSION)" "$(1)/Ravenpass.app/Contents/PlugIns/$(AUTOFILL_NAME).appex/Contents/Info.plist"
 cp "$(PROFILES)/$(4)" "$(1)/Ravenpass.app/Contents/PlugIns/$(AUTOFILL_NAME).appex/Contents/embedded.provisionprofile"
 $(call entitlements,$(AUTOFILL_NAME),com.dortanes.ravenpass.autofill)
 $(call entitlements,$(APP_ENTITLEMENTS),com.dortanes.ravenpass)
@@ -256,6 +260,7 @@ release-sign: signing-profiles
 	$(MAKE) release-staple
 
 app-store: APP_ENTITLEMENTS := RavenpassAppStore
+app-store: BUNDLE_VERSION := $(shell git rev-list --count HEAD)
 app-store: signing-profiles app $(AUTOFILL) notices
 	rm -rf $(APP_STORE_DIR)
 	mkdir -p $(APP_STORE_DIR)
