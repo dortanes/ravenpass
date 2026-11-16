@@ -23,6 +23,7 @@ const noCapabilities: Capabilities = {
   autoBackups: false,
   print: false,
   qrCodes: false,
+  donations: false,
 };
 
 const HostCapabilities = createContext<Capabilities>(noCapabilities);

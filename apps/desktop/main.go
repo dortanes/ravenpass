@@ -53,8 +53,10 @@ func main() {
 	}
 	applicationDirectory := filepath.Join(configDirectory, "Ravenpass")
 	// The folders the owner picked are reopened before the vault location is.
+	// Only the Mac App Store build runs in the sandbox.
+	contained := sandbox.Contained()
 	var confined api.Sandbox
-	if sandbox.Contained() {
+	if contained {
 		confined = sandbox.Open(filepath.Join(applicationDirectory, "folders.json"))
 	}
 	core, err := appcore.Build(appcore.Platform{
@@ -108,7 +110,7 @@ func main() {
 		Printer:    printing.Mac{},
 		QRCodes:    qrcodes.Mac{},
 		Sandbox:    confined,
-		Offers:     api.Capabilities{Shortcuts: true, DockIcon: true, StorageLocations: true, SaveFiles: true, CopyScans: true, Appearance: true},
+		Offers:     api.Capabilities{Shortcuts: true, DockIcon: true, StorageLocations: true, SaveFiles: true, CopyScans: true, Appearance: true, Donations: !contained},
 	})
 	if err != nil {
 		log.Fatal(err)

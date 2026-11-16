@@ -36,6 +36,8 @@ type Capabilities struct {
 	Print bool `json:"print"`
 	// QRCodes reports that the editor reads a one-time code setup from a QR code picture; Host.QRCodes sets it.
 	QRCodes bool `json:"qrCodes"`
+	// Donations reports that About may link to the donation page; a store that forbids links to other payment clears it.
+	Donations bool `json:"donations"`
 }
 
 // Capabilities reports the features this host offers.

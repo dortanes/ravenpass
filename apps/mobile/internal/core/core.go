@@ -206,7 +206,7 @@ func build() (*Core, error) {
 		Screenshots:    bridge.Screens{},
 		SystemAutofill: bridge.SystemAutofill{},
 		TemporaryPicks: true,
-		Offers:         api.Capabilities{StorageLocations: true, InterfaceSize: true, CopyScans: true, Appearance: true},
+		Offers:         api.Capabilities{StorageLocations: true, InterfaceSize: true, CopyScans: true, Appearance: true, Donations: true},
 	})
 	if err != nil {
 		return nil, err

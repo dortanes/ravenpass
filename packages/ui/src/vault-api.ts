@@ -872,6 +872,8 @@ export interface Capabilities {
   print: boolean;
   /** The editor reads a one-time code setup from a QR code in a picture file or on the clipboard. */
   qrCodes: boolean;
+  /** About may link to the donation page; a store that forbids links to other payment leaves it out. */
+  donations: boolean;
 }
 
 /** A password copied from the Generator place or used in the editor, kept on this device; `at` is RFC 3339 in UTC. */

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ExternalLink } from "lucide-react";
 import { useState } from "react";
 import appIcon from "../../../../../apps/desktop/build/appicon.png";
+import { useCapabilities } from "../../host/capabilities.tsx";
 import { useTranslator } from "../../i18n/translator.tsx";
 import {
   donationAddress,
@@ -24,6 +25,7 @@ export function AboutPanel({
   onOpenWebsite: (address: string) => void;
 }) {
   const { t } = useTranslator();
+  const offers = useCapabilities();
   const [licenseOpen, setLicenseOpen] = useState(false);
   // A report opened before the details arrive, or without them, carries the version alone.
   const details =
@@ -83,11 +85,13 @@ export function AboutPanel({
           detail={t("settings.about.license.detail")}
           onClick={() => setLicenseOpen(true)}
         />
-        <BlockRowButton
-          external
-          title={t("settings.about.donate")}
-          onClick={() => onOpenWebsite(donationAddress)}
-        />
+        {offers.donations && (
+          <BlockRowButton
+            external
+            title={t("settings.about.donate")}
+            onClick={() => onOpenWebsite(donationAddress)}
+          />
+        )}
       </Block>
       <Button
         type="button"

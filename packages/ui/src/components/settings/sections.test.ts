@@ -28,6 +28,7 @@ const everything: Capabilities = {
   autoBackups: true,
   print: true,
   qrCodes: true,
+  donations: true,
 };
 
 const nothing: Capabilities = {
@@ -48,6 +49,7 @@ const nothing: Capabilities = {
   autoBackups: false,
   print: false,
   qrCodes: false,
+  donations: false,
 };
 
 /** What the Mac and the Android phone offer. */
