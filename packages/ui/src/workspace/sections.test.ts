@@ -10,6 +10,7 @@ import type {
 import {
   cardSearchValues,
   countInGroup,
+  countUngrouped,
   credentialSearchValues,
   everyGroup,
   identitySearchValues,
@@ -22,6 +23,7 @@ import {
   seedSearchValues,
   selectEntries,
   tagSearch,
+  ungroupedGroup,
 } from "./sections.ts";
 
 function entry(
@@ -337,6 +339,15 @@ test("a group counts the items of each kind it holds", () => {
   assert.equal(countInGroup(identities, "work"), 1);
   assert.equal(countInGroup([...entries, ...identities], "work"), 3);
   assert.equal(countInGroup(identities, "mail"), 0);
+});
+
+test("ungroupedGroup selects and counts items with no groups", () => {
+  const ungrouped = entries.filter((item) => item.groups.length === 0);
+  assert.equal(countUngrouped(entries), ungrouped.length);
+  assert.deepEqual(
+    selectEntries(entries, credentialSearchValues, "all", "", ungroupedGroup),
+    selectEntries(ungrouped, credentialSearchValues, "all", ""),
+  );
 });
 
 test("tags find an item, and a tag search finds it by its tags alone", () => {

@@ -14,6 +14,9 @@ export const recentLimit = 10;
 /** No group chosen: the list is not narrowed to one. */
 export const everyGroup = "";
 
+/** Items belonging to no group at all. */
+export const ungroupedGroup = "__ungrouped__";
+
 /** What the list needs of an item of any kind. */
 export interface ListedItem {
   id: string;
@@ -154,7 +157,9 @@ export function matchesQuery(
 }
 
 function inGroup(entry: ListedItem, group: string): boolean {
-  return group === everyGroup || entry.groups.includes(group);
+  if (group === everyGroup) return true;
+  if (group === ungroupedGroup) return entry.groups.length === 0;
+  return entry.groups.includes(group);
 }
 
 function byLabel<Item extends ListedItem>(
@@ -179,4 +184,9 @@ export function countInGroup(
   group: string,
 ): number {
   return items.filter((item) => item.groups.includes(group)).length;
+}
+
+/** countUngrouped counts items that belong to no group. */
+export function countUngrouped(items: readonly { groups: string[] }[]): number {
+  return items.filter((item) => item.groups.length === 0).length;
 }

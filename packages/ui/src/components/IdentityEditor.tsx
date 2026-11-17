@@ -69,6 +69,7 @@ export function IdentityEditor({
   limits,
   busy,
   host,
+  onCreateGroup,
   onSave,
   onCancel,
   onFailure,
@@ -81,6 +82,7 @@ export function IdentityEditor({
   limits: IdentityLimits | null;
   busy: boolean;
   host: EditorHost;
+  onCreateGroup?: (name: string) => Promise<string | null>;
   onSave: (input: IdentityInput, groups: string[]) => void;
   onCancel: () => void;
   onFailure: (cause: unknown, message: MessageKey) => void;
@@ -273,7 +275,7 @@ export function IdentityEditor({
               busy={busy}
               onChange={setTags}
             />
-            {groups.length > 0 && (
+            {(groups.length > 0 || onCreateGroup) && (
               <GroupField
                 groups={groups}
                 membership={membership}
@@ -281,6 +283,7 @@ export function IdentityEditor({
                 onToggle={(id) =>
                   setMembership((current) => toggled(current, id))
                 }
+                onCreateGroup={onCreateGroup}
               />
             )}
           </div>

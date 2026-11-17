@@ -1,6 +1,14 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { cn } from "cn";
-import { LoaderCircle, Star } from "lucide-react";
+import {
+  Folder,
+  Inbox,
+  LoaderCircle,
+  PanelLeftOpen,
+  Plus,
+  Star,
+  X,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import {
   type ComponentType,
@@ -16,14 +24,29 @@ import {
   useState,
 } from "react";
 import { useRovingFocus } from "../../hooks/roving-focus.ts";
+import { useCompactLayout } from "../../host/compact.ts";
 import { useTranslator } from "../../i18n/translator.tsx";
 import { RowArrivals } from "../../motion/arrivals.ts";
 import { SelectionGroup } from "../../motion/SelectionIndicator.tsx";
 import { rowPresence, vanish } from "../../motion/timings.ts";
 import type { Group } from "../../vault-api.ts";
 import type { ListingPosition } from "../../workspace/list-positions.ts";
-import type { ListedItem } from "../../workspace/sections.ts";
+import {
+  everyGroup,
+  type ListedItem,
+  ungroupedGroup,
+} from "../../workspace/sections.ts";
 import type { SiteIconState } from "../../workspace/site-icons.ts";
+import { NameDialog } from "../settings/NameDialog.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu.tsx";
 import { ScrollArea } from "../ui/scroll-area.tsx";
 import { Avatar } from "./Avatar.tsx";
 import { GroupTabs } from "./GroupTabs.tsx";
@@ -53,6 +76,15 @@ export interface ListProps<Item extends ListedItem> {
   groups: Group[];
   group: string;
   onGroup: (group: string) => void;
+  defaultGroup?: string;
+  onDefaultGroup?: (id: string) => void;
+  onCreateGroup?: (name: string) => Promise<string | null>;
+  onRenameGroup?: (id: string, name: string) => Promise<boolean>;
+  onDeleteGroup?: (id: string) => void;
+  onSetItemGroups?: (id: string, groups: string[]) => Promise<boolean>;
+  groupsSidebarCollapsed?: boolean;
+  onShowGroupSidebar?: () => void;
+  busy?: boolean;
   selectedId: string | null;
   loading: boolean;
   emptyMessage: string;
@@ -85,7 +117,7 @@ interface RowWords<Item> {
   detail: (entry: Item) => RowDetail;
 }
 
-/** ItemList is a place's list column: group tabs, the section's title and count, and the rows. */
+/** ItemList is a place's list column: group header/picker, the section's title and count, and the rows. */
 export function ItemList<Item extends ListedItem>({
   title,
   entries,
@@ -93,6 +125,15 @@ export function ItemList<Item extends ListedItem>({
   groups,
   group,
   onGroup,
+  defaultGroup = "",
+  onDefaultGroup,
+  onCreateGroup,
+  onRenameGroup,
+  onDeleteGroup,
+  onSetItemGroups,
+  groupsSidebarCollapsed,
+  onShowGroupSidebar,
+  busy = false,
   selectedId,
   loading,
   emptyMessage,
@@ -110,16 +151,74 @@ export function ItemList<Item extends ListedItem>({
     notice?: ReactNode;
   }) {
   const { t } = useTranslator();
+  const compact = useCompactLayout();
   const [arrivals] = useState(() => new RowArrivals());
+  const activeGroup = groups.find((item) => item.id === group) ?? null;
 
   return (
     // isolate: row and tab z-indexes must stay below overlays such as the compact New button.
     <div className="isolate flex h-full min-w-0 flex-col gap-1 max-sm:px-2">
-      <GroupTabs groups={groups} group={group} onGroup={onGroup} items={all} />
-      <div className="flex shrink-0 items-baseline gap-[7px] px-3 pb-1 max-sm:hidden">
-        <span className="text-xs text-muted-foreground">{title}</span>
-        {!loading && (
-          <span className="text-[11px] text-faint">{entries.length}</span>
+      {compact && (
+        <GroupTabs
+          groups={groups}
+          group={group}
+          onGroup={onGroup}
+          items={all}
+          defaultGroup={defaultGroup}
+          onCreate={onCreateGroup}
+          onRename={onRenameGroup}
+          onDelete={onDeleteGroup}
+          onDefaultGroup={onDefaultGroup}
+          busy={busy}
+        />
+      )}
+      <div className="flex shrink-0 items-center gap-1.5 px-2 pb-1 max-sm:hidden">
+        {groupsSidebarCollapsed && onShowGroupSidebar && (
+          <button
+            type="button"
+            title={t("workspace.groups.sidebar.show")}
+            aria-label={t("workspace.groups.sidebar.show")}
+            onClick={onShowGroupSidebar}
+            className="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-control hover:text-foreground"
+          >
+            <PanelLeftOpen className="size-3.5" />
+          </button>
+        )}
+        <div className="flex min-w-0 flex-1 items-baseline gap-[7px] px-1">
+          {group === everyGroup ? (
+            <span className="truncate text-xs text-muted-foreground">
+              {title}
+            </span>
+          ) : (
+            <span className="inline-flex min-w-0 items-center gap-1 text-xs text-foreground">
+              {group === ungroupedGroup ? (
+                <Inbox className="size-3 shrink-0 opacity-70" />
+              ) : (
+                <Folder className="size-3 shrink-0 opacity-70" />
+              )}
+              <span className="truncate">
+                {group === ungroupedGroup
+                  ? t("workspace.groups.ungrouped")
+                  : (activeGroup?.name ?? title)}
+              </span>
+            </span>
+          )}
+          {!loading && (
+            <span className="shrink-0 text-[11px] text-faint">
+              {entries.length}
+            </span>
+          )}
+        </div>
+        {group !== everyGroup && (
+          <button
+            type="button"
+            title={t("workspace.groups.clear")}
+            aria-label={t("workspace.groups.clear")}
+            onClick={() => onGroup(everyGroup)}
+            className="flex size-5 shrink-0 cursor-pointer items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-control hover:text-foreground"
+          >
+            <X className="size-3" />
+          </button>
         )}
       </div>
       {notice && <div className="shrink-0 px-3 pb-1">{notice}</div>}
@@ -136,13 +235,23 @@ export function ItemList<Item extends ListedItem>({
         </div>
       )}
       {!loading && !entries.length && (
-        <p className="px-3 py-2 text-[13px] text-muted-foreground">
-          {emptyMessage}
-        </p>
+        <div className="flex flex-col items-start gap-2 px-3 py-2">
+          <p className="text-[13px] text-muted-foreground">{emptyMessage}</p>
+          {group !== everyGroup && (
+            <button
+              type="button"
+              onClick={() => onGroup(everyGroup)}
+              className="cursor-pointer rounded-full bg-control px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-secondary"
+            >
+              {t("workspace.groups.clear")}
+            </button>
+          )}
+        </div>
       )}
       <ListRows
         key={position.key}
         entries={entries}
+        groups={groups}
         groupsOf={(entry) =>
           groups
             .filter(
@@ -151,7 +260,10 @@ export function ItemList<Item extends ListedItem>({
             .map((held) => held.name)
         }
         selectedId={selectedId}
+        busy={busy}
         onOpen={onOpen}
+        onSetItemGroups={onSetItemGroups}
+        onCreateGroup={onCreateGroup}
         position={position}
         arrivals={arrivals}
         words={{ label, untitled, detail }}
@@ -164,24 +276,33 @@ export function ItemList<Item extends ListedItem>({
 /** ListRows is one listing's virtualized rows; it restores and records the listing's scroll position. */
 function ListRows<Item extends ListedItem>({
   entries,
+  groups,
   groupsOf,
   selectedId,
+  busy,
   onOpen,
+  onSetItemGroups,
+  onCreateGroup,
   position,
   arrivals,
   words,
   look,
 }: {
   entries: Item[];
+  groups: Group[];
   /** The names of the groups a row shows, leaving out the group the list is narrowed to. */
   groupsOf: (entry: Item) => string[];
   selectedId: string | null;
+  busy: boolean;
   onOpen: (id: string) => void;
+  onSetItemGroups?: (id: string, groups: string[]) => Promise<boolean>;
+  onCreateGroup?: (name: string) => Promise<string | null>;
   position: ListingPosition;
   arrivals: RowArrivals;
   words: RowWords<Item>;
   look: RowLook<Item>;
 }) {
+  const { t } = useTranslator();
   const viewport = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLElement>(null);
   // The row the arrow keys moved to, until the scroll they started has built it.
@@ -191,6 +312,9 @@ function ListRows<Item extends ListedItem>({
     () => new Set(entries.map((entry) => entry.id)),
     [entries],
   );
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [targetEntryId, setTargetEntryId] = useState<string | null>(null);
+
   // The virtualizer recomputes its layout whenever this changes identity.
   const rowKey = useCallback(
     (index: number) => entries[index]?.id ?? index,
@@ -246,33 +370,39 @@ function ListRows<Item extends ListedItem>({
     },
   });
 
+  const groupName = {
+    label: t("settings.groups.name"),
+    placeholder: t("settings.groups.name.placeholder"),
+    maxLength: 64,
+    save: t("settings.groups.save"),
+    cancel: t("settings.groups.cancel"),
+  };
+
+  async function toggleEntryGroup(entry: Item, groupId: string) {
+    const inGroup = entry.groups.includes(groupId);
+    const next = inGroup
+      ? entry.groups.filter((id) => id !== groupId)
+      : [...entry.groups, groupId];
+    await onSetItemGroups?.(entry.id, next);
+  }
+
   return (
-    <ScrollArea className="min-h-0 flex-1" viewportRef={viewport}>
-      <nav
-        ref={list}
-        className="relative shrink-0 max-sm:mb-16"
-        style={{ height: rows.getTotalSize() }}
-        aria-label={words.label}
-      >
-        <SelectionGroup id="item-list">
-          <AnimatePresence custom={listed}>
-            {rows.getVirtualItems().map((row) => {
-              const entry = entries[row.index];
-              if (!entry) return null;
-              const active = entry.id === selectedId;
-              return (
-                <ArrivingRow
-                  key={row.key}
-                  id={entry.id}
-                  index={row.index}
-                  top={row.start}
-                  root={viewport}
-                  arrivals={arrivals}
-                  measure={rows.measureElement}
-                  active={active}
-                  onOpen={onOpen}
-                  onKeyDown={(event) => moveFocus(event, row.index)}
-                >
+    <>
+      <ScrollArea className="min-h-0 flex-1" viewportRef={viewport}>
+        <nav
+          ref={list}
+          className="relative shrink-0 max-sm:mb-16"
+          style={{ height: rows.getTotalSize() }}
+          aria-label={words.label}
+        >
+          <SelectionGroup id="item-list">
+            <AnimatePresence custom={listed}>
+              {rows.getVirtualItems().map((row) => {
+                const entry = entries[row.index];
+                if (!entry) return null;
+                const active = entry.id === selectedId;
+
+                const rowContent = (
                   <ItemRowContent
                     active={active}
                     avatar={
@@ -292,24 +422,138 @@ function ListRows<Item extends ListedItem>({
                       <RowEnd
                         marks={look.marks?.(entry)}
                         pinned={entry.pinned}
+                        hideOnHover={Boolean(onSetItemGroups)}
                       />
                     }
                   />
-                </ArrivingRow>
-              );
-            })}
-          </AnimatePresence>
-        </SelectionGroup>
-      </nav>
-    </ScrollArea>
+                );
+
+                const quickAssignMenu = onSetItemGroups && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={t("workspace.list.actions.groups")}
+                        title={t("workspace.list.actions.groups")}
+                        disabled={busy}
+                        className="pointer-events-none absolute top-1/2 right-2 z-2 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-foreground/10 bg-raised/95 text-muted-foreground opacity-0 shadow-xs transition-opacity hover:bg-control hover:text-foreground focus-visible:pointer-events-auto focus-visible:opacity-100 disabled:opacity-50 group-hover/row:pointer-events-auto group-hover/row:opacity-100 data-[state=open]:pointer-events-auto data-[state=open]:opacity-100 [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-85"
+                      >
+                        <Folder className="size-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <DropdownMenuLabel className="text-xs text-muted-foreground">
+                        {t("workspace.list.context.groups")}
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {groups.map((group) => (
+                        <DropdownMenuCheckboxItem
+                          key={group.id}
+                          checked={entry.groups.includes(group.id)}
+                          disabled={busy}
+                          onSelect={(event) => event.preventDefault()}
+                          onCheckedChange={() =>
+                            void toggleEntryGroup(entry, group.id)
+                          }
+                        >
+                          <span className="truncate">{group.name}</span>
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                      {!groups.length && (
+                        <DropdownMenuItem disabled>
+                          <span className="text-xs text-muted-foreground">
+                            {t("workspace.list.context.noGroups")}
+                          </span>
+                        </DropdownMenuItem>
+                      )}
+                      {onCreateGroup && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setTargetEntryId(entry.id);
+                              setCreatingGroup(true);
+                            }}
+                          >
+                            <Plus className="size-4" />
+                            <span>{t("workspace.list.context.newGroup")}</span>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+
+                return (
+                  <ArrivingRow
+                    key={row.key}
+                    id={entry.id}
+                    index={row.index}
+                    top={row.start}
+                    root={viewport}
+                    arrivals={arrivals}
+                    measure={rows.measureElement}
+                    active={active}
+                    onOpen={onOpen}
+                    onKeyDown={(event) => moveFocus(event, row.index)}
+                    trailingAction={quickAssignMenu}
+                  >
+                    {rowContent}
+                  </ArrivingRow>
+                );
+              })}
+            </AnimatePresence>
+          </SelectionGroup>
+        </nav>
+      </ScrollArea>
+
+      <NameDialog
+        open={creatingGroup}
+        title={t("workspace.groups.new")}
+        {...groupName}
+        busy={busy}
+        onSave={async (name) => {
+          if (!onCreateGroup) return false;
+          const newId = await onCreateGroup(name);
+          if (newId) {
+            if (targetEntryId) {
+              const item = entries.find((e) => e.id === targetEntryId);
+              if (item) {
+                await onSetItemGroups?.(item.id, [...item.groups, newId]);
+              }
+            }
+            return true;
+          }
+          return false;
+        }}
+        onClose={() => {
+          setCreatingGroup(false);
+          setTargetEntryId(null);
+        }}
+      />
+    </>
   );
 }
 
-function RowEnd({ marks, pinned }: { marks: ReactNode; pinned: boolean }) {
+function RowEnd({
+  marks,
+  pinned,
+  hideOnHover = false,
+}: {
+  marks: ReactNode;
+  pinned: boolean;
+  hideOnHover?: boolean;
+}) {
   const { t } = useTranslator();
   if (!marks && !pinned) return null;
   return (
-    <span className="flex items-center gap-1.5">
+    <span
+      className={cn(
+        "flex items-center gap-1.5",
+        hideOnHover &&
+          "transition-opacity group-hover/row:opacity-0 group-has-[[data-state=open]]/row:opacity-0 [@media(hover:none)]:opacity-0",
+      )}
+    >
       {marks}
       {pinned && (
         <Star
@@ -360,6 +604,7 @@ function ArrivingRow({
   onOpen,
   onKeyDown,
   children,
+  trailingAction,
 }: {
   id: string;
   index: number;
@@ -367,11 +612,12 @@ function ArrivingRow({
   /** The element the list scrolls in, which decides when the row is in view. */
   root: RefObject<HTMLDivElement | null>;
   arrivals: RowArrivals;
-  measure: (element: HTMLButtonElement | null) => void;
+  measure: (element: HTMLDivElement | null) => void;
   active: boolean;
   onOpen: (id: string) => void;
   onKeyDown: (event: KeyboardEvent<HTMLButtonElement>) => void;
   children: ReactNode;
+  trailingAction?: ReactNode;
 }) {
   const [seen] = useState(() => arrivals.seenBefore(id));
   // The row's place among the rows that came into view with it, once it has.
@@ -379,14 +625,9 @@ function ArrivingRow({
   const presence = rowPresence(order ?? 0);
 
   return (
-    <motion.button
+    <motion.div
       ref={measure}
-      type="button"
-      data-row={id}
       data-index={index}
-      aria-current={active ? "true" : undefined}
-      onClick={() => onOpen(id)}
-      onKeyDown={onKeyDown}
       initial={seen ? false : presence.initial}
       animate={seen || order !== null ? presence.animate : undefined}
       exit="leave"
@@ -397,9 +638,23 @@ function ArrivingRow({
       viewport={seen ? undefined : { root, once: true }}
       onViewportEnter={seen ? undefined : () => setOrder(arrivals.arrive(id))}
       style={{ top }}
-      className={cn(itemRowClass(!active), "absolute inset-x-0")}
+      className="group/row absolute inset-x-0"
     >
-      {children}
-    </motion.button>
+      <button
+        type="button"
+        data-row={id}
+        aria-current={active ? "true" : undefined}
+        onClick={() => onOpen(id)}
+        onKeyDown={onKeyDown}
+        className={cn(
+          itemRowClass(!active),
+          "relative w-full",
+          trailingAction && "[@media(hover:none)]:pr-10",
+        )}
+      >
+        {children}
+      </button>
+      {trailingAction}
+    </motion.div>
   );
 }

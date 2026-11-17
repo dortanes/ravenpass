@@ -40,11 +40,13 @@ import type {
   VaultApi,
   VaultState,
 } from "../vault-api.ts";
+import { quietStorage } from "../workspace/browser-storage.ts";
 import { ListPositions } from "../workspace/list-positions.ts";
 import {
   everyGroup,
   knownTags,
   tagSearch,
+  ungroupedGroup,
   type WorkspaceSection,
 } from "../workspace/sections.ts";
 import { SelectionQueue } from "../workspace/selection.ts";
@@ -62,6 +64,7 @@ import {
   CommandPalette,
   type PaletteChoice,
 } from "./workspace/CommandPalette.tsx";
+import { GroupSidebar } from "./workspace/GroupSidebar.tsx";
 import { IdentitiesPlace } from "./workspace/IdentitiesPlace.tsx";
 import type {
   OpeningPane,
@@ -314,11 +317,21 @@ export function VaultView({
   const [listPositions] = useState(() => new ListPositions());
   const openPlace = useRef<PlaceHandle | null>(null);
   const searchField = useRef<HTMLInputElement | null>(null);
+  const [groupsSidebarOpen, setGroupsSidebarOpen] = useState(
+    () => quietStorage.getItem("ravenpass.groupsSidebar") !== "false",
+  );
   const place: WorkspacePlace = utility ?? itemPlace;
   const group =
-    chosenGroup === everyGroup || groups.some((item) => item.id === chosenGroup)
+    chosenGroup === everyGroup ||
+    chosenGroup === ungroupedGroup ||
+    groups.some((item) => item.id === chosenGroup)
       ? chosenGroup
       : everyGroup;
+
+  function toggleGroupsSidebar(open: boolean) {
+    setGroupsSidebarOpen(open);
+    quietStorage.setItem("ravenpass.groupsSidebar", String(open));
+  }
   const busy =
     working ||
     clipboardSetting.changing ||
@@ -422,13 +435,14 @@ export function VaultView({
     setQuery(tagSearch(tag));
   }
 
-  /** The search belongs to the place it was typed in; the section and the group carry over. */
+  /** The search and group belong to the item place they were chosen in. */
   function choosePlace(next: WorkspacePlace, opening: OpeningPane = "empty") {
     if (next === place) return;
     openPlace.current?.close();
     setQuery("");
     setOpening(opening);
     if (holdsItems(next)) {
+      if (holdsItems(place)) setGroup(everyGroup);
       setUtility(null);
       setItemPlace(next);
     } else {
@@ -474,8 +488,8 @@ export function VaultView({
         showInPlace(choice.place, { item: choice.id });
         break;
       case "group":
-        setGroup(choice.id);
         choosePlace(itemPlace);
+        setGroup(choice.id);
         break;
       case "settings":
         showSettings(choice.section);
@@ -490,37 +504,48 @@ export function VaultView({
   }
 
   // A group change rewrites the index every list and tab reads.
-  async function changeGroups(change: () => Promise<void>) {
+  async function changeGroups<T = boolean>(
+    change: () => Promise<T>,
+  ): Promise<T | null> {
     setWorking(true);
     setSyncState("writing");
     try {
-      await change();
+      const result = await change();
       setSyncState("synced");
       await refreshGroups();
       await refreshItems();
       await refreshExportState();
-      return true;
+      return (result !== undefined ? result : true) as T;
     } catch (cause) {
       settleSync(cause);
       report(cause, "workspace.error.group");
-      return false;
+      return null;
     } finally {
       setWorking(false);
     }
   }
 
-  function createGroup(name: string) {
-    return changeGroups(async () => {
-      await api.createGroup(name);
-    });
+  function createGroup(name: string): Promise<string | null> {
+    return changeGroups(() => api.createGroup(name));
   }
 
-  function renameGroup(id: string, name: string) {
-    return changeGroups(() => api.renameGroup(id, name));
+  function renameGroup(id: string, name: string): Promise<boolean> {
+    return changeGroups(() => api.renameGroup(id, name)).then((res) =>
+      Boolean(res),
+    );
   }
 
   function deleteGroup(id: string) {
+    if (group === id) {
+      setGroup(everyGroup);
+    }
     void changeGroups(() => api.deleteGroup(id));
+  }
+
+  function setItemGroups(id: string, nextGroups: string[]): Promise<boolean> {
+    return changeGroups(() => api.setItemGroups(id, nextGroups)).then((res) =>
+      Boolean(res),
+    );
   }
 
   // A restore or a purge changes the lists as well as the trash.
@@ -826,7 +851,14 @@ export function VaultView({
     groups,
     group,
     onGroup: setGroup,
+    onCreateGroup: createGroup,
+    onRenameGroup: renameGroup,
+    onDeleteGroup: deleteGroup,
+    onSetItemGroups: setItemGroups,
+    groupsSidebarCollapsed: !groupsSidebarOpen,
+    onShowGroupSidebar: () => toggleGroupsSidebar(true),
     defaultGroup,
+    onDefaultGroup: chooseDefaultGroup,
     tags: vaultTags,
     onTag: showTag,
     section,
@@ -851,6 +883,18 @@ export function VaultView({
     reveal: () => api.revealImportFile(),
   };
   const search = searchLabels[itemPlace];
+  const activePlaceItems =
+    place === "passwords"
+      ? credentials
+      : place === "identities"
+        ? identities
+        : place === "cards"
+          ? cards
+          : place === "notes"
+            ? notes
+            : place === "seeds"
+              ? seeds
+              : noItems;
   const counts: Record<ItemPlaceName, number> = {
     passwords: credentials.length,
     identities: identities.length,
@@ -918,6 +962,21 @@ export function VaultView({
         className={cn("flex min-h-0 flex-1 gap-3", !compact && "px-3.5 pb-1")}
       >
         {!compact && <WorkspaceRail place={place} onPlace={choosePlace} />}
+        {!compact && holdsItems(place) && groupsSidebarOpen && (
+          <GroupSidebar
+            groups={groups}
+            group={group}
+            onGroup={setGroup}
+            items={activePlaceItems}
+            defaultGroup={defaultGroup}
+            onCreate={createGroup}
+            onRename={renameGroup}
+            onDelete={deleteGroup}
+            onDefaultGroup={chooseDefaultGroup}
+            onCollapse={() => toggleGroupsSidebar(false)}
+            busy={busy}
+          />
+        )}
         <section
           className="flex min-w-0 flex-1"
           aria-label={t(regionLabels[place])}
@@ -965,7 +1024,9 @@ export function VaultView({
                     ...seeds,
                   ]}
                   defaultGroup={defaultGroup}
-                  onCreateGroup={createGroup}
+                  onCreateGroup={async (name) =>
+                    Boolean(await createGroup(name))
+                  }
                   onRenameGroup={renameGroup}
                   onDeleteGroup={deleteGroup}
                   onDefaultGroup={chooseDefaultGroup}

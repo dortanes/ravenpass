@@ -1,151 +1,249 @@
-import { motion } from "motion/react";
-import { useCallback, useRef, useState, type WheelEvent } from "react";
-import { useTranslator } from "../../i18n/translator.tsx";
+import { cn } from "cn";
 import {
-  aboveIndicator,
-  SelectionGroup,
-  SelectionIndicator,
-} from "../../motion/SelectionIndicator.tsx";
+  Check,
+  ChevronDown,
+  Folder,
+  Inbox,
+  Layers,
+  Pencil,
+  Plus,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
+import { useState } from "react";
+import { useTranslator } from "../../i18n/translator.tsx";
 import type { Group } from "../../vault-api.ts";
 import {
   countInGroup,
+  countUngrouped,
   everyGroup,
   type ListedItem,
+  ungroupedGroup,
 } from "../../workspace/sections.ts";
-import { ToggleGroup, ToggleGroupItem } from "../ui/toggle-group.tsx";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu.tsx";
+import { GroupDialogs } from "./GroupDialogs.tsx";
 
-// ToggleGroup reports "" for a deselected item, so every group cannot use everyGroup's "" as its value.
-const everyGroupValue = "*";
-
-/** fadedEdges masks each edge the strip can still scroll towards. */
-function fadedEdges(start: boolean, end: boolean) {
-  if (!start && !end) return undefined;
-  const opening = start ? "transparent 0, #000 20px" : "#000 0";
-  const closing = end
-    ? "#000 calc(100% - 20px), transparent 100%"
-    : "#000 100%";
-  const mask = `linear-gradient(to right, ${opening}, ${closing})`;
-  return { maskImage: mask, WebkitMaskImage: mask };
-}
-
-/** GroupTabs narrows the list to one group and scrolls sideways within its column. */
+/** GroupTabs picks one group (or ungrouped/all) on compact layouts where the sidebar is absent. */
 export function GroupTabs({
   groups,
   group,
   onGroup,
   items,
+  defaultGroup = "",
+  onCreate,
+  onRename,
+  onDelete,
+  onDefaultGroup,
+  busy = false,
 }: {
   groups: Group[];
   group: string;
   onGroup: (group: string) => void;
-  /** The items the tabs count: those of the open place. */
+  /** The items the picker counts: those of the open place. */
   items: readonly ListedItem[];
+  defaultGroup?: string;
+  onCreate?: (name: string) => Promise<string | null>;
+  onRename?: (id: string, name: string) => Promise<boolean>;
+  onDelete?: (id: string) => void;
+  onDefaultGroup?: (id: string) => void;
+  busy?: boolean;
 }) {
   const { t } = useTranslator();
-  const strip = useRef<HTMLDivElement | null>(null);
-  const [edges, setEdges] = useState({ start: false, end: false });
+  const [creating, setCreating] = useState(false);
+  const [renaming, setRenaming] = useState<Group | null>(null);
+  const [deleting, setDeleting] = useState<Group | null>(null);
 
-  const measure = useCallback(() => {
-    const element = strip.current;
-    if (!element) return;
-    const room = element.scrollWidth - element.clientWidth;
-    setEdges({
-      start: element.scrollLeft > 1,
-      end: room > 1 && element.scrollLeft < room - 1,
-    });
-  }, []);
+  if (!groups.length && !onCreate) return null;
 
-  const observe = useCallback(
-    (element: HTMLDivElement | null) => {
-      strip.current = element;
-      if (!element) return;
-      const observer = new ResizeObserver(measure);
-      observer.observe(element);
-      if (element.firstElementChild)
-        observer.observe(element.firstElementChild);
-      return () => observer.disconnect();
-    },
-    [measure],
-  );
+  const activeGroup = groups.find((item) => item.id === group) ?? null;
+  const activeIsDefault = activeGroup?.id === defaultGroup;
+  const ungroupedCount = countUngrouped(items);
+  const activeLabel =
+    group === ungroupedGroup
+      ? t("workspace.groups.ungrouped")
+      : activeGroup
+        ? activeGroup.name
+        : t("workspace.groups.all");
 
-  if (!groups.length) return null;
-
-  // Most mouse wheels have no horizontal axis.
-  function scrollSideways(event: WheelEvent<HTMLDivElement>) {
-    const element = strip.current;
-    if (!element || Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-    element.scrollLeft += event.deltaY;
-  }
-
-  function choose(next: string) {
-    if (next) onGroup(next === everyGroupValue ? everyGroup : next);
-  }
+  const populated = groups
+    .map((item) => ({ item, count: countInGroup(items, item.id) }))
+    .filter(({ item, count }) => count > 0 || group === item.id);
+  const empty = groups
+    .map((item) => ({ item, count: countInGroup(items, item.id) }))
+    .filter(({ item, count }) => count === 0 && group !== item.id);
 
   return (
-    // layoutScroll: Motion measures the indicator against this element's scroll offset.
-    <motion.div
-      ref={observe}
-      layoutScroll
-      onWheel={scrollSideways}
-      onScroll={measure}
-      style={fadedEdges(edges.start, edges.end)}
-      className="w-full min-w-0 shrink-0 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-    >
-      <ToggleGroup
-        type="single"
-        aria-label={t("workspace.groups.label")}
-        value={group === everyGroup ? everyGroupValue : group}
-        onValueChange={choose}
-        rovingFocus={false}
-        spacing={0.75}
-        className="w-max"
-      >
-        <SelectionGroup id="group-tabs">
-          <GroupTab
-            value={everyGroupValue}
-            label={t("workspace.groups.all")}
-            active={group === everyGroup}
-          />
-          {groups.map((item) => (
-            <GroupTab
-              key={item.id}
-              value={item.id}
-              label={item.name}
-              count={countInGroup(items, item.id)}
-              active={group === item.id}
-            />
-          ))}
-        </SelectionGroup>
-      </ToggleGroup>
-    </motion.div>
-  );
-}
+    <>
+      <div className="flex w-full min-w-0 shrink-0 items-center gap-1.5 pb-0.5">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={t("workspace.groups.label")}
+              className="flex h-8 min-w-0 flex-1 cursor-pointer items-center gap-1.5 rounded-full bg-raised px-3 text-xs text-foreground inset-ring inset-ring-foreground/10 outline-none transition-colors hover:bg-control focus-visible:ring-2 focus-visible:ring-ring/40"
+            >
+              {group === ungroupedGroup ? (
+                <Inbox className="size-3.5 shrink-0 opacity-75" />
+              ) : activeGroup ? (
+                <Folder className="size-3.5 shrink-0 opacity-75" />
+              ) : (
+                <Layers className="size-3.5 shrink-0 opacity-75" />
+              )}
+              <span className="min-w-0 flex-1 truncate text-left">
+                {activeLabel}
+              </span>
+              <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-60">
+            <DropdownMenuItem onClick={() => onGroup(everyGroup)}>
+              <Layers className="size-4" />
+              <span className="min-w-0 flex-1 truncate">
+                {t("workspace.groups.all")}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {items.length}
+              </span>
+              {group === everyGroup && <Check className="size-4" />}
+            </DropdownMenuItem>
+            {((ungroupedCount > 0 && groups.length > 0) ||
+              group === ungroupedGroup) && (
+              <DropdownMenuItem onClick={() => onGroup(ungroupedGroup)}>
+                <Inbox className="size-4" />
+                <span className="min-w-0 flex-1 truncate">
+                  {t("workspace.groups.ungrouped")}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {ungroupedCount}
+                </span>
+                {group === ungroupedGroup && <Check className="size-4" />}
+              </DropdownMenuItem>
+            )}
+            {(populated.length > 0 || empty.length > 0) && (
+              <DropdownMenuSeparator />
+            )}
+            {populated.map(({ item, count }) => (
+              <DropdownMenuItem key={item.id} onClick={() => onGroup(item.id)}>
+                <Folder className="size-4" />
+                <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                {item.id === defaultGroup && (
+                  <Star className="size-3 fill-current text-muted-foreground" />
+                )}
+                <span className="text-xs text-muted-foreground">{count}</span>
+                {group === item.id && <Check className="size-4" />}
+              </DropdownMenuItem>
+            ))}
+            {empty.map(({ item }) => (
+              <DropdownMenuItem
+                key={item.id}
+                onClick={() => onGroup(item.id)}
+                className="text-muted-foreground"
+              >
+                <Folder className="size-4 opacity-60" />
+                <span className="min-w-0 flex-1 truncate">{item.name}</span>
+                {item.id === defaultGroup && (
+                  <Star className="size-3 fill-current text-faint" />
+                )}
+                <span className="text-xs text-faint">0</span>
+              </DropdownMenuItem>
+            ))}
+            {activeGroup && (onRename || onDelete || onDefaultGroup) && (
+              <>
+                <DropdownMenuSeparator />
+                {onDefaultGroup && (
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onDefaultGroup(activeIsDefault ? "" : activeGroup.id)
+                    }
+                    disabled={busy}
+                  >
+                    <Star
+                      className={cn(
+                        "size-4",
+                        activeIsDefault && "fill-current",
+                      )}
+                    />
+                    <span>
+                      {t(
+                        activeIsDefault
+                          ? "workspace.groups.unsetDefault"
+                          : "workspace.groups.setDefault",
+                      )}
+                    </span>
+                  </DropdownMenuItem>
+                )}
+                {onRename && (
+                  <DropdownMenuItem
+                    onClick={() => setRenaming(activeGroup)}
+                    disabled={busy}
+                  >
+                    <Pencil className="size-4" />
+                    <span>{t("workspace.groups.rename")}</span>
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => setDeleting(activeGroup)}
+                    disabled={busy}
+                  >
+                    <Trash2 className="size-4" />
+                    <span>{t("workspace.groups.delete")}</span>
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-function GroupTab({
-  value,
-  label,
-  count,
-  active,
-}: {
-  value: string;
-  label: string;
-  count?: number;
-  active: boolean;
-}) {
-  return (
-    <ToggleGroupItem
-      value={value}
-      className="relative h-[26px] gap-1.5 rounded-full px-3 text-xs font-normal text-muted-foreground transition-all hover:bg-accent hover:text-foreground focus:z-auto focus-visible:z-auto motion-safe:active:scale-[0.97] data-[state=on]:bg-transparent data-[state=on]:text-foreground max-sm:h-8"
-    >
-      {active && (
-        <SelectionIndicator className="rounded-full bg-raised inset-ring inset-ring-foreground/10" />
-      )}
-      <span className={`${aboveIndicator} max-w-[120px] truncate`}>
-        {label}
-      </span>
-      {count !== undefined && (
-        <span className={`${aboveIndicator} text-faint`}>{count}</span>
-      )}
-    </ToggleGroupItem>
+        {group !== everyGroup && (
+          <button
+            type="button"
+            title={t("workspace.groups.clear")}
+            aria-label={t("workspace.groups.clear")}
+            onClick={() => onGroup(everyGroup)}
+            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-control text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <X className="size-3.5" />
+          </button>
+        )}
+
+        {onCreate && (
+          <button
+            type="button"
+            title={t("workspace.groups.new")}
+            aria-label={t("workspace.groups.new")}
+            disabled={busy}
+            onClick={() => setCreating(true)}
+            className="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-full bg-control text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-50"
+          >
+            <Plus className="size-3.5" />
+          </button>
+        )}
+      </div>
+
+      <GroupDialogs
+        group={group}
+        onGroup={onGroup}
+        creating={creating}
+        renaming={renaming}
+        deleting={deleting}
+        onCloseCreate={() => setCreating(false)}
+        onCloseRename={() => setRenaming(null)}
+        onCloseDelete={() => setDeleting(null)}
+        onStartDelete={setDeleting}
+        onCreate={onCreate}
+        onRename={onRename}
+        onDelete={onDelete}
+        busy={busy}
+      />
+    </>
   );
 }
