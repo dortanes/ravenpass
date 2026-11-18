@@ -142,7 +142,7 @@ export const failures: typeof english = {
     "尚未选择备份文件夹。请先选择文件夹，再打开自动备份。",
   "failure.shortcut-invalid":
     "Ravenpass 无法将这些按键用作快捷键。请选择其他按键。",
-  "failure.pin-invalid": "PIN 码为 6 到 12 位数字。请输入后重试。",
+  "failure.pin-invalid": "PIN 码为 6 到 12 位字母或数字。请输入后重试。",
   "failure.pin-wrong": "PIN 码错误。请稍候再试。",
   "failure.pin-too-soon": "连续输错 PIN 码次数过多。请等几秒后再试。",
   "failure.pin-removed":

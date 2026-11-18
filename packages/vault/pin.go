@@ -40,9 +40,18 @@ func DerivePINKey(pin string, salt, deviceSecret []byte) ([32]byte, error) {
 	return key, nil
 }
 
-// ValidPIN reports a PIN of MinPINLength to MaxPINLength digits.
+// ValidPIN reports a PIN of MinPINLength to MaxPINLength ASCII letters or digits.
 func ValidPIN(pin string) bool {
-	return Digits(pin, MinPINLength, MaxPINLength)
+	if len(pin) < MinPINLength || len(pin) > MaxPINLength {
+		return false
+	}
+	for i := range len(pin) {
+		b := pin[i]
+		if !((b >= '0' && b <= '9') || (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z')) {
+			return false
+		}
+	}
+	return true
 }
 
 // NewPINSalt gives the random salt a device keeps beside a PIN.
