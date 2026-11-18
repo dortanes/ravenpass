@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/dortanes/ravenpass/compare/v0.4.0...v0.5.0) (2026-11-18)
+
+
+### Features
+
+* **desktop:** ✨ open the app at login ([4ea6d0e](https://github.com/dortanes/ravenpass/commit/4ea6d0e80210a91f2d4cd126be0a380a077cef41))
+
+
+### Bug Fixes
+
+* **desktop:** 🐛 leave out donations in the App Store build ([2fbc3eb](https://github.com/dortanes/ravenpass/commit/2fbc3ebb8cd46de7ac7553da09deafb9ff074353))
+
 ## [0.4.0](https://github.com/dortanes/ravenpass/compare/v0.3.0...v0.4.0) (2026-11-16)
 
 
