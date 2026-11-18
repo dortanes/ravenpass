@@ -134,6 +134,10 @@ export const workspace = {
     "Ravenpass could not save the appearance. Try again.",
   "workspace.error.dock-icon":
     "Ravenpass could not save the Dock icon setting. Try again.",
+  "workspace.error.hidden-at-login":
+    "Ravenpass could not save how it starts at login. Try again.",
+  "workspace.error.launch-at-login":
+    "macOS did not change whether Ravenpass opens at login. Try again.",
   "workspace.error.auto-lock":
     "Ravenpass could not save the automatic lock setting. Try again.",
   "workspace.error.site-icons":

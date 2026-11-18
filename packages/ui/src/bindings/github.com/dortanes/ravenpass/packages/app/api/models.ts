@@ -222,6 +222,11 @@ export interface Capabilities {
      * Donations reports that About may link to the donation page; a store that forbids links to other payment clears it.
      */
     "donations": boolean;
+
+    /**
+     * LaunchAtLogin reports that the system can open the app at login; Host.LoginItem sets it.
+     */
+    "launchAtLogin": boolean;
 }
 
 /**
@@ -547,6 +552,13 @@ export interface Group {
 }
 
 /**
+ * HiddenAtLogin reports whether a launch at login stays in the menu bar.
+ */
+export interface HiddenAtLogin {
+    "hidden": boolean;
+}
+
+/**
  * Identity is an identity as read.
  */
 export interface Identity {
@@ -866,6 +878,18 @@ export interface LanguageSettings {
      */
     "language": string;
     "chosen": boolean;
+}
+
+/**
+ * LaunchAtLogin reports whether Ravenpass is set to open at login.
+ */
+export interface LaunchAtLogin {
+    "enabled": boolean;
+
+    /**
+     * NeedsApproval reports that the owner blocked the enabled item in the system's settings, so it does not open yet.
+     */
+    "needsApproval": boolean;
 }
 
 /**

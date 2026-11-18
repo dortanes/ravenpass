@@ -580,6 +580,13 @@ export function GetDockIcon(): $CancellablePromise<$models.DockIcon> {
 }
 
 /**
+ * GetHiddenAtLogin reports whether a launch at login stays in the menu bar.
+ */
+export function GetHiddenAtLogin(): $CancellablePromise<$models.HiddenAtLogin> {
+    return $Call.ByID(3973994712);
+}
+
+/**
  * GetIdentityLimits reports the vault core's identity bounds.
  */
 export function GetIdentityLimits(): $CancellablePromise<$models.IdentityLimits> {
@@ -605,6 +612,13 @@ export function GetInterfaceSize(): $CancellablePromise<$models.InterfaceSize> {
  */
 export function GetLanguage(): $CancellablePromise<$models.LanguageSettings> {
     return $Call.ByID(181901236);
+}
+
+/**
+ * GetLaunchAtLogin reports whether the system opens Ravenpass at login.
+ */
+export function GetLaunchAtLogin(): $CancellablePromise<$models.LaunchAtLogin> {
+    return $Call.ByID(2652861697);
 }
 
 /**
@@ -791,6 +805,13 @@ export function MergeCredentials(into: string, $from: string, input: $models.Cre
  */
 export function MoveStorageLocation(): $CancellablePromise<$models.StorageChange> {
     return $Call.ByID(1592179435);
+}
+
+/**
+ * OpenLoginItems shows the system screen where the owner allows or blocks login items.
+ */
+export function OpenLoginItems(): $CancellablePromise<void> {
+    return $Call.ByID(2138386089);
 }
 
 /**
@@ -1046,6 +1067,13 @@ export function SetDockIcon(hideWithWindow: boolean): $CancellablePromise<void> 
 }
 
 /**
+ * SetHiddenAtLogin records whether a launch at login stays in the menu bar, from the next login on.
+ */
+export function SetHiddenAtLogin(hidden: boolean): $CancellablePromise<void> {
+    return $Call.ByID(1848154252, hidden);
+}
+
+/**
  * SetIdentityList records the choice; when on, the system keeps the accounts outside the vault's encryption.
  */
 export function SetIdentityList(enabled: boolean): $CancellablePromise<void> {
@@ -1071,6 +1099,13 @@ export function SetItemGroups(id: string, groups: string[] | null): $Cancellable
  */
 export function SetLanguage(language: string): $CancellablePromise<void> {
     return $Call.ByID(2394874664, language);
+}
+
+/**
+ * SetLaunchAtLogin asks the system to open Ravenpass at login or to stop.
+ */
+export function SetLaunchAtLogin(enabled: boolean): $CancellablePromise<void> {
+    return $Call.ByID(3136796461, enabled);
 }
 
 /**

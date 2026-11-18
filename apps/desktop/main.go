@@ -18,6 +18,7 @@ import (
 	"github.com/dortanes/ravenpass/apps/desktop/internal/dock"
 	"github.com/dortanes/ravenpass/apps/desktop/internal/filewatch"
 	"github.com/dortanes/ravenpass/apps/desktop/internal/identitystore"
+	"github.com/dortanes/ravenpass/apps/desktop/internal/loginitem"
 	"github.com/dortanes/ravenpass/apps/desktop/internal/mainwindow"
 	"github.com/dortanes/ravenpass/apps/desktop/internal/menubar"
 	"github.com/dortanes/ravenpass/apps/desktop/internal/pagezoom"
@@ -96,10 +97,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	var loginItem api.LoginItem
+	if loginitem.Available() {
+		loginItem = loginitem.Mac{}
+	}
 	var showWindow, reloadWindow func()
 	service, err := core.Serve(api.Host{
 		Links:        links,
 		IdentityList: identities,
+		LoginItem:    loginItem,
 		Confirmations: api.Confirmations{
 			Panel:      panel,
 			ShowMain:   func() { showWindow() },
@@ -186,16 +192,25 @@ func main() {
 	if err := provider.Start(); err != nil && !errors.Is(err, autofillbridge.ErrUnsigned) {
 		slog.Warn("the AutoFill bridge could not start", "err", err)
 	}
+	loginitem.WatchLaunch()
 	// AppKit resets an unbundled executable's Dock icon and hides any window shown before launching finishes.
-	var launched atomic.Bool
+	var launched, codeSetupWaiting atomic.Bool
 	app.Event.OnApplicationEvent(events.Mac.ApplicationDidFinishLaunching, func(_ *application.ApplicationEvent) {
 		launched.Store(true)
-		showWindow()
+		if !codeSetupWaiting.Load() && loginitem.LaunchedAtLogin() && settings.HiddenAtLogin() {
+			dock.Hide()
+		} else {
+			showWindow()
+		}
 		confirmations.Watch(panel.Follow)
 	})
 	// An otpauth link can arrive before launching finishes; launching then shows the window.
 	app.Event.OnApplicationEvent(events.Common.ApplicationLaunchedWithUrl, func(event *application.ApplicationEvent) {
-		if controls.ReceiveCodeSetup(event.Context().URL()) && launched.Load() {
+		if !controls.ReceiveCodeSetup(event.Context().URL()) {
+			return
+		}
+		codeSetupWaiting.Store(true)
+		if launched.Load() {
 			showWindow()
 		}
 	})

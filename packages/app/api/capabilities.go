@@ -38,6 +38,8 @@ type Capabilities struct {
 	QRCodes bool `json:"qrCodes"`
 	// Donations reports that About may link to the donation page; a store that forbids links to other payment clears it.
 	Donations bool `json:"donations"`
+	// LaunchAtLogin reports that the system can open the app at login; Host.LoginItem sets it.
+	LaunchAtLogin bool `json:"launchAtLogin"`
 }
 
 // Capabilities reports the features this host offers.

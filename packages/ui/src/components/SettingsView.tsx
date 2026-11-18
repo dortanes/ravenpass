@@ -20,6 +20,7 @@ import type {
   ExtensionLinking,
   Group,
   InterfaceSize,
+  LaunchAtLoginSettings,
   PasswordHistoryCount,
   PasswordHistorySetting,
   ScreenshotSettings,
@@ -74,6 +75,7 @@ export function SettingsView({
   onAppearance,
   dockIcon,
   onDockIcon,
+  launchAtLogin,
   clipboard,
   onClipboard,
   siteIcons,
@@ -134,6 +136,7 @@ export function SettingsView({
   onAppearance: (appearance: Appearance) => void;
   dockIcon: DockIcon | null;
   onDockIcon: (hideWithWindow: boolean) => void;
+  launchAtLogin: LaunchAtLoginSettings;
   clipboard: ClipboardClearing | null;
   onClipboard: (enabled: boolean, seconds: number) => void;
   siteIcons: SiteIcons | null;
@@ -211,6 +214,7 @@ export function SettingsView({
             onAppearance={onAppearance}
             dockIcon={dockIcon}
             onDockIcon={onDockIcon}
+            launchAtLogin={launchAtLogin}
             busy={busy}
           />
         )}

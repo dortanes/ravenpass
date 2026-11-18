@@ -14,6 +14,11 @@ export const settings: typeof english = {
   "settings.appearance.system": "Как в системе",
   "settings.appearance.light": "Светлое",
   "settings.appearance.dark": "Тёмное",
+  "settings.launch-at-login": "Открывать при входе в систему",
+  "settings.launch-at-login.blocked":
+    "Заблокировано в Системных настройках. Разрешите Ravenpass в разделе «Объекты входа».",
+  "settings.launch-at-login.open": "Открыть «Объекты входа»",
+  "settings.launch-at-login.hidden": "Запускать только в строке меню",
   "settings.dock-icon": "Скрывать значок в Dock при закрытии окна",
   "settings.dock-icon.detail": "Ravenpass остаётся в строке меню.",
   "settings.unlock.heading": "Разблокировка хранилища",

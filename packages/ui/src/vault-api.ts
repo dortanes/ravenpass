@@ -96,6 +96,16 @@ export interface DockIcon {
   hideWithWindow: boolean;
 }
 
+export interface LaunchAtLogin {
+  enabled: boolean;
+  /** The owner blocked the enabled login item in the system's settings, so it does not open yet. */
+  needsApproval: boolean;
+}
+
+export interface HiddenAtLogin {
+  hidden: boolean;
+}
+
 export interface SignInStyleSetting {
   style: SignInStyle;
   offered: SignInStyle[];
@@ -874,6 +884,8 @@ export interface Capabilities {
   qrCodes: boolean;
   /** About may link to the donation page; a store that forbids links to other payment leaves it out. */
   donations: boolean;
+  /** The system can open the app at login. */
+  launchAtLogin: boolean;
 }
 
 /** A password copied from the Generator place or used in the editor, kept on this device; `at` is RFC 3339 in UTC. */
@@ -907,6 +919,13 @@ export interface VaultApi {
   setAutoLock(enabled: boolean, seconds: number): Promise<void>;
   dockIcon(): Promise<DockIcon>;
   setDockIcon(hideWithWindow: boolean): Promise<void>;
+  launchAtLogin(): Promise<LaunchAtLogin>;
+  setLaunchAtLogin(enabled: boolean): Promise<void>;
+  hiddenAtLogin(): Promise<HiddenAtLogin>;
+  /** Applies from the next login on. */
+  setHiddenAtLogin(hidden: boolean): Promise<void>;
+  /** Shows the system screen where the owner allows or blocks login items. */
+  openLoginItems(): Promise<void>;
   interfaceSize(): Promise<InterfaceSize>;
   /** `percent` is one of `InterfaceSize.offered`; the interface applies it. */
   setInterfaceSize(percent: number): Promise<void>;
@@ -1240,6 +1259,15 @@ export type ExtensionLinking = Pick<
 export type AutofillSettings = Pick<
   VaultApi,
   "identityList" | "setIdentityList" | "systemAutofill" | "chooseSystemAutofill"
+>;
+
+export type LaunchAtLoginSettings = Pick<
+  VaultApi,
+  | "launchAtLogin"
+  | "setLaunchAtLogin"
+  | "hiddenAtLogin"
+  | "setHiddenAtLogin"
+  | "openLoginItems"
 >;
 
 export type ScreenshotSettings = Pick<

@@ -29,6 +29,7 @@ const everything: Capabilities = {
   print: true,
   qrCodes: true,
   donations: true,
+  launchAtLogin: true,
 };
 
 const nothing: Capabilities = {
@@ -50,6 +51,7 @@ const nothing: Capabilities = {
   print: false,
   qrCodes: false,
   donations: false,
+  launchAtLogin: false,
 };
 
 /** What the Mac and the Android phone offer. */
@@ -58,6 +60,7 @@ const mac: Capabilities = {
   extensions: true,
   shortcuts: true,
   dockIcon: true,
+  launchAtLogin: true,
   storageLocations: true,
   saveFiles: true,
   appearance: true,
@@ -115,6 +118,7 @@ test("each capability brings back only the section that needs it", () => {
   }
   for (const capability of [
     "dockIcon",
+    "launchAtLogin",
     "storageLocations",
     "saveFiles",
     "unlockOnShow",

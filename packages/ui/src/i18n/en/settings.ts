@@ -12,6 +12,11 @@ export const settings = {
   "settings.appearance.system": "Match system",
   "settings.appearance.light": "Light",
   "settings.appearance.dark": "Dark",
+  "settings.launch-at-login": "Open at login",
+  "settings.launch-at-login.blocked":
+    "Blocked in System Settings. Allow Ravenpass under Login Items.",
+  "settings.launch-at-login.open": "Open Login Items",
+  "settings.launch-at-login.hidden": "Start in the menu bar only",
   "settings.dock-icon": "Hide Dock icon when the window is closed",
   "settings.dock-icon.detail": "Ravenpass stays in the menu bar.",
   "settings.unlock.heading": "Unlock this vault",

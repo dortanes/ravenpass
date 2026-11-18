@@ -21,6 +21,8 @@ export const queryKeys = {
   clipboardClearing: [...hostScope, "clipboard-clearing"],
   autoLock: [...hostScope, "auto-lock"],
   dockIcon: [...hostScope, "dock-icon"],
+  launchAtLogin: [...hostScope, "launch-at-login"],
+  hiddenAtLogin: [...hostScope, "hidden-at-login"],
   siteIcons: [...hostScope, "site-icons"],
   bankDetails: [...hostScope, "bank-details"],
   breachChecks: [...hostScope, "breach-checks"],

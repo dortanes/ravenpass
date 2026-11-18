@@ -123,6 +123,10 @@ export const workspace: typeof english = {
   "workspace.error.interface-size": "Ravenpass 无法存储界面大小。请重试。",
   "workspace.error.appearance": "Ravenpass 无法存储外观设置。请重试。",
   "workspace.error.dock-icon": "Ravenpass 无法存储程序坞图标设置。请重试。",
+  "workspace.error.hidden-at-login":
+    "Ravenpass 无法存储登录时的启动方式。请重试。",
+  "workspace.error.launch-at-login":
+    "macOS 未能更改 Ravenpass 的登录时打开设置。请重试。",
   "workspace.error.auto-lock": "Ravenpass 无法存储自动锁定设置。请重试。",
   "workspace.error.site-icons": "Ravenpass 无法存储网站图标设置。请重试。",
   "workspace.error.bank-details": "Ravenpass 无法存储银行信息设置。请重试。",

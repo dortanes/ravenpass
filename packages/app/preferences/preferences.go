@@ -59,6 +59,7 @@ type record struct {
 	AutoLockSeconds    *int `json:"autoLockSeconds,omitempty"`
 	SiteIconsOff       bool `json:"siteIconsOff,omitempty"`
 	HideDockWithWindow bool `json:"hideDockWithWindow,omitempty"`
+	ShowWindowAtLogin  bool `json:"showWindowAtLogin,omitempty"`
 	BankDetailsOff     bool `json:"bankDetailsOff,omitempty"`
 	// SignInStyle is empty for SignInCard.
 	SignInStyle           SignInStyle `json:"signInStyle,omitempty"`

@@ -9,6 +9,7 @@ import type {
   AppearanceSetting,
   DockIcon,
   InterfaceSize,
+  LaunchAtLoginSettings,
 } from "../../vault-api.ts";
 import { Block, BlockHeading, BlockRow, blockControl } from "../Block.tsx";
 import {
@@ -20,6 +21,7 @@ import {
   SelectValue,
 } from "../ui/select.tsx";
 import { Switch } from "../ui/switch.tsx";
+import { LaunchAtLoginSetting } from "./LaunchAtLoginSetting.tsx";
 
 const appearanceLabels: Record<Appearance, MessageKey> = {
   system: "settings.appearance.system",
@@ -34,6 +36,7 @@ export function GeneralPanel({
   onAppearance,
   dockIcon,
   onDockIcon,
+  launchAtLogin,
   busy,
 }: {
   interfaceSize: InterfaceSize | null;
@@ -42,6 +45,7 @@ export function GeneralPanel({
   onAppearance: (appearance: Appearance) => void;
   dockIcon: DockIcon | null;
   onDockIcon: (hideWithWindow: boolean) => void;
+  launchAtLogin: LaunchAtLoginSettings;
   busy: boolean;
 }) {
   const { t } = useTranslator();
@@ -139,22 +143,27 @@ export function GeneralPanel({
         )}
       </Block>
 
-      {offers.dockIcon && (
+      {(offers.launchAtLogin || offers.dockIcon) && (
         <>
           <BlockHeading>{t("settings.general.macos")}</BlockHeading>
           <Block>
-            <BlockRow
-              title={t("settings.dock-icon")}
-              detail={t("settings.dock-icon.detail")}
-              htmlFor="dock-icon"
-            >
-              <Switch
-                id="dock-icon"
-                checked={Boolean(dockIcon?.hideWithWindow)}
-                disabled={busy || !dockIcon}
-                onCheckedChange={onDockIcon}
-              />
-            </BlockRow>
+            {offers.launchAtLogin && (
+              <LaunchAtLoginSetting settings={launchAtLogin} busy={busy} />
+            )}
+            {offers.dockIcon && (
+              <BlockRow
+                title={t("settings.dock-icon")}
+                detail={t("settings.dock-icon.detail")}
+                htmlFor="dock-icon"
+              >
+                <Switch
+                  id="dock-icon"
+                  checked={Boolean(dockIcon?.hideWithWindow)}
+                  disabled={busy || !dockIcon}
+                  onCheckedChange={onDockIcon}
+                />
+              </BlockRow>
+            )}
           </Block>
         </>
       )}

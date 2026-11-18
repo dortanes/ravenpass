@@ -941,6 +941,7 @@ export function VaultView({
                   onAppearance={(next) => appearanceChange.mutate(next)}
                   dockIcon={dockIconSetting.value}
                   onDockIcon={dockIconSetting.change}
+                  launchAtLogin={api}
                   clipboard={clipboard}
                   onClipboard={clipboardSetting.change}
                   siteIcons={siteIcons}

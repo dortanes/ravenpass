@@ -139,6 +139,10 @@ export const workspace: typeof english = {
     "Не удалось сохранить оформление. Повторите попытку.",
   "workspace.error.dock-icon":
     "Не удалось сохранить настройку значка в Dock. Повторите попытку.",
+  "workspace.error.hidden-at-login":
+    "Не удалось сохранить настройку запуска при входе в систему. Повторите попытку.",
+  "workspace.error.launch-at-login":
+    "macOS не изменила открытие Ravenpass при входе в систему. Повторите попытку.",
   "workspace.error.auto-lock":
     "Не удалось сохранить настройку автоблокировки. Повторите попытку.",
   "workspace.error.site-icons":

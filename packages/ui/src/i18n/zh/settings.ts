@@ -14,6 +14,11 @@ export const settings: typeof english = {
   "settings.appearance.system": "跟随系统",
   "settings.appearance.light": "浅色",
   "settings.appearance.dark": "深色",
+  "settings.launch-at-login": "登录时打开",
+  "settings.launch-at-login.blocked":
+    "已在系统设置中被阻止。请在“登录项”中允许 Ravenpass。",
+  "settings.launch-at-login.open": "打开“登录项”",
+  "settings.launch-at-login.hidden": "仅在菜单栏中启动",
   "settings.dock-icon": "关闭窗口时隐藏程序坞图标",
   "settings.dock-icon.detail": "Ravenpass 会保留在菜单栏中。",
   "settings.unlock.heading": "解锁此密码库",

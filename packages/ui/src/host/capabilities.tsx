@@ -24,6 +24,7 @@ const noCapabilities: Capabilities = {
   print: false,
   qrCodes: false,
   donations: false,
+  launchAtLogin: false,
 };
 
 const HostCapabilities = createContext<Capabilities>(noCapabilities);

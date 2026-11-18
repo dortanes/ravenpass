@@ -613,6 +613,11 @@ export const hostApi: VaultApi = {
   setAutoLock: service.SetAutoLock,
   dockIcon: service.GetDockIcon,
   setDockIcon: service.SetDockIcon,
+  launchAtLogin: service.GetLaunchAtLogin,
+  setLaunchAtLogin: service.SetLaunchAtLogin,
+  hiddenAtLogin: service.GetHiddenAtLogin,
+  setHiddenAtLogin: service.SetHiddenAtLogin,
+  openLoginItems: service.OpenLoginItems,
   async interfaceSize() {
     const size = await service.GetInterfaceSize();
     return { ...size, offered: size.offered ?? [] };

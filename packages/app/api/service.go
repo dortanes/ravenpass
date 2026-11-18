@@ -132,6 +132,7 @@ type Service struct {
 	screens     ScreenCapture
 	// systemAutofill is the device's choice of autofill service and passkey providers.
 	systemAutofill SystemAutofill
+	loginItem      LoginItem
 	// confirmations are the requests the confirmation panel shows.
 	confirmations *confirmation.Queue
 	panel         ConfirmationPanel
@@ -194,6 +195,8 @@ type Host struct {
 	Screenshots ScreenCapture
 	// SystemAutofill is set on a host whose system chooses autofill and passkey providers on a system screen.
 	SystemAutofill SystemAutofill
+	// LoginItem is nil on a host the system cannot open at login.
+	LoginItem LoginItem
 	// Backups is set on a host that backs up the open vault on its own.
 	Backups *backups.Keeper
 	// History is set on a host that keeps the passwords the generator handed out.
@@ -302,6 +305,11 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 		systemAutofill = host.SystemAutofill
 		offers.SystemAutofill = true
 	}
+	var loginItem LoginItem = noLoginItem{}
+	if host.LoginItem != nil {
+		loginItem = host.LoginItem
+		offers.LaunchAtLogin = true
+	}
 	offers.AutoBackups = host.Backups != nil
 	var folders BackupFolders = dialogFolders{currentApp: host.CurrentApp, sandbox: sandbox}
 	if host.BackupFolders != nil {
@@ -320,7 +328,7 @@ func New(vault *vaultservice.Service, settings *preferences.Store, icons *siteic
 		vault: vault, preferences: settings, icons: icons, brands: siteicons.NewFetcher(), breaches: breaches.New(), currentApp: host.CurrentApp,
 		pasteboard: clipboard, files: heldFiles{VaultFiles: files, hold: hold}, places: places, openURL: openURL, hold: hold, dialog: dialog,
 		photoPicker: heldPhotos{PhotoPicker: photoPicker, hold: hold}, saver: saver, printer: printer, qrCodes: host.QRCodes, links: links, identities: identities, offers: offers,
-		shows: shows, screens: screens, systemAutofill: systemAutofill,
+		shows: shows, screens: screens, systemAutofill: systemAutofill, loginItem: loginItem,
 		confirmations: confirmations.Queue, panel: panel,
 		showMain: confirmations.ShowMain, reloadMain: confirmations.ReloadMain, owner: confirmations.Owner,
 		backups: host.Backups, history: host.History, folders: folders, about: about, apps: apps,
