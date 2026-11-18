@@ -105,7 +105,7 @@ export function ItemRowContent({
           <span
             className={cn("flex min-w-0 items-center gap-1.5", style.title)}
           >
-            <span className={cn("min-w-0 shrink-[2]", line)}>{title}</span>
+            <span className={cn("min-w-0 shrink", line)}>{title}</span>
             {alert && (
               <span className="shrink-0 rounded-full bg-destructive/15 px-1.5 text-[10.5px] font-medium leading-4 text-destructive">
                 {alert}

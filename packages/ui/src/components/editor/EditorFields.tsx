@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { Check, ChevronsUpDown, Plus, Sparkles, X } from "lucide-react";
+import { Check, ChevronsUpDown, Folder, Plus, Sparkles, X } from "lucide-react";
 import { Popover as PopoverPrimitive } from "radix-ui";
 import {
   type KeyboardEvent,
@@ -84,15 +84,42 @@ export function GroupField({
   membership,
   busy,
   onToggle,
+  onCreateGroup,
 }: {
   groups: Group[];
   membership: string[];
   busy: boolean;
   onToggle: (id: string) => void;
+  onCreateGroup?: (name: string) => Promise<string | null>;
 }) {
   const { t } = useTranslator();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
   const chosen = groups.filter((group) => membership.includes(group.id));
+  const trimmed = search.trim();
+  const exists = groups.some(
+    (group) => group.name.toLowerCase() === trimmed.toLowerCase(),
+  );
+  const canCreate =
+    Boolean(onCreateGroup) &&
+    trimmed.length > 0 &&
+    [...trimmed].length <= 64 &&
+    !exists;
+
+  async function handleCreate(name: string) {
+    if (!onCreateGroup || creating || [...name].length > 64) return;
+    setCreating(true);
+    try {
+      const newId = await onCreateGroup(name);
+      if (newId) {
+        onToggle(newId);
+        setSearch("");
+      }
+    } finally {
+      setCreating(false);
+    }
+  }
 
   return (
     <div className={editorRow}>
@@ -109,9 +136,10 @@ export function GroupField({
               {chosen.map((group) => (
                 <span
                   key={group.id}
-                  className="max-w-[140px] truncate rounded-full bg-tile px-2 py-px text-[11px]"
+                  className="inline-flex max-w-[140px] items-center gap-1 truncate rounded-full bg-tile px-2 py-px text-[11px]"
                 >
-                  {group.name}
+                  <Folder className="size-2.5 shrink-0 opacity-60" />
+                  <span className="truncate">{group.name}</span>
                 </span>
               ))}
               {!chosen.length && (
@@ -125,9 +153,33 @@ export function GroupField({
         </PopoverTrigger>
         <PopoverContent align="start" className="w-[240px]">
           <Command>
-            <CommandInput placeholder={t("workspace.editor.groups.search")} />
+            <CommandInput
+              value={search}
+              maxLength={64}
+              disabled={busy || creating}
+              onValueChange={setSearch}
+              placeholder={t("workspace.editor.groups.search")}
+            />
             <CommandList>
-              <CommandEmpty>{t("workspace.editor.groups.empty")}</CommandEmpty>
+              <CommandEmpty>
+                {canCreate ? (
+                  <button
+                    type="button"
+                    disabled={busy || creating}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-primary hover:bg-accent disabled:opacity-50"
+                    onClick={() => void handleCreate(trimmed)}
+                  >
+                    <Plus className="size-4 shrink-0" />
+                    <span className="truncate">
+                      {t("workspace.editor.groups.create", { name: trimmed })}
+                    </span>
+                  </button>
+                ) : !groups.length && !trimmed && onCreateGroup ? (
+                  t("workspace.editor.groups.noneHint")
+                ) : (
+                  t("workspace.editor.groups.empty")
+                )}
+              </CommandEmpty>
               <CommandGroup>
                 {groups.map((group) => (
                   <CommandItem
@@ -144,6 +196,21 @@ export function GroupField({
                   </CommandItem>
                 ))}
               </CommandGroup>
+              {canCreate && (
+                <CommandGroup>
+                  <CommandItem
+                    value={trimmed}
+                    disabled={busy || creating}
+                    onSelect={() => void handleCreate(trimmed)}
+                    className="cursor-pointer gap-2 text-primary"
+                  >
+                    <Plus className="size-4" />
+                    <span className="truncate">
+                      {t("workspace.editor.groups.create", { name: trimmed })}
+                    </span>
+                  </CommandItem>
+                </CommandGroup>
+              )}
             </CommandList>
           </Command>
         </PopoverContent>

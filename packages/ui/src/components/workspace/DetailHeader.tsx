@@ -16,6 +16,8 @@ export interface DetailControls {
   tags: string[];
   /** Lists the items carrying a tag. */
   onTag: (tag: string) => void;
+  /** Narrows the list to one group. */
+  onGroup?: (group: string) => void;
   pinned: boolean;
   busy: boolean;
   /** Moves the item to the trash. */
@@ -43,6 +45,7 @@ export function DetailHeader({
     groups,
     tags,
     onTag,
+    onGroup,
     pinned,
     busy,
     onDelete,
@@ -90,7 +93,12 @@ export function DetailHeader({
         <p className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
           {subtitle && <span className="truncate">{subtitle}</span>}
           {groups.map((group) => (
-            <GroupBadge key={group.id} name={group.name} />
+            <GroupBadge
+              key={group.id}
+              name={group.name}
+              label={t("workspace.groups.show", { group: group.name })}
+              onChoose={onGroup ? () => onGroup(group.id) : undefined}
+            />
           ))}
           {tags.map((tag) => (
             <TagBadge

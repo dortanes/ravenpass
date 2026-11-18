@@ -32,6 +32,7 @@ import {
   type ListedItem,
   type SearchValues,
   selectEntries,
+  ungroupedGroup,
   type WorkspaceSection,
 } from "../../workspace/sections.ts";
 import type { SelectionQueue } from "../../workspace/selection.ts";
@@ -75,6 +76,13 @@ export interface PlaceShell {
   group: string;
   onGroup: (group: string) => void;
   defaultGroup: string;
+  onDefaultGroup?: (id: string) => void;
+  onCreateGroup?: (name: string) => Promise<string | null>;
+  onRenameGroup?: (id: string, name: string) => Promise<boolean>;
+  onDeleteGroup?: (id: string) => void;
+  onSetItemGroups?: (id: string, groups: string[]) => Promise<boolean>;
+  groupsSidebarCollapsed?: boolean;
+  onShowGroupSidebar?: () => void;
   /** Every tag the vault's items carry, which editors suggest. */
   tags: string[];
   /** Lists the items of the open place carrying a tag. */
@@ -154,6 +162,7 @@ export interface EditorProps<Item, Input> {
   /** The groups the item starts in, which for a new one is the chosen default. */
   initialGroups: string[];
   tagging: Tagging;
+  onCreateGroup?: (name: string) => Promise<string | null>;
   onSave: (input: Input, groups: string[]) => void;
   onCancel: () => void;
 }
@@ -529,7 +538,7 @@ export function ItemPlace<
   );
   const visible = rank ? rank(matching) : matching;
   const groupsForNew =
-    group !== everyGroup
+    group !== everyGroup && group !== ungroupedGroup
       ? [group]
       : shell.defaultGroup
         ? [shell.defaultGroup]
@@ -538,11 +547,15 @@ export function ItemPlace<
   const pinned = selectedSummary?.pinned ?? false;
   const emptyListMessage = shell.query
     ? t(messages.emptySearch)
-    : shell.section === "recent"
-      ? t(messages.emptyRecent)
-      : shell.section === "pinned"
-        ? t(messages.emptyPinned)
-        : t(messages.emptyAll);
+    : group === ungroupedGroup
+      ? t("workspace.list.empty.ungrouped")
+      : group !== everyGroup
+        ? t("workspace.list.empty.group")
+        : shell.section === "recent"
+          ? t(messages.emptyRecent)
+          : shell.section === "pinned"
+            ? t(messages.emptyPinned)
+            : t(messages.emptyAll);
   // Keyed per item: a detail's own state, such as a reveal, must not outlive its item.
   const paneKey =
     pane === "detail" || pane === "edit"
@@ -558,6 +571,15 @@ export function ItemPlace<
     groups,
     group,
     onGroup: shell.onGroup,
+    defaultGroup: shell.defaultGroup,
+    onDefaultGroup: shell.onDefaultGroup,
+    onCreateGroup: shell.onCreateGroup,
+    onRenameGroup: shell.onRenameGroup,
+    onDeleteGroup: shell.onDeleteGroup,
+    onSetItemGroups: shell.onSetItemGroups,
+    groupsSidebarCollapsed: shell.groupsSidebarCollapsed,
+    onShowGroupSidebar: shell.onShowGroupSidebar,
+    busy,
     selectedId,
     loading,
     emptyMessage: emptyListMessage,
@@ -620,6 +642,10 @@ export function ItemPlace<
               ),
               tags: selectedSummary?.tags ?? [],
               onTag: shell.onTag,
+              onGroup: (next) => {
+                if (compact) leaveDetail("empty");
+                shell.onGroup(next);
+              },
               pinned,
               busy,
               onDelete: () => void remove(),
@@ -634,6 +660,7 @@ export function ItemPlace<
           editor({
             initialGroups: groupsForNew,
             tagging,
+            onCreateGroup: shell.onCreateGroup,
             onSave: save,
             onCancel: () => leaveDetail("empty"),
           })}
@@ -643,6 +670,7 @@ export function ItemPlace<
             initial: selected,
             initialGroups: selected.groups,
             tagging,
+            onCreateGroup: shell.onCreateGroup,
             onSave: save,
             onCancel: () => setPane("detail"),
           })}

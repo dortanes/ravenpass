@@ -1,4 +1,5 @@
 import { cn } from "cn";
+import { Folder } from "lucide-react";
 
 const badge =
   "max-w-[120px] shrink-0 truncate rounded-full border border-foreground/12 px-2 py-px text-[11px] text-secondary-foreground";
@@ -32,11 +33,11 @@ export function TagBadge({
 }
 
 const rowBadge =
-  "max-w-[96px] min-w-7 shrink truncate rounded-full px-1.5 text-[10.5px] leading-4 text-secondary-foreground";
+  "max-w-[78px] min-w-6 shrink truncate rounded-full px-1.5 text-[10.5px] leading-4 text-secondary-foreground";
 
 /**
- * RowBadges are an item's group names, filled, then its tags, outlined, on its row's title line; short of room, each
- * badge cuts its own text.
+ * RowBadges show at most one group and overflow count, then tags, on its row's title line; short of room, badges
+ * yield to the item title before cutting their own text.
  */
 export function RowBadges({
   groups,
@@ -46,14 +47,34 @@ export function RowBadges({
   tags: readonly string[];
 }) {
   if (!groups.length && !tags.length) return null;
+  const visibleGroups = groups.slice(0, 1);
+  const extraGroups = groups.length - visibleGroups.length;
+  const visibleTags = tags.slice(0, extraGroups > 0 ? 1 : 2);
+  const extraTags = tags.length - visibleTags.length;
   return (
-    <span className="flex min-w-0 shrink items-center gap-1 overflow-hidden">
-      {groups.map((name) => (
-        <span key={`group:${name}`} className={cn(rowBadge, "bg-foreground/8")}>
-          {name}
+    <span className="flex min-w-0 shrink-[2] items-center gap-1 overflow-hidden">
+      {visibleGroups.map((name) => (
+        <span
+          key={`group:${name}`}
+          title={groups.join(", ")}
+          className={cn(
+            rowBadge,
+            "inline-flex items-center gap-1 bg-foreground/8 px-1.5",
+          )}
+        >
+          <Folder className="size-2.5 shrink-0 opacity-60" />
+          <span className="truncate">{name}</span>
         </span>
       ))}
-      {tags.map((tag) => (
+      {extraGroups > 0 && (
+        <span
+          title={groups.slice(1).join(", ")}
+          className="shrink-0 rounded-full bg-foreground/8 px-1.5 text-[10.5px] leading-4 text-muted-foreground"
+        >
+          +{extraGroups}
+        </span>
+      )}
+      {visibleTags.map((tag) => (
         <span
           key={`tag:${tag}`}
           className={cn(rowBadge, "border border-foreground/12")}
@@ -61,6 +82,14 @@ export function RowBadges({
           {tag}
         </span>
       ))}
+      {extraTags > 0 && (
+        <span
+          title={tags.slice(visibleTags.length).join(", ")}
+          className="shrink-0 rounded-full border border-foreground/12 px-1.5 text-[10.5px] leading-4 text-muted-foreground"
+        >
+          +{extraTags}
+        </span>
+      )}
     </span>
   );
 }

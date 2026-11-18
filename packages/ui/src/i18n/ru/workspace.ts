@@ -44,6 +44,21 @@ export const workspace: typeof english = {
 
   "workspace.groups.label": "Группы",
   "workspace.groups.all": "Все группы",
+  "workspace.groups.ungrouped": "Без группы",
+  "workspace.groups.empty": "Групп пока нет",
+  "workspace.groups.emptyCount":
+    "{count, plural, one {# пустая группа} few {# пустые группы} many {# пустых групп} other {# пустой группы}}",
+  "workspace.groups.sidebar.hide": "Скрыть группы",
+  "workspace.groups.sidebar.show": "Показать группы",
+  "workspace.groups.clear": "Показать все группы",
+  "workspace.groups.more": "Действия с группой",
+  "workspace.groups.new": "Новая группа",
+  "workspace.groups.rename": "Переименовать группу",
+  "workspace.groups.delete": "Удалить группу",
+  "workspace.groups.default": "Группа по умолчанию",
+  "workspace.groups.setDefault": "Сделать основной",
+  "workspace.groups.unsetDefault": "Не использовать по умолчанию",
+  "workspace.groups.show": "Показать всё в группе «{group}»",
 
   "workspace.list.label": "Сохранённые пароли",
   "workspace.list.loading": "Загрузка…",
@@ -54,6 +69,12 @@ export const workspace: typeof english = {
   "workspace.list.empty.pinned":
     "Пароли, добавленные в избранное, появятся здесь.",
   "workspace.list.empty.search": "Подходящих паролей нет.",
+  "workspace.list.empty.group": "В этой группе нет записей.",
+  "workspace.list.empty.ungrouped": "Нет записей без группы.",
+  "workspace.list.actions.groups": "Назначить группы",
+  "workspace.list.context.groups": "Группы",
+  "workspace.list.context.noGroups": "Нет групп",
+  "workspace.list.context.newGroup": "Новая группа…",
 
   "workspace.loading": "Загрузка паролей…",
   "workspace.detail.loading": "Открываем пароль…",
@@ -72,6 +93,8 @@ export const workspace: typeof english = {
   "workspace.editor.groups.none": "Без группы",
   "workspace.editor.groups.search": "Найти группу",
   "workspace.editor.groups.empty": "Подходящей группы нет.",
+  "workspace.editor.groups.noneHint": "Введите название, чтобы создать группу.",
+  "workspace.editor.groups.create": "Создать «{name}»",
   "workspace.editor.hint.dismiss": "Понятно",
   "workspace.editor.tags": "Теги",
   "workspace.editor.tags.placeholder": "Личный, рабочий, общий",

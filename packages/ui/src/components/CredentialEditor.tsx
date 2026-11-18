@@ -84,6 +84,7 @@ export function CredentialEditor({
   limits,
   busy,
   host,
+  onCreateGroup,
   onSave,
   onCancel,
   onFailure,
@@ -96,6 +97,7 @@ export function CredentialEditor({
   limits: CredentialLimits | null;
   busy: boolean;
   host: CredentialEditorHost;
+  onCreateGroup?: (name: string) => Promise<string | null>;
   onSave: (draft: CredentialDraft, groups: string[]) => void;
   onCancel: () => void;
   onFailure: (cause: unknown, message: MessageKey) => void;
@@ -372,7 +374,7 @@ export function CredentialEditor({
               busy={busy}
               onChange={setTags}
             />
-            {groups.length > 0 && (
+            {(groups.length > 0 || onCreateGroup) && (
               <GroupField
                 groups={groups}
                 membership={membership}
@@ -380,6 +382,7 @@ export function CredentialEditor({
                 onToggle={(id) =>
                   setMembership((current) => toggled(current, id))
                 }
+                onCreateGroup={onCreateGroup}
               />
             )}
             <EditorRow

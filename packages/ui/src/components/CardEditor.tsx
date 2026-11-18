@@ -98,6 +98,7 @@ export function CardEditor({
   busy,
   bankLookup,
   host,
+  onCreateGroup,
   onSave,
   onCancel,
   onFailure,
@@ -112,6 +113,7 @@ export function CardEditor({
   /** Whether leaving the bank site asks the bank's site for its name and colour. */
   bankLookup: boolean;
   host: CardEditorHost;
+  onCreateGroup?: (name: string) => Promise<string | null>;
   onSave: (input: CardInput, groups: string[]) => void;
   onCancel: () => void;
   onFailure: (cause: unknown, message: MessageKey) => void;
@@ -585,7 +587,7 @@ export function CardEditor({
               busy={busy}
               onChange={setTags}
             />
-            {groups.length > 0 && (
+            {(groups.length > 0 || onCreateGroup) && (
               <GroupField
                 groups={groups}
                 membership={membership}
@@ -593,6 +595,7 @@ export function CardEditor({
                 onToggle={(id) =>
                   setMembership((current) => toggled(current, id))
                 }
+                onCreateGroup={onCreateGroup}
               />
             )}
           </div>

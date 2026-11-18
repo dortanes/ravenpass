@@ -28,6 +28,7 @@ export function NoteEditor({
   groups,
   limits,
   busy,
+  onCreateGroup,
   onSave,
   onCancel,
 }: {
@@ -38,6 +39,7 @@ export function NoteEditor({
   groups: Group[];
   limits: NoteLimits | null;
   busy: boolean;
+  onCreateGroup?: (name: string) => Promise<string | null>;
   onSave: (input: NoteInput, groups: string[]) => void;
   onCancel: () => void;
 }) {
@@ -104,7 +106,7 @@ export function NoteEditor({
             busy={busy}
             onChange={setTags}
           />
-          {groups.length > 0 && (
+          {(groups.length > 0 || onCreateGroup) && (
             <GroupField
               groups={groups}
               membership={membership}
@@ -112,6 +114,7 @@ export function NoteEditor({
               onToggle={(id) =>
                 setMembership((current) => toggled(current, id))
               }
+              onCreateGroup={onCreateGroup}
             />
           )}
         </div>

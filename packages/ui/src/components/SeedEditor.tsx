@@ -103,6 +103,7 @@ export function SeedEditor({
   limits,
   busy,
   host,
+  onCreateGroup,
   onSave,
   onCancel,
 }: {
@@ -114,6 +115,7 @@ export function SeedEditor({
   limits: SeedLimits | null;
   busy: boolean;
   host: SeedEditorHost;
+  onCreateGroup?: (name: string) => Promise<string | null>;
   onSave: (input: SeedInput, groups: string[]) => void;
   onCancel: () => void;
 }) {
@@ -326,7 +328,7 @@ export function SeedEditor({
               busy={busy}
               onChange={setTags}
             />
-            {groups.length > 0 && (
+            {(groups.length > 0 || onCreateGroup) && (
               <GroupField
                 groups={groups}
                 membership={membership}
@@ -334,6 +336,7 @@ export function SeedEditor({
                 onToggle={(id) =>
                   setMembership((current) => toggled(current, id))
                 }
+                onCreateGroup={onCreateGroup}
               />
             )}
           </div>
