@@ -6,9 +6,9 @@ require (
 	github.com/fxamacker/cbor/v2 v2.10.0
 	github.com/kslamph/bip39-hdwallet v1.1.0
 	github.com/pquerna/otp v1.5.0
-	golang.org/x/crypto v0.58.0
+	golang.org/x/crypto v0.59.0
 	golang.org/x/image v0.48.0
-	golang.org/x/net v0.62.0
+	golang.org/x/net v0.63.0
 	golang.org/x/text v0.44.0
 )
 

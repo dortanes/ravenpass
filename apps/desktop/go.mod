@@ -10,9 +10,9 @@ require (
 )
 
 require (
-	github.com/PuerkitoBio/goquery v1.13.0 // indirect
+	github.com/PuerkitoBio/goquery v1.14.0 // indirect
 	github.com/adrg/xdg v0.5.3 // indirect
-	github.com/andybalholm/cascadia v1.3.4 // indirect
+	github.com/andybalholm/cascadia v1.3.5 // indirect
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/coder/websocket v1.8.15 // indirect
 	github.com/dortanes/ravenpass/packages/authenticator v0.0.0-00010101000000-000000000000 // indirect
@@ -34,9 +34,9 @@ require (
 	github.com/sergeymakinen/go-ico v1.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xgfone/go-imagex v0.7.2 // indirect
-	golang.org/x/crypto v0.58.0 // indirect
+	golang.org/x/crypto v0.59.0 // indirect
 	golang.org/x/image v0.48.0 // indirect
-	golang.org/x/net v0.62.0 // indirect
+	golang.org/x/net v0.63.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/text v0.44.0 // indirect

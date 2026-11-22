@@ -3,7 +3,7 @@ module github.com/dortanes/ravenpass/packages/app
 go 1.27.1
 
 require (
-	github.com/PuerkitoBio/goquery v1.13.0
+	github.com/PuerkitoBio/goquery v1.14.0
 	github.com/coder/websocket v1.8.15
 	github.com/dortanes/ravenpass/packages/authenticator v0.0.0-00010101000000-000000000000
 	github.com/dortanes/ravenpass/packages/importers v0.0.0-00010101000000-000000000000
@@ -22,7 +22,7 @@ require (
 
 require (
 	github.com/adrg/xdg v0.5.3 // indirect
-	github.com/andybalholm/cascadia v1.3.4 // indirect
+	github.com/andybalholm/cascadia v1.3.5 // indirect
 	github.com/boombuler/barcode v1.0.1-0.20190219062509-6c824513bacc // indirect
 	github.com/fxamacker/cbor/v2 v2.10.0 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect
@@ -36,8 +36,8 @@ require (
 	github.com/pquerna/otp v1.5.0 // indirect
 	github.com/sergeymakinen/go-bmp v1.0.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	golang.org/x/crypto v0.58.0 // indirect
-	golang.org/x/net v0.62.0 // indirect
+	golang.org/x/crypto v0.59.0 // indirect
+	golang.org/x/net v0.63.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 )
 
