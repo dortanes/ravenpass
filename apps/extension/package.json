@@ -16,11 +16,11 @@
     "@scure/base": "^2.4.0",
     "cn": "^0.5.2",
     "idb": "^8.0.4",
-    "lucide-react": "^1.72.0",
+    "lucide-react": "^1.76.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "sonner": "^2.0.8",
-    "tldts": "^7.4.26",
+    "tldts": "^7.5.4",
     "valibot": "^1.5.0"
   },
   "devDependencies": {
